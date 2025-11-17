@@ -1,0 +1,565 @@
+// TechBuddy MVP - Prisma Schema
+// Database: PostgreSQL (Supabase)
+// ORM: Prisma
+// Framework: NestJS
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  GENERAL_USER
+  CERTIFIED_MENTOR
+}
+
+enum OrganizationMemberRole {
+  ADMIN
+  STUDENT
+  GRADUATE
+}
+
+enum OrganizationMemberStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ProjectRole {
+  PM
+  TEAM_LEADER
+  MEMBER
+  MENTOR
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  HELP
+}
+
+enum TaskPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_STATUS_CHANGED
+  COMMENT_ADDED
+  MENTORING_REQUEST
+  HELP_REQUESTED
+}
+
+// ============================================
+// Phase 1: 커뮤니티 기능
+// ============================================
+
+// 1. 사용자
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String?
+  name      String
+  nickname  String?  @unique
+  role      UserRole @default(GENERAL_USER)
+  bio       String?
+  techStack String[]
+  avatarUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  organizationMemberships OrganizationMember[]
+  createdPromotions       OrganizationPromotion[]
+  posts                   Post[]                  @relation("UserPosts")
+  postComments            PostComment[]
+  postLikes               PostLike[]
+  postBookmarks           PostBookmark[]
+
+  createdProjects    Project[]       @relation("ProjectCreator")
+  projectMemberships ProjectMember[]
+  assignedTasks      Task[]          @relation("TaskAssignee")
+  createdTasks       Task[]          @relation("TaskCreator")
+  taskComments       TaskComment[]
+  uploadedFiles      ProjectFile[]
+
+  notifications     Notification[] @relation("NotificationRecipient")
+  sentNotifications Notification[] @relation("NotificationSender")
+
+  // Phase 3: 멘토링
+  mentorProfile             MentorProfile?
+  mentoringRequests         MentoringRequest[] @relation("MentoringRequestUser")
+  receivedMentoringRequests MentoringRequest[] @relation("MentoringRequestMentor")
+  chatRoomMemberships       ChatRoom[]         @relation("UserChatRooms")
+  chatMessages              ChatMessage[]
+
+  approvedMembers OrganizationMember[] @relation("ApprovedBy")
+
+  @@index([email])
+  @@map("users")
+}
+
+// 2. 교육기관
+model Organization {
+  id           String  @id @default(uuid())
+  name         String  @unique
+  description  String?
+  location     String?
+  studentCount Int     @default(0)
+  logoUrl      String?
+  websiteUrl   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members    OrganizationMember[]
+  promotions OrganizationPromotion[]
+
+  @@index([name])
+  @@map("organizations")
+}
+
+// 3. 기관 소속
+model OrganizationMember {
+  id             String                   @id @default(uuid())
+  organizationId String
+  userId         String
+  role           OrganizationMemberRole
+  status         OrganizationMemberStatus @default(PENDING)
+  requestedAt    DateTime                 @default(now())
+  approvedAt     DateTime?
+  approvedById   String?
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy   User?        @relation("ApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("organization_members")
+}
+
+// 4. 교육기관 홍보 게시글
+model OrganizationPromotion {
+  id             String  @id @default(uuid())
+  organizationId String
+  title          String
+  content        String
+  externalLink   String
+  linkText       String  @default("지원하기")
+  imageUrl       String?
+  viewCount      Int     @default(0)
+  createdById    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([createdById])
+  @@map("organization_promotions")
+}
+
+// 5. 게시판
+model Board {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+  isPublic    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  posts Post[]
+
+  @@map("boards")
+}
+
+// 6. 게시글
+model Post {
+  id          String  @id @default(uuid())
+  boardId     String
+  authorId    String
+  title       String
+  content     String
+  viewCount   Int     @default(0)
+  isPublished Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  board     Board          @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  author    User           @relation("UserPosts", fields: [authorId], references: [id], onDelete: Cascade)
+  comments  PostComment[]
+  likes     PostLike[]
+  bookmarks PostBookmark[]
+  postTags  PostTag[]
+
+  @@index([boardId])
+  @@index([authorId])
+  @@index([title])
+  @@map("posts")
+}
+
+// 7. 댓글
+model PostComment {
+  id       String  @id @default(uuid())
+  postId   String
+  authorId String
+  content  String
+  parentId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  PostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies PostComment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("post_comments")
+}
+
+// 8. 좋아요
+model PostLike {
+  id     String @id @default(uuid())
+  postId String
+  userId String
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_likes")
+}
+
+// 9. 북마크
+model PostBookmark {
+  id     String @id @default(uuid())
+  postId String
+  userId String
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_bookmarks")
+}
+
+// 10. 태그
+model Tag {
+  id   String @id @default(uuid())
+  name String @unique
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  postTags PostTag[]
+
+  @@map("tags")
+}
+
+// 11. 게시글-태그 연결
+model PostTag {
+  id     String @id @default(uuid())
+  postId String
+  tagId  String
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
+  @@index([postId])
+  @@index([tagId])
+  @@map("post_tags")
+}
+
+// ============================================
+// Phase 2: 프로젝트 관리 기능
+// ============================================
+
+// 12. 프로젝트
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  overview    String? // Markdown
+  startDate   DateTime?
+  endDate     DateTime?
+  status      ProjectStatus @default(ACTIVE)
+  isPublic    Boolean       @default(false)
+  createdById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  createdBy User            @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  members   ProjectMember[]
+  tasks     Task[]
+  files     ProjectFile[]
+
+  @@index([createdById])
+  @@index([status])
+  @@map("projects")
+}
+
+// 13. 프로젝트 멤버
+model ProjectMember {
+  id        String      @id @default(uuid())
+  projectId String
+  userId    String
+  role      ProjectRole
+
+  joinedAt DateTime @default(now())
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+// 14. 작업(태스크)
+model Task {
+  id          String       @id @default(uuid())
+  projectId   String
+  title       String
+  description String?
+  assigneeId  String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  helpReason  String? // status가 HELP일 때만 사용
+  dueDate     DateTime?
+  createdById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee  User?         @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy User          @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  labels    TaskLabel[]
+  comments  TaskComment[]
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([createdById])
+  @@map("tasks")
+}
+
+// 15. 태스크 라벨
+model TaskLabel {
+  id     String @id @default(uuid())
+  taskId String
+  label  String
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_labels")
+}
+
+// 16. 태스크 코멘트
+model TaskComment {
+  id       String @id @default(uuid())
+  taskId   String
+  authorId String
+  content  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([authorId])
+  @@map("task_comments")
+}
+
+// 17. 산출문서
+model ProjectFile {
+  id           String  @id @default(uuid())
+  projectId    String
+  name         String
+  originalName String
+  folder       String // '기획서', '설계서', '발표자료', '기타'
+  description  String?
+  fileSize     BigInt
+  mimeType     String?
+  fileUrl      String
+  uploadedById String
+
+  uploadedAt DateTime @default(now())
+
+  // Relations
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([uploadedById])
+  @@index([folder])
+  @@map("project_files")
+}
+
+// 18. 알림
+model Notification {
+  id          String           @id @default(uuid())
+  recipientId String
+  senderId    String?
+  type        NotificationType
+  title       String
+  message     String
+  isRead      Boolean          @default(false)
+  relatedId   String? // 관련 엔티티 ID (프로젝트, 태스크 등)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender    User? @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId])
+  @@index([senderId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// ============================================
+// Phase 3: 멘토링 기능 (추후)
+// ============================================
+
+// 19. 멘토 프로필
+model MentorProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  specialization    String[] // 전문 분야
+  techStack         String[] // 기술 스택
+  yearsOfExperience Int
+  availableTime     String? // 가능 시간대
+  introduction      String? // 자기소개
+  mentoringStyle    String? // 멘토링 스타일
+  rating            Float    @default(0.0)
+  reviewCount       Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mentoringRequests MentoringRequest[]
+
+  @@index([userId])
+  @@map("mentor_profiles")
+}
+
+// 20. 멘토링 신청
+model MentoringRequest {
+  id              String    @id @default(uuid())
+  userId          String // 멘티
+  mentorId        String // 멘토
+  mentorProfileId String
+  message         String // 신청 메시지
+  status          String    @default("PENDING") // PENDING, ACCEPTED, REJECTED, COMPLETED
+  scheduledAt     DateTime? // 예정 시간
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user          User          @relation("MentoringRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  mentor        User          @relation("MentoringRequestMentor", fields: [mentorId], references: [id], onDelete: Cascade)
+  mentorProfile MentorProfile @relation(fields: [mentorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([mentorId])
+  @@index([mentorProfileId])
+  @@index([status])
+  @@map("mentoring_requests")
+}
+
+// 21. 채팅방
+model ChatRoom {
+  id      String  @id @default(uuid())
+  name    String?
+  isGroup Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members  User[]        @relation("UserChatRooms")
+  messages ChatMessage[]
+
+  @@map("chat_rooms")
+}
+
+// 22. 채팅 메시지
+model ChatMessage {
+  id         String  @id @default(uuid())
+  chatRoomId String
+  senderId   String
+  content    String
+  fileUrl    String? // 첨부 파일
+  isRead     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  sender   User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([chatRoomId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}

@@ -1,0 +1,897 @@
+﻿-- 테이블 순서는 관계를 고려하여 한 번에 실행해도 에러가 발생하지 않게 정렬되었습니다.
+
+-- users Table Create SQL
+-- 테이블 생성 SQL - users
+CREATE TABLE users
+(
+    id                   UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    email                VARCHAR(255)    NOT NULL, 
+    password_hash        VARCHAR(255)    NULL, 
+    name                 VARCHAR(100)    NOT NULL, 
+    avatar_url           VARCHAR(500)    NULL, 
+    grade                VARCHAR(20)     DEFAULT 'JOB_SEEKER' NOT NULL, 
+    grade_verified       BOOLEAN         DEFAULT false NOT NULL, 
+    oauth_provider       VARCHAR(50)     NULL, 
+    oauth_id             VARCHAR(255)    NULL, 
+    is_active            BOOLEAN         DEFAULT true NOT NULL, 
+    is_email_verified    BOOLEAN         DEFAULT false NOT NULL, 
+    created_at           TIMESTAMP       DEFAULT NOW() NOT NULL, 
+    updated_at           TIMESTAMP       DEFAULT NOW() NOT NULL, 
+    last_login_at        TIMESTAMP       NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - users(email)
+CREATE INDEX idx_users_email
+    ON users(email);
+
+-- Index 설정 SQL - users(grade)
+CREATE INDEX idx_users_grade
+    ON users(grade);
+
+-- Index 설정 SQL - users(oauth_provider, oauth_id)
+CREATE INDEX idx_users_oauth
+    ON users(oauth_provider, oauth_id);
+
+
+-- projects Table Create SQL
+-- 테이블 생성 SQL - projects
+CREATE TABLE projects
+(
+    id             UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    name           VARCHAR(200)    NOT NULL, 
+    description    TEXT            NULL, 
+    overview       TEXT            NULL, 
+    start_date     DATE            NULL, 
+    end_date       DATE            NULL, 
+    status         VARCHAR(20)     DEFAULT 'active' NOT NULL, 
+    is_public      BOOLEAN         DEFAULT false NOT NULL, 
+    created_by     UUID            NOT NULL, 
+    created_at     TIMESTAMP       DEFAULT NOW() NOT NULL, 
+    updated_at     TIMESTAMP       DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - projects(created_by)
+CREATE INDEX idx_projects_creator
+    ON projects(created_by);
+
+-- Index 설정 SQL - projects(start_date, end_date)
+CREATE INDEX idx_projects_dates
+    ON projects(start_date, end_date);
+
+-- Index 설정 SQL - projects(status)
+CREATE INDEX idx_projects_status
+    ON projects(status);
+
+-- Foreign Key 설정 SQL - projects(created_by) -> users(id)
+ALTER TABLE projects
+    ADD CONSTRAINT fk_projects_creator FOREIGN KEY (created_by)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - projects(created_by)
+-- ALTER TABLE projects
+-- DROP CONSTRAINT fk_projects_creator;
+
+
+-- organizations Table Create SQL
+-- 테이블 생성 SQL - organizations
+CREATE TABLE organizations
+(
+    id               UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    name             VARCHAR(100)    NOT NULL, 
+    description      TEXT            NULL, 
+    location         VARCHAR(100)    NULL, 
+    student_count    INTEGER         DEFAULT 0 NOT NULL, 
+    logo_url         VARCHAR(255)    NULL, 
+    website_url      VARCHAR(255)    NULL, 
+    created_at       TIMESTAMP       DEFAULT NOW() NOT NULL, 
+    updated_at       TIMESTAMP       DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - organizations(name)
+CREATE INDEX idx_organizations_name
+    ON organizations(name);
+
+
+-- tasks Table Create SQL
+-- 테이블 생성 SQL - tasks
+CREATE TABLE tasks
+(
+    id             UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    project_id     UUID            NOT NULL, 
+    title          VARCHAR(200)    NOT NULL, 
+    description    TEXT            NULL, 
+    assignee_id    UUID            NULL, 
+    status         VARCHAR(20)     DEFAULT 'TODO' NOT NULL, 
+    priority       VARCHAR(20)     DEFAULT 'MEDIUM' NOT NULL, 
+    help_reason    TEXT            NULL, 
+    due_date       DATE            NULL, 
+    position       INTEGER         DEFAULT 0 NOT NULL, 
+    created_by     UUID            NOT NULL, 
+    created_at     TIMESTAMP       DEFAULT NOW() NOT NULL, 
+    updated_at     TIMESTAMP       DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - tasks(assignee_id)
+CREATE INDEX idx_tasks_assignee
+    ON tasks(assignee_id);
+
+-- Index 설정 SQL - tasks(due_date)
+CREATE INDEX idx_tasks_due_date
+    ON tasks(due_date);
+
+-- Index 설정 SQL - tasks(project_id)
+CREATE INDEX idx_tasks_project
+    ON tasks(project_id);
+
+-- Index 설정 SQL - tasks(project_id, position)
+CREATE INDEX idx_tasks_project_position
+    ON tasks(project_id, position);
+
+-- Index 설정 SQL - tasks(project_id, status)
+CREATE INDEX idx_tasks_project_status
+    ON tasks(project_id, status);
+
+-- Index 설정 SQL - tasks(status)
+CREATE INDEX idx_tasks_status
+    ON tasks(status);
+
+-- Foreign Key 설정 SQL - tasks(project_id) -> projects(id)
+ALTER TABLE tasks
+    ADD CONSTRAINT fk_tasks_project FOREIGN KEY (project_id)
+        REFERENCES projects (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - tasks(project_id)
+-- ALTER TABLE tasks
+-- DROP CONSTRAINT fk_tasks_project;
+
+-- Foreign Key 설정 SQL - tasks(assignee_id) -> users(id)
+ALTER TABLE tasks
+    ADD CONSTRAINT fk_tasks_assignee FOREIGN KEY (assignee_id)
+        REFERENCES users (id) ON DELETE SET NULL ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - tasks(assignee_id)
+-- ALTER TABLE tasks
+-- DROP CONSTRAINT fk_tasks_assignee;
+
+-- Foreign Key 설정 SQL - tasks(created_by) -> users(id)
+ALTER TABLE tasks
+    ADD CONSTRAINT fk_tasks_creator FOREIGN KEY (created_by)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - tasks(created_by)
+-- ALTER TABLE tasks
+-- DROP CONSTRAINT fk_tasks_creator;
+
+
+-- boards Table Create SQL
+-- 테이블 생성 SQL - boards
+CREATE TABLE boards
+(
+    id                 UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    name               VARCHAR(100)    NOT NULL, 
+    slug               VARCHAR(100)    NOT NULL, 
+    description        TEXT            NULL, 
+    board_type         VARCHAR(20)     DEFAULT 'PUBLIC' NOT NULL, 
+    required_grade     VARCHAR(20)     NULL, 
+    organization_id    UUID            NULL, 
+    display_order      INTEGER         DEFAULT 0 NOT NULL, 
+    is_active          BOOLEAN         DEFAULT true NOT NULL, 
+    created_at         TIMESTAMP       DEFAULT NOW() NOT NULL, 
+    updated_at         TIMESTAMP       DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - boards(board_type)
+CREATE INDEX idx_boards_type
+    ON boards(board_type);
+
+-- Index 설정 SQL - boards(organization_id)
+CREATE INDEX idx_boards_org
+    ON boards(organization_id);
+
+-- Index 설정 SQL - boards(slug)
+CREATE INDEX idx_boards_slug
+    ON boards(slug);
+
+-- Foreign Key 설정 SQL - boards(organization_id) -> organizations(id)
+ALTER TABLE boards
+    ADD CONSTRAINT fk_boards_organization FOREIGN KEY (organization_id)
+        REFERENCES organizations (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - boards(organization_id)
+-- ALTER TABLE boards
+-- DROP CONSTRAINT fk_boards_organization;
+
+
+-- task_comments Table Create SQL
+-- 테이블 생성 SQL - task_comments
+CREATE TABLE task_comments
+(
+    id            UUID         DEFAULT 'uuid_generate_v4()' NULL, 
+    task_id       UUID         NOT NULL, 
+    author_id     UUID         NOT NULL, 
+    content       TEXT         NOT NULL, 
+    is_deleted    BOOLEAN      DEFAULT false NOT NULL, 
+    created_at    TIMESTAMP    DEFAULT NOW() NOT NULL, 
+    updated_at    TIMESTAMP    DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - task_comments(author_id)
+CREATE INDEX idx_task_comments_author
+    ON task_comments(author_id);
+
+-- Index 설정 SQL - task_comments(created_at DESC)
+CREATE INDEX idx_task_comments_created
+    ON task_comments(created_at DESC);
+
+-- Index 설정 SQL - task_comments(task_id)
+CREATE INDEX idx_task_comments_task
+    ON task_comments(task_id);
+
+-- Foreign Key 설정 SQL - task_comments(task_id) -> tasks(id)
+ALTER TABLE task_comments
+    ADD CONSTRAINT fk_task_comments_task FOREIGN KEY (task_id)
+        REFERENCES tasks (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - task_comments(task_id)
+-- ALTER TABLE task_comments
+-- DROP CONSTRAINT fk_task_comments_task;
+
+-- Foreign Key 설정 SQL - task_comments(author_id) -> users(id)
+ALTER TABLE task_comments
+    ADD CONSTRAINT fk_task_comments_author FOREIGN KEY (author_id)
+        REFERENCES users (id) ON DELETE SET NULL ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - task_comments(author_id)
+-- ALTER TABLE task_comments
+-- DROP CONSTRAINT fk_task_comments_author;
+
+
+-- posts Table Create SQL
+-- 테이블 생성 SQL - posts
+CREATE TABLE posts
+(
+    id               UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    board_id         UUID            NOT NULL, 
+    author_id        UUID            NOT NULL, 
+    title            VARCHAR(200)    NOT NULL, 
+    content          TEXT            NOT NULL, 
+    view_count       INTEGER         DEFAULT 0 NOT NULL, 
+    like_count       INTEGER         DEFAULT 0 NOT NULL, 
+    comment_count    INTEGER         DEFAULT 0 NOT NULL, 
+    is_pinned        BOOLEAN         DEFAULT false NOT NULL, 
+    is_deleted       BOOLEAN         DEFAULT false NOT NULL, 
+    created_at       TIMESTAMP       DEFAULT NOW() NOT NULL, 
+    updated_at       TIMESTAMP       DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - posts(author_id)
+CREATE INDEX idx_posts_author
+    ON posts(author_id);
+
+-- Index 설정 SQL - posts(board_id)
+CREATE INDEX idx_posts_board
+    ON posts(board_id);
+
+-- Index 설정 SQL - posts(board_id, is_deleted)
+CREATE INDEX idx_posts_board_deleted
+    ON posts(board_id, is_deleted);
+
+-- Index 설정 SQL - posts(board_id, is_pinned, created_at DESC)
+CREATE INDEX idx_posts_board_pinned
+    ON posts(board_id, is_pinned, created_at DESC);
+
+-- Index 설정 SQL - posts(created_at DESC)
+CREATE INDEX idx_posts_created
+    ON posts(created_at DESC);
+
+-- Foreign Key 설정 SQL - posts(board_id) -> boards(id)
+ALTER TABLE posts
+    ADD CONSTRAINT fk_posts_board FOREIGN KEY (board_id)
+        REFERENCES boards (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - posts(board_id)
+-- ALTER TABLE posts
+-- DROP CONSTRAINT fk_posts_board;
+
+-- Foreign Key 설정 SQL - posts(author_id) -> users(id)
+ALTER TABLE posts
+    ADD CONSTRAINT fk_posts_author FOREIGN KEY (author_id)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - posts(author_id)
+-- ALTER TABLE posts
+-- DROP CONSTRAINT fk_posts_author;
+
+
+-- user_profiles Table Create SQL
+-- 테이블 생성 SQL - user_profiles
+CREATE TABLE user_profiles
+(
+    id               UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    user_id          UUID            NOT NULL, 
+    bio              TEXT            NULL, 
+    github_url       VARCHAR(255)    NULL, 
+    blog_url         VARCHAR(255)    NULL, 
+    portfolio_url    VARCHAR(255)    NULL, 
+    tech_stacks      JSONB           DEFAULT ''::jsonb NOT NULL, 
+    interests        JSONB           DEFAULT ''::jsonb NOT NULL, 
+    created_at       TIMESTAMP       DEFAULT NOW() NOT NULL, 
+    updated_at       TIMESTAMP       DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - user_profiles(interests)
+CREATE INDEX idx_user_profiles_interests
+    ON user_profiles(interests);
+
+-- Index 설정 SQL - user_profiles(tech_stacks)
+CREATE INDEX idx_user_profiles_tech_stacks
+    ON user_profiles(tech_stacks);
+
+-- Foreign Key 설정 SQL - user_profiles(user_id) -> users(id)
+ALTER TABLE user_profiles
+    ADD CONSTRAINT fk_user_profiles_user FOREIGN KEY (user_id)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - user_profiles(user_id)
+-- ALTER TABLE user_profiles
+-- DROP CONSTRAINT fk_user_profiles_user;
+
+
+-- organization_members Table Create SQL
+-- 테이블 생성 SQL - organization_members
+CREATE TABLE organization_members
+(
+    id                 UUID           DEFAULT 'uuid_generate_v4()' NULL, 
+    organization_id    UUID           NOT NULL, 
+    user_id            UUID           NOT NULL, 
+    role               VARCHAR(20)    DEFAULT 'STUDENT' NOT NULL, 
+    status             VARCHAR(20)    DEFAULT 'PENDING' NOT NULL, 
+    requested_at       TIMESTAMP      DEFAULT NOW() NOT NULL, 
+    approved_at        TIMESTAMP      NULL, 
+    approved_by        UUID           NULL, 
+    created_at         TIMESTAMP      DEFAULT NOW() NOT NULL, 
+    updated_at         TIMESTAMP      DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - organization_members(organization_id)
+CREATE INDEX idx_org_members_org
+    ON organization_members(organization_id);
+
+-- Index 설정 SQL - organization_members(status)
+CREATE INDEX idx_org_members_status
+    ON organization_members(status);
+
+-- Index 설정 SQL - organization_members(user_id)
+CREATE INDEX idx_org_members_user
+    ON organization_members(user_id);
+
+-- Unique Index 설정 SQL - organization_members(organization_id, user_id)
+CREATE UNIQUE INDEX uk_org_members_org_user
+    ON organization_members(organization_id, user_id);
+
+-- Foreign Key 설정 SQL - organization_members(organization_id) -> organizations(id)
+ALTER TABLE organization_members
+    ADD CONSTRAINT fk_org_members_organization FOREIGN KEY (organization_id)
+        REFERENCES organizations (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - organization_members(organization_id)
+-- ALTER TABLE organization_members
+-- DROP CONSTRAINT fk_org_members_organization;
+
+-- Foreign Key 설정 SQL - organization_members(user_id) -> users(id)
+ALTER TABLE organization_members
+    ADD CONSTRAINT fk_org_members_user FOREIGN KEY (user_id)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - organization_members(user_id)
+-- ALTER TABLE organization_members
+-- DROP CONSTRAINT fk_org_members_user;
+
+-- Foreign Key 설정 SQL - organization_members(approved_by) -> users(id)
+ALTER TABLE organization_members
+    ADD CONSTRAINT fk_org_members_approver FOREIGN KEY (approved_by)
+        REFERENCES users (id) ON DELETE SET NULL ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - organization_members(approved_by)
+-- ALTER TABLE organization_members
+-- DROP CONSTRAINT fk_org_members_approver;
+
+
+-- organization_promotions Table Create SQL
+-- 테이블 생성 SQL - organization_promotions
+CREATE TABLE organization_promotions
+(
+    id                 UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    organization_id    UUID            NOT NULL, 
+    title              VARCHAR(200)    NOT NULL, 
+    content            TEXT            NOT NULL, 
+    external_link      VARCHAR(500)    NOT NULL, 
+    link_text          VARCHAR(50)     DEFAULT '지원하기' NOT NULL, 
+    image_url          VARCHAR(255)    NULL, 
+    view_count         INTEGER         DEFAULT 0 NOT NULL, 
+    created_by         UUID            NULL, 
+    created_at         TIMESTAMP       DEFAULT NOW() NOT NULL, 
+    updated_at         TIMESTAMP       DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - organization_promotions(created_at DESC)
+CREATE INDEX idx_org_promotions_created
+    ON organization_promotions(created_at DESC);
+
+-- Index 설정 SQL - organization_promotions(organization_id)
+CREATE INDEX idx_org_promotions_org
+    ON organization_promotions(organization_id);
+
+-- Foreign Key 설정 SQL - organization_promotions(organization_id) -> organizations(id)
+ALTER TABLE organization_promotions
+    ADD CONSTRAINT fk_org_promotions_organization FOREIGN KEY (organization_id)
+        REFERENCES organizations (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - organization_promotions(organization_id)
+-- ALTER TABLE organization_promotions
+-- DROP CONSTRAINT fk_org_promotions_organization;
+
+-- Foreign Key 설정 SQL - organization_promotions(created_by) -> users(id)
+ALTER TABLE organization_promotions
+    ADD CONSTRAINT fk_org_promotions_creator FOREIGN KEY (created_by)
+        REFERENCES users (id) ON DELETE SET NULL ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - organization_promotions(created_by)
+-- ALTER TABLE organization_promotions
+-- DROP CONSTRAINT fk_org_promotions_creator;
+
+
+-- comments Table Create SQL
+-- 테이블 생성 SQL - comments
+CREATE TABLE comments
+(
+    id            UUID         DEFAULT 'uuid_generate_v4()' NULL, 
+    post_id       UUID         NOT NULL, 
+    author_id     UUID         NOT NULL, 
+    parent_id     UUID         NULL, 
+    content       TEXT         NOT NULL, 
+    is_deleted    BOOLEAN      DEFAULT false NOT NULL, 
+    created_at    TIMESTAMP    DEFAULT NOW() NOT NULL, 
+    updated_at    TIMESTAMP    DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - comments(author_id)
+CREATE INDEX idx_comments_author
+    ON comments(author_id);
+
+-- Index 설정 SQL - comments(parent_id)
+CREATE INDEX idx_comments_parent
+    ON comments(parent_id);
+
+-- Index 설정 SQL - comments(post_id)
+CREATE INDEX idx_comments_post
+    ON comments(post_id);
+
+-- Foreign Key 설정 SQL - comments(post_id) -> posts(id)
+ALTER TABLE comments
+    ADD CONSTRAINT fk_comments_post FOREIGN KEY (post_id)
+        REFERENCES posts (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - comments(post_id)
+-- ALTER TABLE comments
+-- DROP CONSTRAINT fk_comments_post;
+
+-- Foreign Key 설정 SQL - comments(author_id) -> users(id)
+ALTER TABLE comments
+    ADD CONSTRAINT fk_comments_author FOREIGN KEY (author_id)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - comments(author_id)
+-- ALTER TABLE comments
+-- DROP CONSTRAINT fk_comments_author;
+
+-- Foreign Key 설정 SQL - comments(parent_id) -> comments(id)
+ALTER TABLE comments
+    ADD CONSTRAINT fk_comments_parent FOREIGN KEY (parent_id)
+        REFERENCES comments (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - comments(parent_id)
+-- ALTER TABLE comments
+-- DROP CONSTRAINT fk_comments_parent;
+
+
+-- post_likes Table Create SQL
+-- 테이블 생성 SQL - post_likes
+CREATE TABLE post_likes
+(
+    id            UUID         DEFAULT 'uuid_generate_v4()' NULL, 
+    post_id       UUID         NOT NULL, 
+    user_id       UUID         NOT NULL, 
+    created_at    TIMESTAMP    DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - post_likes(post_id)
+CREATE INDEX idx_post_likes_post
+    ON post_likes(post_id);
+
+-- Index 설정 SQL - post_likes(user_id)
+CREATE INDEX idx_post_likes_user
+    ON post_likes(user_id);
+
+-- Unique Index 설정 SQL - post_likes(post_id, user_id)
+CREATE UNIQUE INDEX uk_post_likes_post_user
+    ON post_likes(post_id, user_id);
+
+-- Foreign Key 설정 SQL - post_likes(post_id) -> posts(id)
+ALTER TABLE post_likes
+    ADD CONSTRAINT fk_post_likes_post FOREIGN KEY (post_id)
+        REFERENCES posts (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - post_likes(post_id)
+-- ALTER TABLE post_likes
+-- DROP CONSTRAINT fk_post_likes_post;
+
+-- Foreign Key 설정 SQL - post_likes(user_id) -> users(id)
+ALTER TABLE post_likes
+    ADD CONSTRAINT fk_post_likes_user FOREIGN KEY (user_id)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - post_likes(user_id)
+-- ALTER TABLE post_likes
+-- DROP CONSTRAINT fk_post_likes_user;
+
+
+-- post_bookmarks Table Create SQL
+-- 테이블 생성 SQL - post_bookmarks
+CREATE TABLE post_bookmarks
+(
+    id            UUID         DEFAULT 'uuid_generate_v4()' NULL, 
+    post_id       UUID         NOT NULL, 
+    user_id       UUID         NOT NULL, 
+    created_at    TIMESTAMP    DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - post_bookmarks(post_id)
+CREATE INDEX idx_post_bookmarks_post
+    ON post_bookmarks(post_id);
+
+-- Index 설정 SQL - post_bookmarks(user_id)
+CREATE INDEX idx_post_bookmarks_user
+    ON post_bookmarks(user_id);
+
+-- Unique Index 설정 SQL - post_bookmarks(post_id, user_id)
+CREATE UNIQUE INDEX uk_post_bookmarks_post_user
+    ON post_bookmarks(post_id, user_id);
+
+-- Foreign Key 설정 SQL - post_bookmarks(post_id) -> posts(id)
+ALTER TABLE post_bookmarks
+    ADD CONSTRAINT fk_post_bookmarks_post FOREIGN KEY (post_id)
+        REFERENCES posts (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - post_bookmarks(post_id)
+-- ALTER TABLE post_bookmarks
+-- DROP CONSTRAINT fk_post_bookmarks_post;
+
+-- Foreign Key 설정 SQL - post_bookmarks(user_id) -> users(id)
+ALTER TABLE post_bookmarks
+    ADD CONSTRAINT fk_post_bookmarks_user FOREIGN KEY (user_id)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - post_bookmarks(user_id)
+-- ALTER TABLE post_bookmarks
+-- DROP CONSTRAINT fk_post_bookmarks_user;
+
+
+-- project_members Table Create SQL
+-- 테이블 생성 SQL - project_members
+CREATE TABLE project_members
+(
+    id            UUID           DEFAULT 'uuid_generate_v4()' NULL, 
+    project_id    UUID           NOT NULL, 
+    user_id       UUID           NOT NULL, 
+    role          VARCHAR(20)    NOT NULL, 
+    joined_at     TIMESTAMP      DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - project_members(project_id)
+CREATE INDEX idx_project_members_project
+    ON project_members(project_id);
+
+-- Index 설정 SQL - project_members(role)
+CREATE INDEX idx_project_members_role
+    ON project_members(role);
+
+-- Index 설정 SQL - project_members(user_id)
+CREATE INDEX idx_project_members_user
+    ON project_members(user_id);
+
+-- Unique Index 설정 SQL - project_members(project_id, user_id)
+CREATE UNIQUE INDEX uk_project_members_project_user
+    ON project_members(project_id, user_id);
+
+-- Foreign Key 설정 SQL - project_members(project_id) -> projects(id)
+ALTER TABLE project_members
+    ADD CONSTRAINT fk_project_members_project FOREIGN KEY (project_id)
+        REFERENCES projects (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - project_members(project_id)
+-- ALTER TABLE project_members
+-- DROP CONSTRAINT fk_project_members_project;
+
+-- Foreign Key 설정 SQL - project_members(user_id) -> users(id)
+ALTER TABLE project_members
+    ADD CONSTRAINT fk_project_members_user FOREIGN KEY (user_id)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - project_members(user_id)
+-- ALTER TABLE project_members
+-- DROP CONSTRAINT fk_project_members_user;
+
+
+-- task_labels Table Create SQL
+-- 테이블 생성 SQL - task_labels
+CREATE TABLE task_labels
+(
+    id            UUID           DEFAULT 'uuid_generate_v4()' NULL, 
+    task_id       UUID           NOT NULL, 
+    label         VARCHAR(50)    NOT NULL, 
+    color         VARCHAR(20)    DEFAULT 'gray' NOT NULL, 
+    created_at    TIMESTAMP      DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - task_labels(label)
+CREATE INDEX idx_task_labels_label
+    ON task_labels(label);
+
+-- Index 설정 SQL - task_labels(task_id)
+CREATE INDEX idx_task_labels_task
+    ON task_labels(task_id);
+
+-- Foreign Key 설정 SQL - task_labels(task_id) -> tasks(id)
+ALTER TABLE task_labels
+    ADD CONSTRAINT fk_task_labels_task FOREIGN KEY (task_id)
+        REFERENCES tasks (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - task_labels(task_id)
+-- ALTER TABLE task_labels
+-- DROP CONSTRAINT fk_task_labels_task;
+
+
+-- task_checklists Table Create SQL
+-- 테이블 생성 SQL - task_checklists
+CREATE TABLE task_checklists
+(
+    id            UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    task_id       UUID            NOT NULL, 
+    text          VARCHAR(200)    NOT NULL, 
+    completed     BOOLEAN         DEFAULT false NOT NULL, 
+    position      INTEGER         DEFAULT 0 NOT NULL, 
+    created_at    TIMESTAMP       DEFAULT NOW() NOT NULL, 
+    updated_at    TIMESTAMP       DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - task_checklists(task_id)
+CREATE INDEX idx_task_checklists_task
+    ON task_checklists(task_id);
+
+-- Foreign Key 설정 SQL - task_checklists(task_id) -> tasks(id)
+ALTER TABLE task_checklists
+    ADD CONSTRAINT fk_task_checklists_task FOREIGN KEY (task_id)
+        REFERENCES tasks (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - task_checklists(task_id)
+-- ALTER TABLE task_checklists
+-- DROP CONSTRAINT fk_task_checklists_task;
+
+
+-- task_comment_mentions Table Create SQL
+-- 테이블 생성 SQL - task_comment_mentions
+CREATE TABLE task_comment_mentions
+(
+    id            UUID         DEFAULT 'uuid_generate_v4()' NULL, 
+    comment_id    UUID         NOT NULL, 
+    user_id       UUID         NOT NULL, 
+    created_at    TIMESTAMP    DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - task_comment_mentions(comment_id)
+CREATE INDEX idx_task_comment_mentions_comment
+    ON task_comment_mentions(comment_id);
+
+-- Index 설정 SQL - task_comment_mentions(user_id)
+CREATE INDEX idx_task_comment_mentions_user
+    ON task_comment_mentions(user_id);
+
+-- Foreign Key 설정 SQL - task_comment_mentions(comment_id) -> task_comments(id)
+ALTER TABLE task_comment_mentions
+    ADD CONSTRAINT fk_task_comment_mentions_comment FOREIGN KEY (comment_id)
+        REFERENCES task_comments (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - task_comment_mentions(comment_id)
+-- ALTER TABLE task_comment_mentions
+-- DROP CONSTRAINT fk_task_comment_mentions_comment;
+
+-- Foreign Key 설정 SQL - task_comment_mentions(user_id) -> users(id)
+ALTER TABLE task_comment_mentions
+    ADD CONSTRAINT fk_task_comment_mentions_user FOREIGN KEY (user_id)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - task_comment_mentions(user_id)
+-- ALTER TABLE task_comment_mentions
+-- DROP CONSTRAINT fk_task_comment_mentions_user;
+
+
+-- task_history Table Create SQL
+-- 테이블 생성 SQL - task_history
+CREATE TABLE task_history
+(
+    id            UUID           DEFAULT 'uuid_generate_v4()' NULL, 
+    task_id       UUID           NOT NULL, 
+    changed_by    UUID           NOT NULL, 
+    field_name    VARCHAR(50)    NOT NULL, 
+    old_value     TEXT           NULL, 
+    new_value     TEXT           NULL, 
+    created_at    TIMESTAMP      DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - task_history(created_at DESC)
+CREATE INDEX idx_task_history_created
+    ON task_history(created_at DESC);
+
+-- Index 설정 SQL - task_history(task_id)
+CREATE INDEX idx_task_history_task
+    ON task_history(task_id);
+
+-- Foreign Key 설정 SQL - task_history(task_id) -> tasks(id)
+ALTER TABLE task_history
+    ADD CONSTRAINT fk_task_history_task FOREIGN KEY (task_id)
+        REFERENCES tasks (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - task_history(task_id)
+-- ALTER TABLE task_history
+-- DROP CONSTRAINT fk_task_history_task;
+
+-- Foreign Key 설정 SQL - task_history(changed_by) -> users(id)
+ALTER TABLE task_history
+    ADD CONSTRAINT fk_task_history_changed_by FOREIGN KEY (changed_by)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - task_history(changed_by)
+-- ALTER TABLE task_history
+-- DROP CONSTRAINT fk_task_history_changed_by;
+
+
+-- project_files Table Create SQL
+-- 테이블 생성 SQL - project_files
+CREATE TABLE project_files
+(
+    id               UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    project_id       UUID            NOT NULL, 
+    name             VARCHAR(255)    NOT NULL, 
+    original_name    VARCHAR(255)    NOT NULL, 
+    folder           VARCHAR(50)     NOT NULL, 
+    description      TEXT            NULL, 
+    file_size        BIGINT          NOT NULL, 
+    mime_type        VARCHAR(100)    NULL, 
+    file_url         VARCHAR(500)    NOT NULL, 
+    uploaded_by      UUID            NOT NULL, 
+    uploaded_at      TIMESTAMP       DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - project_files(folder)
+CREATE INDEX idx_project_files_folder
+    ON project_files(folder);
+
+-- Index 설정 SQL - project_files(project_id)
+CREATE INDEX idx_project_files_project
+    ON project_files(project_id);
+
+-- Index 설정 SQL - project_files(uploaded_at DESC)
+CREATE INDEX idx_project_files_uploaded
+    ON project_files(uploaded_at DESC);
+
+-- Foreign Key 설정 SQL - project_files(project_id) -> projects(id)
+ALTER TABLE project_files
+    ADD CONSTRAINT fk_project_files_project FOREIGN KEY (project_id)
+        REFERENCES projects (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - project_files(project_id)
+-- ALTER TABLE project_files
+-- DROP CONSTRAINT fk_project_files_project;
+
+-- Foreign Key 설정 SQL - project_files(uploaded_by) -> users(id)
+ALTER TABLE project_files
+    ADD CONSTRAINT fk_project_files_uploader FOREIGN KEY (uploaded_by)
+        REFERENCES users (id) ON DELETE SET NULL ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - project_files(uploaded_by)
+-- ALTER TABLE project_files
+-- DROP CONSTRAINT fk_project_files_uploader;
+
+
+-- notifications Table Create SQL
+-- 테이블 생성 SQL - notifications
+CREATE TABLE notifications
+(
+    id                    UUID            DEFAULT 'uuid_generate_v4()' NULL, 
+    user_id               UUID            NOT NULL, 
+    type                  VARCHAR(50)     NOT NULL, 
+    title                 VARCHAR(200)    NOT NULL, 
+    message               TEXT            NOT NULL, 
+    related_project_id    UUID            NULL, 
+    related_task_id       UUID            NULL, 
+    related_post_id       UUID            NULL, 
+    action_url            VARCHAR(500)    NULL, 
+    is_read               BOOLEAN         DEFAULT false NOT NULL, 
+    read_at               TIMESTAMP       NULL, 
+    created_at            TIMESTAMP       DEFAULT NOW() NOT NULL, 
+     PRIMARY KEY (id)
+);
+
+-- Index 설정 SQL - notifications(created_at DESC)
+CREATE INDEX idx_notifications_created
+    ON notifications(created_at DESC);
+
+-- Index 설정 SQL - notifications(type)
+CREATE INDEX idx_notifications_type
+    ON notifications(type);
+
+-- Index 설정 SQL - notifications(user_id)
+CREATE INDEX idx_notifications_user
+    ON notifications(user_id);
+
+-- Index 설정 SQL - notifications(user_id, is_read, created_at DESC)
+CREATE INDEX idx_notifications_user_unread
+    ON notifications(user_id, is_read, created_at DESC);
+
+-- Foreign Key 설정 SQL - notifications(user_id) -> users(id)
+ALTER TABLE notifications
+    ADD CONSTRAINT fk_notifications_user FOREIGN KEY (user_id)
+        REFERENCES users (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - notifications(user_id)
+-- ALTER TABLE notifications
+-- DROP CONSTRAINT fk_notifications_user;
+
+-- Foreign Key 설정 SQL - notifications(related_project_id) -> projects(id)
+ALTER TABLE notifications
+    ADD CONSTRAINT fk_notifications_project FOREIGN KEY (related_project_id)
+        REFERENCES projects (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - notifications(related_project_id)
+-- ALTER TABLE notifications
+-- DROP CONSTRAINT fk_notifications_project;
+
+-- Foreign Key 설정 SQL - notifications(related_task_id) -> tasks(id)
+ALTER TABLE notifications
+    ADD CONSTRAINT fk_notifications_task FOREIGN KEY (related_task_id)
+        REFERENCES tasks (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - notifications(related_task_id)
+-- ALTER TABLE notifications
+-- DROP CONSTRAINT fk_notifications_task;
+
+-- Foreign Key 설정 SQL - notifications(related_post_id) -> posts(id)
+ALTER TABLE notifications
+    ADD CONSTRAINT fk_notifications_post FOREIGN KEY (related_post_id)
+        REFERENCES posts (id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Foreign Key 삭제 SQL - notifications(related_post_id)
+-- ALTER TABLE notifications
+-- DROP CONSTRAINT fk_notifications_post;
+
+
