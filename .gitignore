@@ -54,6 +54,7 @@ frontend/.env.local
 .DS_Store
 .clinerules
 .playwright-mcp
+.claude
 
 # ============ OS ============
 Thumbs.db
