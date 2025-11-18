@@ -164,15 +164,34 @@ NODE_ENV="development"
 
 ### 4. Prisma 설정
 
-```bash
-# Prisma 스키마 생성 (이미 있으면 스킵)
-npx prisma generate
+> **중요:** `npm install` 시 `postinstall` 스크립트로 `prisma generate`가 자동 실행됩니다.
 
-# 데이터베이스 마이그레이션
-npx prisma migrate dev --name init
+```bash
+# 데이터베이스 마이그레이션 (⚠️ .env 설정 후 실행)
+npx prisma migrate dev
+
+# Prisma Client 재생성 (schema.prisma 수정 시)
+npx prisma generate
 
 # Prisma Studio 실행 (DB GUI)
 npx prisma studio  # http://localhost:5555
+```
+
+**처음 클론 후 실행 순서:**
+
+```bash
+# 1. 의존성 설치 (prisma generate 자동 실행됨)
+npm install
+
+# 2. .env 파일 설정 (DATABASE_URL 필수!)
+cp .env.example .env
+# .env 파일에서 DATABASE_URL 수정
+
+# 3. 데이터베이스 마이그레이션
+npx prisma migrate dev
+
+# 4. 개발 서버 실행
+npm run start:dev
 ```
 
 ### 5. 백엔드 실행

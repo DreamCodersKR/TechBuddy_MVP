@@ -25,6 +25,59 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+---
+
+## 🔧 TechBuddy Backend Setup
+
+### 처음 클론 후 실행 순서
+
+```bash
+# 1. 의존성 설치 (prisma generate 자동 실행됨)
+npm install
+
+# 2. .env 파일 설정 (DATABASE_URL 필수!)
+cp .env.example .env
+# .env 파일에서 DATABASE_URL 수정
+
+# 3. 데이터베이스 마이그레이션
+npx prisma migrate dev
+
+# 4. 개발 서버 실행
+npm run start:dev
+```
+
+### 환경 변수 설정
+
+`.env` 파일에 다음 정보를 설정하세요:
+
+```env
+# Supabase PostgreSQL
+DATABASE_URL="postgresql://postgres:[PASSWORD]@[PROJECT_REF].supabase.co:5432/postgres"
+
+# JWT Secret
+JWT_SECRET="your-secret-key-here"
+JWT_EXPIRES_IN="7d"
+
+# Server
+PORT=3000
+NODE_ENV="development"
+```
+
+### Prisma 관련 명령어
+
+```bash
+# Prisma Client 재생성 (schema.prisma 수정 시)
+npx prisma generate
+
+# 데이터베이스 마이그레이션
+npx prisma migrate dev
+
+# Prisma Studio (DB GUI)
+npx prisma studio  # http://localhost:5555
+```
+
+---
+
 ## Project setup
 
 ```bash

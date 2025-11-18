@@ -172,10 +172,10 @@ cd TechBuddy_MVP
 
 # 2. 백엔드 설정
 cd backend
-npm install
-cp .env.example .env  # 환경변수 설정
-npx prisma migrate dev
-npm run start:dev
+npm install                # prisma generate 자동 실행됨
+cp .env.example .env       # 환경변수 설정 (DATABASE_URL 필수!)
+npx prisma migrate dev     # DB 마이그레이션
+npm run start:dev          # 개발 서버 실행
 
 # 3. 프론트엔드 설정
 cd ../frontend
