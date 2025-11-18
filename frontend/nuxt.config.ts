@@ -6,6 +6,12 @@ export default defineNuxtConfig({
   // Modules
   modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
 
+  // Tailwind CSS
+  tailwindcss: {
+    cssPath: './assets/css/tailwind.css',
+    configPath: 'tailwind.config.js',
+  },
+
   // TypeScript
   typescript: {
     strict: true,
@@ -19,9 +25,6 @@ export default defineNuxtConfig({
       environment: process.env.NUXT_PUBLIC_ENVIRONMENT || 'development',
     },
   },
-
-  // CSS
-  css: ['~/assets/css/tailwind.css'],
 
   // App Config
   app: {
