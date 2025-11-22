@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage for development
+    container_name: techbuddy-backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./backend/.env
+    volumes:
+      # Mount source code for hot reload
+      - ./backend/src:/app/src
+      # Preserve node_modules in container
+      - backend-node-modules:/app/node_modules
+    command: npm run start:dev
+    restart: unless-stopped
+    networks:
+      - techbuddy-network
+
+networks:
+  techbuddy-network:
+    driver: bridge
+
+volumes:
+  backend-node-modules:
