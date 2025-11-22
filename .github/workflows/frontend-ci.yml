@@ -24,6 +24,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Debug - Check directory
+        run: |
+          pwd
+          ls -la
+
       - name: Install dependencies
         run: npm ci
 
