@@ -218,7 +218,6 @@ npm run dev
 | **프론트엔드** | 박지승 | Nuxt.js 개발, UI/UX 구현           |
 | **백엔드**     | 윤종호 | NestJS API 개발, DB 설계           |
 | **디자이너**   | 미정   | UI/UX 디자인                       |
-| **앱 개발**    | 박시형 | Flutter 모바일 앱 (Phase 4)        |
 
 ### ⭐ Key Strength
 
