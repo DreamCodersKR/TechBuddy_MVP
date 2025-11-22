@@ -15,7 +15,8 @@ lerna-debug.log*
 .pnpm-debug.log*
 
 # ============ Package Manager ============
-package-lock.json
+# package-lock.json은 CI/CD를 위해 Git에 포함
+# package-lock.json
 yarn.lock
 pnpm-lock.yaml
 

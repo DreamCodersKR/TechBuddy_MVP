@@ -7,16 +7,28 @@
           <div class="flex items-center gap-8">
             <span class="text-xl font-bold text-foreground">TechBuddy</span>
             <div class="hidden md:flex items-center gap-6">
-              <a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <a
+                href="#"
+                class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 커뮤니티
               </a>
-              <a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <a
+                href="#"
+                class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 교육기관
               </a>
-              <a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <a
+                href="#"
+                class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 멘토링
               </a>
-              <a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <a
+                href="#"
+                class="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 프로젝트
               </a>
             </div>
@@ -74,9 +86,14 @@
         <div class="transition-all duration-300 hover:shadow-lg border border-border bg-card text-card-foreground rounded-lg">
           <div class="p-6 space-y-4">
             <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-              <MessageSquare :size="24" class="text-emerald-600" />
+              <MessageSquare
+                :size="24"
+                class="text-emerald-600"
+              />
             </div>
-            <h3 class="text-xl font-semibold text-foreground">주제별 커뮤니티</h3>
+            <h3 class="text-xl font-semibold text-foreground">
+              주제별 커뮤니티
+            </h3>
             <p class="text-muted-foreground leading-relaxed">
               자유게시판, 프로젝트 구인, 취업/진로별 맞춤 정보 공유
             </p>
@@ -87,9 +104,14 @@
         <div class="transition-all duration-300 hover:shadow-lg border border-border bg-card text-card-foreground rounded-lg">
           <div class="p-6 space-y-4">
             <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-              <Users :size="24" class="text-emerald-600" />
+              <Users
+                :size="24"
+                class="text-emerald-600"
+              />
             </div>
-            <h3 class="text-xl font-semibold text-foreground">멘토링 매칭</h3>
+            <h3 class="text-xl font-semibold text-foreground">
+              멘토링 매칭
+            </h3>
             <p class="text-muted-foreground leading-relaxed">
               시니어 개발자와 1:1 실시간 채팅으로 성장하세요
             </p>
@@ -100,9 +122,14 @@
         <div class="transition-all duration-300 hover:shadow-lg border border-border bg-card text-card-foreground rounded-lg">
           <div class="p-6 space-y-4">
             <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-              <Folder :size="24" class="text-emerald-600" />
+              <Folder
+                :size="24"
+                class="text-emerald-600"
+              />
             </div>
-            <h3 class="text-xl font-semibold text-foreground">초보자용 프로젝트 관리</h3>
+            <h3 class="text-xl font-semibold text-foreground">
+              초보자용 프로젝트 관리
+            </h3>
             <p class="text-muted-foreground leading-relaxed">
               쉬운 칸반보드와 Help 상태로 막힌 부분 즉시 해결
             </p>
@@ -123,7 +150,9 @@
               <span class="text-lg font-bold text-white">1</span>
             </div>
             <div class="space-y-2 pt-2">
-              <h3 class="text-xl font-semibold text-foreground">회원가입</h3>
+              <h3 class="text-xl font-semibold text-foreground">
+                회원가입
+              </h3>
               <p class="text-muted-foreground leading-relaxed">
                 이메일 또는 소셜 로그인으로 간편하게 시작
               </p>
@@ -135,7 +164,9 @@
               <span class="text-lg font-bold text-white">2</span>
             </div>
             <div class="space-y-2 pt-2">
-              <h3 class="text-xl font-semibold text-foreground">커뮤니티 참여</h3>
+              <h3 class="text-xl font-semibold text-foreground">
+                커뮤니티 참여
+              </h3>
               <p class="text-muted-foreground leading-relaxed">
                 게시판에서 정보 공유하고 멘토 찾기
               </p>
@@ -147,7 +178,9 @@
               <span class="text-lg font-bold text-white">3</span>
             </div>
             <div class="space-y-2 pt-2">
-              <h3 class="text-xl font-semibold text-foreground">프로젝트 시작</h3>
+              <h3 class="text-xl font-semibold text-foreground">
+                프로젝트 시작
+              </h3>
               <p class="text-muted-foreground leading-relaxed">
                 팀을 구성하고 프로젝트를 체계적으로 관리
               </p>
@@ -200,16 +233,28 @@
             </p>
           </div>
           <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-            <a href="#" class="hover:text-foreground transition-colors">
+            <a
+              href="#"
+              class="hover:text-foreground transition-colors"
+            >
               서비스 소개
             </a>
-            <a href="#" class="hover:text-foreground transition-colors">
+            <a
+              href="#"
+              class="hover:text-foreground transition-colors"
+            >
               이용약관
             </a>
-            <a href="#" class="hover:text-foreground transition-colors">
+            <a
+              href="#"
+              class="hover:text-foreground transition-colors"
+            >
               개인정보처리방침
             </a>
-            <a href="#" class="hover:text-foreground transition-colors">
+            <a
+              href="#"
+              class="hover:text-foreground transition-colors"
+            >
               문의하기
             </a>
           </div>
@@ -223,7 +268,7 @@
 </template>
 
 <script setup lang="ts">
-import { MessageSquare, Users, Folder } from 'lucide-vue-next';
+import { MessageSquare, Users, Folder } from 'lucide-vue-next'
 
 useHead({
   title: 'TechBuddy - IT 부트캠프 학생을 위한 성장 플랫폼',
@@ -233,5 +278,5 @@ useHead({
       content: '커뮤니티, 멘토링, 프로젝트 관리를 통해 IT 부트캠프 학생과 주니어 개발자가 함께 성장하는 플랫폼',
     },
   ],
-});
+})
 </script>

@@ -1,30 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
 
   // Modules
   modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
-
-  // Tailwind CSS
-  tailwindcss: {
-    cssPath: './assets/css/tailwind.css',
-    configPath: 'tailwind.config.js',
-  },
-
-  // TypeScript
-  typescript: {
-    strict: true,
-    typeCheck: false, // MVP 단계에서는 빌드 속도 우선
-  },
-
-  // Runtime Config
-  runtimeConfig: {
-    public: {
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8080',
-      environment: process.env.NUXT_PUBLIC_ENVIRONMENT || 'development',
-    },
-  },
+  devtools: { enabled: true },
 
   // App Config
   app: {
@@ -41,9 +20,30 @@ export default defineNuxtConfig({
     },
   },
 
+  // Runtime Config
+  runtimeConfig: {
+    public: {
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8080',
+      environment: process.env.NUXT_PUBLIC_ENVIRONMENT || 'development',
+    },
+  },
+
   // Route Rules
   routeRules: {
     // API routes with CORS
     '/api/**': { cors: true },
   },
-});
+  compatibilityDate: '2025-07-15',
+
+  // TypeScript
+  typescript: {
+    strict: true,
+    typeCheck: false, // MVP 단계에서는 빌드 속도 우선
+  },
+
+  // Tailwind CSS
+  tailwindcss: {
+    cssPath: './assets/css/tailwind.css',
+    configPath: 'tailwind.config.js',
+  },
+})
