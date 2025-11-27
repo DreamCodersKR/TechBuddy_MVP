@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -20,9 +21,20 @@ async function bootstrap() {
     }),
   );
 
+  // Swagger 설정
+  const config = new DocumentBuilder()
+    .setTitle('TechBuddy API')
+    .setDescription('IT 부트캠프 학생을 위한 성장 플랫폼 API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api-docs', app, document);
+
   const port = process.env.PORT ?? 8080;
   await app.listen(port);
   console.log(`🚀 Application is running on: http://localhost:${port}`);
+  console.log(`📚 Swagger API Docs: http://localhost:${port}/api-docs`);
 }
 
 void bootstrap();

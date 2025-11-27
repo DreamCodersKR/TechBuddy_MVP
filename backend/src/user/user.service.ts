@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateUserDto, UserResponseDto } from './dto';
+import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -92,5 +92,52 @@ export class UserService {
     hashedPassword: string,
   ): Promise<boolean> {
     return bcrypt.compare(plainPassword, hashedPassword);
+  }
+
+  /**
+   * 사용자 정보 업데이트
+   */
+  async updateUser(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    // 사용자 존재 확인
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다');
+    }
+
+    // nickname이 변경되는 경우 중복 확인
+    if (
+      updateUserDto.nickname &&
+      updateUserDto.nickname !== existingUser.nickname
+    ) {
+      const nicknameExists = await this.prisma.user.findUnique({
+        where: { nickname: updateUserDto.nickname },
+      });
+
+      if (nicknameExists) {
+        throw new ConflictException('이미 사용 중인 닉네임입니다');
+      }
+    }
+
+    // 비밀번호가 포함된 경우 해싱
+    const updateData = { ...updateUserDto } as Partial<UpdateUserDto> & {
+      password?: string;
+    };
+    if (updateUserDto.password) {
+      updateData.password = await this.hashPassword(updateUserDto.password);
+    }
+
+    // 사용자 정보 업데이트
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return new UserResponseDto(updatedUser);
   }
 }
