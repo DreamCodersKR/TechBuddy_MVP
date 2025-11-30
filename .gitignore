@@ -56,7 +56,7 @@ frontend/.env.local
 .clinerules
 .playwright-mcp
 .claude
-
+CLAUDE.md
 # ============ OS ============
 Thumbs.db
 Desktop.ini
