@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
 
   // Modules
-  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
+  modules: ['@nuxt/ui', '@pinia/nuxt'],
   devtools: { enabled: true },
 
   // App Config
@@ -19,6 +19,9 @@ export default defineNuxtConfig({
       ],
     },
   },
+
+  // CSS - Nuxt UI v4 requires explicit import
+  css: ['~/assets/css/main.css'],
 
   // Runtime Config
   runtimeConfig: {
@@ -39,11 +42,5 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     typeCheck: false, // MVP 단계에서는 빌드 속도 우선
-  },
-
-  // Tailwind CSS
-  tailwindcss: {
-    cssPath: './assets/css/tailwind.css',
-    configPath: 'tailwind.config.js',
   },
 })
