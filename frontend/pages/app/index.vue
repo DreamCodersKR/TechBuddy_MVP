@@ -38,13 +38,22 @@ const authStore = useAuthStore()
 
         <template #footer>
           <div class="flex gap-4">
-            <UBadge color="primary" variant="soft">
+            <UBadge
+              color="primary"
+              variant="soft"
+            >
               커뮤니티 (준비중)
             </UBadge>
-            <UBadge color="gray" variant="soft">
+            <UBadge
+              color="gray"
+              variant="soft"
+            >
               프로젝트 (준비중)
             </UBadge>
-            <UBadge color="gray" variant="soft">
+            <UBadge
+              color="gray"
+              variant="soft"
+            >
               멘토링 (준비중)
             </UBadge>
           </div>

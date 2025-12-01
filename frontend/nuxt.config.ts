@@ -20,6 +20,9 @@ export default defineNuxtConfig({
     },
   },
 
+  // CSS - Nuxt UI v4 requires explicit import
+  css: ['~/assets/css/main.css'],
+
   // Runtime Config
   runtimeConfig: {
     public: {
@@ -39,11 +42,5 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     typeCheck: false, // MVP 단계에서는 빌드 속도 우선
-  },
-
-  // Tailwind CSS
-  tailwindcss: {
-    cssPath: './assets/css/tailwind.css',
-    configPath: 'tailwind.config.js',
   },
 })

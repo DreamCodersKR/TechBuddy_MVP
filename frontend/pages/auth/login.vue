@@ -38,19 +38,22 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     toast.add({
       title: '로그인 성공',
       description: '환영합니다!',
-      color: 'green',
+      color: 'success',
     })
 
     // 앱 메인으로 이동
     navigateTo('/app')
-  } catch (error: any) {
-    const message = error?.data?.message || '로그인에 실패했습니다'
+  }
+  catch (error: unknown) {
+    const apiError = error as { data?: { message?: string | string[] } }
+    const message = apiError?.data?.message || '로그인에 실패했습니다'
     toast.add({
       title: '로그인 실패',
       description: Array.isArray(message) ? message[0] : message,
-      color: 'red',
+      color: 'error',
     })
-  } finally {
+  }
+  finally {
     isLoading.value = false
   }
 }
@@ -69,8 +72,16 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     </div>
 
     <!-- 로그인 폼 -->
-    <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
-      <UFormField label="이메일" name="email">
+    <UForm
+      :schema="schema"
+      :state="state"
+      class="space-y-4"
+      @submit="onSubmit"
+    >
+      <UFormField
+        label="이메일"
+        name="email"
+      >
         <UInput
           v-model="state.email"
           type="email"
@@ -80,7 +91,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         />
       </UFormField>
 
-      <UFormField label="비밀번호" name="password">
+      <UFormField
+        label="비밀번호"
+        name="password"
+      >
         <UInput
           v-model="state.password"
           type="password"

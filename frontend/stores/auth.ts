@@ -34,7 +34,8 @@ export const useAuthStore = defineStore('auth', {
         })
 
         this.setAuth(response)
-      } finally {
+      }
+      finally {
         this.isLoading = false
       }
     },
@@ -53,7 +54,8 @@ export const useAuthStore = defineStore('auth', {
         })
 
         this.setAuth(response)
-      } finally {
+      }
+      finally {
         this.isLoading = false
       }
     },
@@ -112,12 +114,14 @@ export const useAuthStore = defineStore('auth', {
 
         this.user = user
         this.accessToken = tokenCookie.value
-      } catch {
+      }
+      catch {
         // 토큰이 유효하지 않으면 제거
         tokenCookie.value = null
         this.user = null
         this.accessToken = null
-      } finally {
+      }
+      finally {
         this.isLoading = false
       }
     },

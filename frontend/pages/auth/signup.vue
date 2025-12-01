@@ -16,7 +16,7 @@ const schema = z.object({
   passwordConfirm: z.string(),
   name: z.string().min(1, '이름을 입력해주세요'),
   nickname: z.string().optional(),
-}).refine((data) => data.password === data.passwordConfirm, {
+}).refine(data => data.password === data.passwordConfirm, {
   message: '비밀번호가 일치하지 않습니다',
   path: ['passwordConfirm'],
 })
@@ -49,19 +49,22 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     toast.add({
       title: '회원가입 완료',
       description: '환영합니다! TechBuddy에 가입되었습니다.',
-      color: 'green',
+      color: 'success',
     })
 
     // 앱 메인으로 이동
     navigateTo('/app')
-  } catch (error: any) {
-    const message = error?.data?.message || '회원가입에 실패했습니다'
+  }
+  catch (error: unknown) {
+    const apiError = error as { data?: { message?: string | string[] } }
+    const message = apiError?.data?.message || '회원가입에 실패했습니다'
     toast.add({
       title: '회원가입 실패',
       description: Array.isArray(message) ? message[0] : message,
-      color: 'red',
+      color: 'error',
     })
-  } finally {
+  }
+  finally {
     isLoading.value = false
   }
 }
@@ -80,8 +83,17 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     </div>
 
     <!-- 회원가입 폼 -->
-    <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
-      <UFormField label="이메일" name="email" required>
+    <UForm
+      :schema="schema"
+      :state="state"
+      class="space-y-4"
+      @submit="onSubmit"
+    >
+      <UFormField
+        label="이메일"
+        name="email"
+        required
+      >
         <UInput
           v-model="state.email"
           type="email"
@@ -91,7 +103,12 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         />
       </UFormField>
 
-      <UFormField label="비밀번호" name="password" required hint="최소 8자 이상">
+      <UFormField
+        label="비밀번호"
+        name="password"
+        required
+        hint="최소 8자 이상"
+      >
         <UInput
           v-model="state.password"
           type="password"
@@ -101,7 +118,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         />
       </UFormField>
 
-      <UFormField label="비밀번호 확인" name="passwordConfirm" required>
+      <UFormField
+        label="비밀번호 확인"
+        name="passwordConfirm"
+        required
+      >
         <UInput
           v-model="state.passwordConfirm"
           type="password"
@@ -111,7 +132,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         />
       </UFormField>
 
-      <UFormField label="이름" name="name" required>
+      <UFormField
+        label="이름"
+        name="name"
+        required
+      >
         <UInput
           v-model="state.name"
           type="text"
@@ -121,7 +146,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         />
       </UFormField>
 
-      <UFormField label="닉네임" name="nickname" hint="선택사항">
+      <UFormField
+        label="닉네임"
+        name="nickname"
+        hint="선택사항"
+      >
         <UInput
           v-model="state.nickname"
           type="text"
