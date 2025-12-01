@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
 
   // Modules
-  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
+  modules: ['@nuxt/ui', '@pinia/nuxt'],
   devtools: { enabled: true },
 
   // App Config

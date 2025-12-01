@@ -1,13 +1,17 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
+  UseGuards,
   UseInterceptors,
   ClassSerializerInterceptor,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginDto } from '../user/dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators';
 
 @ApiTags('인증')
 @Controller('auth')
@@ -72,5 +76,24 @@ export class AuthController {
   })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  /**
+   * 현재 로그인한 사용자 정보 조회
+   */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '내 정보 조회' })
+  @ApiResponse({
+    status: 200,
+    description: '사용자 정보 조회 성공',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 필요',
+  })
+  async getMe(@CurrentUser() user: any) {
+    return this.authService.validateUser(user.id);
   }
 }
