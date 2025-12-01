@@ -41,6 +41,7 @@ docs/
 ### 06-ui-ux (UI/UX)
 - `01-landing-header.md` - 랜딩 페이지 헤더 가이드
 - `02-landing-content.md` - 랜딩 페이지 컨텐츠 가이드 (Hero, 기능 소개, Footer)
+- `03-frontend-page-structure.md` - Nuxt 프론트엔드 페이지 구조 가이드
 
 ---
 
@@ -52,4 +53,4 @@ docs/
 
 ---
 
-*마지막 업데이트: 2024.11.29*
+*마지막 업데이트: 2024.12.01*
