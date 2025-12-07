@@ -133,6 +133,7 @@ model Organization {
   // Relations
   members    OrganizationMember[]
   promotions OrganizationPromotion[]
+  projects   Project[]
 
   @@index([name])
   @@map("organizations")
@@ -321,25 +322,29 @@ model PostTag {
 
 // 12. 프로젝트
 model Project {
-  id          String        @id @default(uuid())
-  name        String
-  description String?
-  overview    String? // Markdown
-  startDate   DateTime?
-  endDate     DateTime?
-  status      ProjectStatus @default(ACTIVE)
-  isPublic    Boolean       @default(false)
-  createdById String
+  id             String        @id @default(uuid())
+  name           String
+  description    String?
+  overview       String?       @db.Text // Markdown
+  startDate      DateTime?
+  endDate        DateTime?
+  status         ProjectStatus @default(ACTIVE)
+  isPublic       Boolean       @default(false)
+  organizationId String
+  createdById    String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft Delete
 
   // Relations
-  createdBy User            @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  members   ProjectMember[]
-  tasks     Task[]
-  files     ProjectFile[]
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User            @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  members      ProjectMember[]
+  tasks        Task[]
+  files        ProjectFile[]
 
+  @@index([organizationId])
   @@index([createdById])
   @@index([status])
   @@map("projects")
