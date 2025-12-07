@@ -1,2 +1,12 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+/* UFormField 내의 UInput을 전체 너비로 확장 */
+[data-part="container"] > div {
+  @apply w-full;
+}
+
+/* UInput root를 flex로 변경 (inline-flex 대신) */
+.relative.inline-flex.items-center:has(input) {
+  @apply w-full;
+}

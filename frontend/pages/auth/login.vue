@@ -88,6 +88,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           placeholder="example@email.com"
           icon="i-heroicons-envelope"
           size="lg"
+          :ui="{ root: 'w-full' }"
         />
       </UFormField>
 
@@ -101,6 +102,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           placeholder="비밀번호를 입력하세요"
           icon="i-heroicons-lock-closed"
           size="lg"
+          :ui="{ root: 'w-full' }"
         />
       </UFormField>
 
