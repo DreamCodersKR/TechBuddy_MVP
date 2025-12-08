@@ -244,4 +244,4 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
 ---
 
-_작성일: 2024.12.01_
+_작성일: 2025.12.01_
