@@ -17,7 +17,13 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
-import { CreateProjectDto, UpdateProjectDto, UpdateOverviewDto } from './dto';
+import {
+  CreateProjectDto,
+  UpdateProjectDto,
+  UpdateOverviewDto,
+  InviteMemberDto,
+  UpdateMemberRoleDto,
+} from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators';
 
@@ -137,5 +143,91 @@ export class ProjectController {
     @Body() updateOverviewDto: UpdateOverviewDto,
   ) {
     return this.projectService.updateOverview(id, user.id, updateOverviewDto);
+  }
+
+  // ============================================
+  // 멤버 관리 API (DRE-63)
+  // ============================================
+
+  /**
+   * 멤버 초대
+   */
+  @Post(':projectId/members')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '프로젝트 멤버 초대 (PM/팀리더만 가능)' })
+  @ApiResponse({ status: 201, description: '멤버 초대 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: 'PM 또는 팀리더 권한 필요' })
+  @ApiResponse({ status: 404, description: '프로젝트 또는 사용자를 찾을 수 없음' })
+  @ApiResponse({ status: 409, description: '이미 프로젝트 멤버입니다' })
+  inviteMember(
+    @Param('projectId') projectId: string,
+    @CurrentUser() user: any,
+    @Body() inviteMemberDto: InviteMemberDto,
+  ) {
+    return this.projectService.inviteMember(projectId, user.id, inviteMemberDto);
+  }
+
+  /**
+   * 멤버 목록 조회
+   */
+  @Get(':projectId/members')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '프로젝트 멤버 목록 조회' })
+  @ApiResponse({ status: 200, description: '멤버 목록 조회 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '접근 권한 없음' })
+  @ApiResponse({ status: 404, description: '프로젝트를 찾을 수 없음' })
+  getMembers(
+    @Param('projectId') projectId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.projectService.getMembers(projectId, user.id);
+  }
+
+  /**
+   * 멤버 역할 변경
+   */
+  @Patch(':projectId/members/:memberId/role')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '멤버 역할 변경 (PM만 가능)' })
+  @ApiResponse({ status: 200, description: '역할 변경 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: 'PM 권한 필요 / PM 역할 변경 불가' })
+  @ApiResponse({ status: 404, description: '프로젝트 멤버를 찾을 수 없음' })
+  updateMemberRole(
+    @Param('projectId') projectId: string,
+    @Param('memberId') memberId: string,
+    @CurrentUser() user: any,
+    @Body() updateMemberRoleDto: UpdateMemberRoleDto,
+  ) {
+    return this.projectService.updateMemberRole(
+      projectId,
+      memberId,
+      user.id,
+      updateMemberRoleDto,
+    );
+  }
+
+  /**
+   * 멤버 삭제 / 나가기
+   */
+  @Delete(':projectId/members/:memberId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '멤버 내보내기 / 프로젝트 나가기' })
+  @ApiResponse({ status: 200, description: '멤버 삭제 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '권한 없음 / PM은 삭제 불가' })
+  @ApiResponse({ status: 404, description: '프로젝트 멤버를 찾을 수 없음' })
+  removeMember(
+    @Param('projectId') projectId: string,
+    @Param('memberId') memberId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.projectService.removeMember(projectId, memberId, user.id);
   }
 }
