@@ -74,10 +74,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   <div>
     <!-- 헤더 -->
     <div class="text-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+      <h1 class="text-2xl font-bold text-white">
         회원가입
       </h1>
-      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+      <p class="mt-2 text-sm text-gray-400">
         TechBuddy와 함께 성장하세요
       </p>
     </div>
@@ -179,19 +179,19 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     <!-- 구분선 -->
     <div class="relative my-6">
       <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-gray-200 dark:border-gray-700" />
+        <div class="w-full border-t border-gray-700" />
       </div>
       <div class="relative flex justify-center text-sm">
-        <span class="px-2 bg-white dark:bg-gray-800 text-gray-500">또는</span>
+        <span class="px-2 bg-gray-900 text-gray-500">또는</span>
       </div>
     </div>
 
     <!-- 로그인 링크 -->
-    <p class="text-center text-sm text-gray-600 dark:text-gray-400">
+    <p class="text-center text-sm text-gray-400">
       이미 계정이 있으신가요?
       <NuxtLink
         to="/auth/login"
-        class="font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400"
+        class="font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
       >
         로그인
       </NuxtLink>
