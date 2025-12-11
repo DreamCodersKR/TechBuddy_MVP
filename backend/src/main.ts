@@ -6,9 +6,27 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS 설정
+  // CORS 설정 - 여러 도메인 허용
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://tech-buddy-mvp.vercel.app',
+    process.env.FRONTEND_URL,
+  ].filter(Boolean);
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // origin이 없는 경우 (서버간 요청, Postman 등) 허용
+      if (!origin) return callback(null, true);
+      // Vercel 프리뷰 URL 패턴 허용 (tech-buddy-mvp-*.vercel.app)
+      if (origin.match(/^https:\/\/tech-buddy-mvp.*\.vercel\.app$/)) {
+        return callback(null, true);
+      }
+      // 허용된 origin 목록 확인
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   });
 
