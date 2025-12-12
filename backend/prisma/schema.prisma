@@ -112,6 +112,7 @@ model User {
   chatMessages              ChatMessage[]
 
   approvedMembers OrganizationMember[] @relation("ApprovedBy")
+  refreshTokens   RefreshToken[]
 
   @@index([email])
   @@map("users")
@@ -567,4 +568,27 @@ model ChatMessage {
   @@index([senderId])
   @@index([createdAt])
   @@map("chat_messages")
+}
+
+// ============================================
+// 인증: Refresh Token
+// ============================================
+
+// 23. Refresh Token
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique // 토큰을 SHA-256 해시하여 저장
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }

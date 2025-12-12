@@ -1,10 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Cookie Parser 미들웨어 (Refresh Token용)
+  app.use(cookieParser());
 
   // CORS 설정 - 여러 도메인 허용
   const allowedOrigins = [
@@ -45,6 +49,12 @@ async function bootstrap() {
     .setDescription('IT 부트캠프 학생을 위한 성장 플랫폼 API')
     .setVersion('1.0')
     .addBearerAuth()
+    .addCookieAuth('refresh_token', {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'refresh_token',
+      description: 'Refresh Token (HttpOnly Cookie)',
+    })
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
