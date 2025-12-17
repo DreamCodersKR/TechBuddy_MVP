@@ -4,7 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserResponseDto,
+  PublicUserResponseDto,
+} from './dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -74,6 +79,30 @@ export class UserService {
     }
 
     return new UserResponseDto(user);
+  }
+
+  /**
+   * 공개 프로필 조회 (이메일 제외)
+   */
+  async findPublicProfile(id: string): Promise<PublicUserResponseDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        nickname: true,
+        avatarUrl: true,
+        bio: true,
+        techStack: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다');
+    }
+
+    return new PublicUserResponseDto(user);
   }
 
   /**
