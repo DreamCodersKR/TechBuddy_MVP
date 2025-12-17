@@ -73,15 +73,19 @@ enum NotificationType {
 
 // 1. 사용자
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String?
-  name      String
-  nickname  String?  @unique
-  role      UserRole @default(GENERAL_USER)
-  bio       String?
-  techStack String[]
-  avatarUrl String?
+  id         String  @id @default(uuid())
+  email      String  @unique
+  password   String?
+  name       String
+  nickname   String? @unique
+  role       UserRole @default(GENERAL_USER)
+  bio        String?
+  techStack  String[]
+  avatarUrl  String?
+
+  // OAuth 관련 필드
+  provider   String? // 'google', 'github', null(일반 로그인)
+  providerId String? // OAuth provider의 사용자 ID
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -114,6 +118,7 @@ model User {
   approvedMembers OrganizationMember[] @relation("ApprovedBy")
   refreshTokens   RefreshToken[]
 
+  @@unique([provider, providerId]) // OAuth 사용자 고유 식별
   @@index([email])
   @@map("users")
 }
