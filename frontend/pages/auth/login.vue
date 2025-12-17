@@ -1,13 +1,24 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
+import { Icon } from '@iconify/vue'
 
 definePageMeta({
   layout: 'auth',
 })
 
+const config = useRuntimeConfig()
 const authStore = useAuthStore()
 const toast = useToast()
+
+// OAuth 로그인 핸들러
+const loginWithGoogle = () => {
+  window.location.href = `${config.public.apiBaseUrl}/auth/google`
+}
+
+const loginWithGitHub = () => {
+  window.location.href = `${config.public.apiBaseUrl}/auth/github`
+}
 
 // 폼 스키마 정의
 const schema = z.object({
@@ -123,6 +134,34 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       </div>
       <div class="relative flex justify-center text-sm">
         <span class="px-2 bg-gray-900 text-gray-500">또는</span>
+      </div>
+    </div>
+
+    <!-- OAuth 소셜 로그인 버튼 -->
+    <div class="space-y-3">
+      <button
+        type="button"
+        class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white hover:bg-gray-100 text-gray-900 font-medium rounded-lg transition-colors"
+        @click="loginWithGoogle"
+      >
+        <Icon icon="logos:google-icon" width="20" height="20" />
+        Google로 계속하기
+      </button>
+
+      <button
+        type="button"
+        class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg border border-gray-600 transition-colors"
+        @click="loginWithGitHub"
+      >
+        <Icon icon="mdi:github" width="22" height="22" />
+        GitHub로 계속하기
+      </button>
+    </div>
+
+    <!-- 구분선 -->
+    <div class="relative my-6">
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full border-t border-gray-700" />
       </div>
     </div>
 

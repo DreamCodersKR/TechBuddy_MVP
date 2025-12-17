@@ -152,6 +152,40 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
+     * OAuth 토큰 설정
+     * - OAuth 콜백에서 받은 accessToken 저장
+     * - 사용자 정보 조회하여 상태 업데이트
+     */
+    async setOAuthToken(accessToken: string): Promise<void> {
+      const config = useRuntimeConfig()
+
+      // 토큰 저장
+      this.accessToken = accessToken
+      const tokenCookie = useCookie('accessToken', {
+        maxAge: 60 * 15, // 15분
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+      })
+      tokenCookie.value = accessToken
+
+      // 사용자 정보 조회
+      try {
+        const user = await $fetch<User>(`${config.public.apiBaseUrl}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          credentials: 'include',
+        })
+        this.user = user
+      }
+      catch (error) {
+        console.error('Failed to fetch user info after OAuth:', error)
+        // 토큰은 저장되었으나 사용자 정보 조회 실패
+        // 이후 restoreAuth에서 재시도
+      }
+    },
+
+    /**
      * 저장된 토큰으로 사용자 정보 복원
      * - Access Token 만료 시 자동으로 Refresh 시도
      */
