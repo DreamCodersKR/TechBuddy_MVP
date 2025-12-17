@@ -5,6 +5,10 @@ import { createHash, randomUUID } from 'crypto';
 import { UserService } from '../user/user.service';
 import { CreateUserDto, LoginDto, UserResponseDto } from '../user/dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { GoogleProfile } from './strategies/google.strategy';
+import { GitHubProfile } from './strategies/github.strategy';
+
+export type OAuthProfile = GoogleProfile | GitHubProfile;
 
 // Refresh Token 만료 시간 (7일)
 const REFRESH_TOKEN_EXPIRES_IN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -210,5 +214,82 @@ export class AuthService {
       },
     });
     return result.count;
+  }
+
+  // ============================================
+  // OAuth 관련 메서드
+  // ============================================
+
+  /**
+   * OAuth 사용자 검증 및 생성/조회
+   * - 기존 OAuth 사용자면 조회
+   * - 새 OAuth 사용자면 생성
+   * - 동일 이메일로 일반 가입한 사용자가 있으면 OAuth 정보 연결
+   */
+  async validateOAuthUser(profile: OAuthProfile): Promise<{
+    user: UserResponseDto;
+    accessToken: string;
+    refreshToken: string;
+    isNewUser: boolean;
+  }> {
+    const { provider, providerId, email, name, avatarUrl } = profile;
+
+    // 1. provider + providerId로 기존 OAuth 사용자 검색
+    let user = await this.prisma.user.findFirst({
+      where: {
+        provider,
+        providerId,
+      },
+    });
+
+    let isNewUser = false;
+
+    if (!user) {
+      // 2. 동일 이메일로 가입한 사용자가 있는지 확인
+      const existingUserByEmail = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingUserByEmail) {
+        // 기존 사용자에 OAuth 정보 연결 (이미 다른 OAuth로 연결되어 있지 않은 경우)
+        if (!existingUserByEmail.provider) {
+          user = await this.prisma.user.update({
+            where: { id: existingUserByEmail.id },
+            data: {
+              provider,
+              providerId,
+              avatarUrl: avatarUrl || existingUserByEmail.avatarUrl,
+            },
+          });
+        } else {
+          // 이미 다른 OAuth provider로 가입된 경우
+          user = existingUserByEmail;
+        }
+      } else {
+        // 3. 새 사용자 생성
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            name,
+            provider,
+            providerId,
+            avatarUrl,
+            password: null, // OAuth 사용자는 비밀번호 없음
+          },
+        });
+        isNewUser = true;
+      }
+    }
+
+    // 토큰 생성
+    const accessToken = this.generateAccessToken(user.id, user.email);
+    const refreshToken = await this.generateRefreshToken(user.id);
+
+    return {
+      user: new UserResponseDto(user),
+      accessToken,
+      refreshToken,
+      isNewUser,
+    };
   }
 }

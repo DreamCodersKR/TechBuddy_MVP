@@ -16,12 +16,18 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiCookieAuth,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginDto } from '../user/dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { GitHubAuthGuard } from './guards/github-auth.guard';
 import { CurrentUser } from '../common/decorators';
+import type { GoogleProfile } from './strategies/google.strategy';
+import type { GitHubProfile } from './strategies/github.strategy';
 
 // Cookie 설정 상수
 const REFRESH_TOKEN_COOKIE_NAME = 'refresh_token';
@@ -31,7 +37,10 @@ const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7일
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   /**
    * 회원가입
@@ -230,5 +239,85 @@ export class AuthController {
       path: '/auth',
       maxAge: 0,
     });
+  }
+
+  // ============================================
+  // OAuth 2.0 엔드포인트
+  // ============================================
+
+  /**
+   * Google OAuth 로그인 시작
+   */
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Google OAuth 로그인' })
+  @ApiResponse({
+    status: 302,
+    description: 'Google 로그인 페이지로 리다이렉트',
+  })
+  async googleAuth() {
+    // Guard가 Google OAuth 페이지로 리다이렉트
+  }
+
+  /**
+   * Google OAuth 콜백
+   */
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiExcludeEndpoint()
+  async googleAuthCallback(
+    @CurrentUser() profile: GoogleProfile,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.validateOAuthUser(profile);
+
+    // Refresh Token을 Cookie에 설정
+    this.setRefreshTokenCookie(res, result.refreshToken);
+
+    // Frontend로 리다이렉트 (Access Token은 URL 파라미터로 전달)
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    const redirectUrl = new URL('/auth/callback', frontendUrl);
+    redirectUrl.searchParams.set('accessToken', result.accessToken);
+    redirectUrl.searchParams.set('isNewUser', result.isNewUser.toString());
+
+    res.redirect(redirectUrl.toString());
+  }
+
+  /**
+   * GitHub OAuth 로그인 시작
+   */
+  @Get('github')
+  @UseGuards(GitHubAuthGuard)
+  @ApiOperation({ summary: 'GitHub OAuth 로그인' })
+  @ApiResponse({
+    status: 302,
+    description: 'GitHub 로그인 페이지로 리다이렉트',
+  })
+  async githubAuth() {
+    // Guard가 GitHub OAuth 페이지로 리다이렉트
+  }
+
+  /**
+   * GitHub OAuth 콜백
+   */
+  @Get('github/callback')
+  @UseGuards(GitHubAuthGuard)
+  @ApiExcludeEndpoint()
+  async githubAuthCallback(
+    @CurrentUser() profile: GitHubProfile,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.validateOAuthUser(profile);
+
+    // Refresh Token을 Cookie에 설정
+    this.setRefreshTokenCookie(res, result.refreshToken);
+
+    // Frontend로 리다이렉트 (Access Token은 URL 파라미터로 전달)
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    const redirectUrl = new URL('/auth/callback', frontendUrl);
+    redirectUrl.searchParams.set('accessToken', result.accessToken);
+    redirectUrl.searchParams.set('isNewUser', result.isNewUser.toString());
+
+    res.redirect(redirectUrl.toString());
   }
 }
