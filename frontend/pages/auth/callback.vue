@@ -53,7 +53,7 @@ onMounted(async () => {
     if (isNewUser) {
       toast.add({
         title: '회원가입 완료',
-        description: 'TechBuddy에 오신 것을 환영합니다!',
+        description: 'FLOWIT에 오신 것을 환영합니다!',
         color: 'success',
       })
     }

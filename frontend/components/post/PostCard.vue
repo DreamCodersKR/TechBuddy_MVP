@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { PostListItem } from '~/types/post'
+import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Icon } from '@iconify/vue'
 
 interface Props {
   post: PostListItem
@@ -31,81 +35,85 @@ function truncateContent(content: string, maxLength: number = 150): string {
   if (content.length <= maxLength) return content
   return content.slice(0, maxLength) + '...'
 }
+
+function getInitials(name: string): string {
+  return name.charAt(0).toUpperCase()
+}
 </script>
 
 <template>
   <NuxtLink :to="`/post/${post.id}`" class="block">
-    <UCard
-      :ui="{
-        base: 'hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer',
-        body: { padding: 'px-4 py-4 sm:px-5 sm:py-5' },
-      }"
-    >
-      <div class="flex flex-col gap-3">
-        <!-- Header: Author & Date -->
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <UAvatar
-              :src="post.author.avatarUrl || undefined"
-              :alt="post.author.nickname || post.author.name"
-              size="xs"
-            />
-            <span class="text-sm text-gray-600 dark:text-gray-400">
-              {{ post.author.nickname || post.author.name }}
+    <Card class="hover:bg-accent/50 transition-colors cursor-pointer">
+      <CardContent class="p-4 sm:p-5">
+        <div class="flex flex-col gap-3">
+          <!-- Header: Author & Date -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <Avatar size="sm">
+                <AvatarImage
+                  v-if="post.author.avatarUrl"
+                  :src="post.author.avatarUrl"
+                  :alt="post.author.nickname || post.author.name"
+                />
+                <AvatarFallback>
+                  {{ getInitials(post.author.nickname || post.author.name) }}
+                </AvatarFallback>
+              </Avatar>
+              <span class="text-sm text-muted-foreground">
+                {{ post.author.nickname || post.author.name }}
+              </span>
+            </div>
+            <span class="text-xs text-muted-foreground">
+              {{ formatDate(post.createdAt) }}
             </span>
           </div>
-          <span class="text-xs text-gray-500 dark:text-gray-500">
-            {{ formatDate(post.createdAt) }}
-          </span>
-        </div>
 
-        <!-- Title -->
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 line-clamp-2">
-          {{ post.title }}
-        </h3>
+          <!-- Title -->
+          <h3 class="text-lg font-semibold text-foreground line-clamp-2">
+            {{ post.title }}
+          </h3>
 
-        <!-- Content Preview -->
-        <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-          {{ truncateContent(post.content) }}
-        </p>
+          <!-- Content Preview -->
+          <p class="text-sm text-muted-foreground line-clamp-2">
+            {{ truncateContent(post.content) }}
+          </p>
 
-        <!-- Tags -->
-        <div v-if="post.tags && post.tags.length > 0" class="flex flex-wrap gap-1.5">
-          <UBadge
-            v-for="tag in post.tags.slice(0, 3)"
-            :key="tag.id"
-            color="gray"
-            variant="subtle"
-            size="xs"
-          >
-            {{ tag.name }}
-          </UBadge>
-          <UBadge
-            v-if="post.tags.length > 3"
-            color="gray"
-            variant="subtle"
-            size="xs"
-          >
-            +{{ post.tags.length - 3 }}
-          </UBadge>
-        </div>
-
-        <!-- Footer: Stats -->
-        <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
-          <div class="flex items-center gap-1">
-            <UIcon name="i-heroicons-eye" class="w-4 h-4" />
-            <span>{{ post.viewCount }}</span>
+          <!-- Tags -->
+          <div v-if="post.tags && post.tags.length > 0" class="flex flex-wrap gap-1.5">
+            <Badge
+              v-for="tag in post.tags.slice(0, 3)"
+              :key="tag.id"
+              variant="secondary"
+              class="text-xs"
+            >
+              {{ tag.name }}
+            </Badge>
+            <Badge
+              v-if="post.tags.length > 3"
+              variant="secondary"
+              class="text-xs"
+            >
+              +{{ post.tags.length - 3 }}
+            </Badge>
           </div>
-          <div class="flex items-center gap-1">
-            <UIcon name="i-heroicons-chat-bubble-left" class="w-4 h-4" />
-            <span>{{ post._count.comments }}</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <UIcon name="i-heroicons-heart" class="w-4 h-4" />
-            <span>{{ post._count.likes }}</span>
+
+          <!-- Footer: Stats -->
+          <div class="flex items-center gap-4 text-xs text-muted-foreground">
+            <div class="flex items-center gap-1">
+              <Icon icon="heroicons:eye" class="w-4 h-4" />
+              <span>{{ post.viewCount }}</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
+              <span>{{ post._count.comments }}</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <Icon icon="heroicons:heart" class="w-4 h-4" />
+              <span>{{ post._count.likes }}</span>
+            </div>
           </div>
         </div>
-      </div>
-    </UCard>
+      </CardContent>
+    </Card>
   </NuxtLink>
 </template>

@@ -27,7 +27,7 @@
 
 ---
 
-## 🔧 TechBuddy Backend Setup
+## 🔧 FLOWIT Backend Setup
 
 ### 처음 클론 후 실행 순서
 

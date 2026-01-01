@@ -14,13 +14,13 @@
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",
-    "@nuxt/ui": "^4.2.1",
     "@pinia/nuxt": "^0.11.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-vue-next": "^0.554.0",
     "nuxt": "^4.2.1",
     "pinia": "^3.0.4",
+    "shadcn-nuxt": "^2.4.3",
     "tailwind-merge": "^3.4.0",
     "vue": "^3.5.24",
     "vue-router": "^4.6.3",
@@ -28,9 +28,9 @@
   },
   "devDependencies": {
     "@nuxt/eslint-config": "^1.10.0",
+    "@nuxtjs/tailwindcss": "^6.14.0",
     "@types/node": "^24.10.1",
     "eslint": "^9.39.1",
-    "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.47.0",
     "vue-tsc": "^3.1.4"

@@ -10,7 +10,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class CreateProjectDto {
   @ApiProperty({
     description: '프로젝트명',
-    example: 'TechBuddy MVP',
+    example: 'FLOWIT MVP',
   })
   @IsString()
   @IsNotEmpty()

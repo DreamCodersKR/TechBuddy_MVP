@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
+import { Icon } from '@iconify/vue'
+
 interface Props {
   title?: string
   description?: string
@@ -15,23 +18,22 @@ withDefaults(defineProps<Props>(), {
 
 <template>
   <div class="flex flex-col items-center justify-center py-16 px-4">
-    <div class="w-16 h-16 mb-4 text-gray-300 dark:text-gray-600">
-      <UIcon name="i-heroicons-document-text" class="w-full h-full" />
+    <div class="w-16 h-16 mb-4 text-muted-foreground">
+      <Icon icon="heroicons:document-text" class="w-full h-full" />
     </div>
-    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+    <h3 class="text-lg font-medium text-foreground mb-2">
       {{ title }}
     </h3>
-    <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+    <p class="text-sm text-muted-foreground text-center mb-6">
       {{ description }}
     </p>
-    <UButton
+    <Button
       v-if="showWriteButton"
-      :to="boardSlug ? `/board/${boardSlug}/write` : '/post/write'"
-      color="primary"
-      size="md"
+      as="a"
+      :href="boardSlug ? `/board/${boardSlug}/write` : '/post/write'"
     >
-      <UIcon name="i-heroicons-pencil" class="w-4 h-4 mr-1" />
+      <Icon icon="heroicons:pencil" class="w-4 h-4 mr-1" />
       글쓰기
-    </UButton>
+    </Button>
   </div>
 </template>

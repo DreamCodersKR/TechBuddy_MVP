@@ -2,13 +2,19 @@
 export default defineNuxtConfig({
 
   // Modules
-  modules: ['@nuxt/ui', '@pinia/nuxt'],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', 'shadcn-nuxt'],
+
+  // Tailwind CSS
+  tailwindcss: {
+    cssPath: './assets/css/main.css',
+    configPath: 'tailwind.config.js',
+  },
   devtools: { enabled: true },
 
   // App Config
   app: {
     head: {
-      title: 'TechBuddy',
+      title: 'FLOWIT',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -20,8 +26,8 @@ export default defineNuxtConfig({
     },
   },
 
-  // CSS - Nuxt UI v4 requires explicit import
-  css: ['~/assets/css/main.css'],
+  // CSS (handled by @nuxtjs/tailwindcss)
+  css: [],
 
   // Runtime Config
   runtimeConfig: {
@@ -42,5 +48,11 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     typeCheck: false, // MVP 단계에서는 빌드 속도 우선
+  },
+
+  // Shadcn-vue Configuration
+  shadcn: {
+    prefix: '',
+    componentDir: './components/ui',
   },
 })

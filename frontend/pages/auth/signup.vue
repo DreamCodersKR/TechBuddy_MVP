@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { FormSubmitEvent } from '#ui/types'
 import { Icon } from '@iconify/vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 definePageMeta({
   layout: 'auth',
@@ -9,7 +11,6 @@ definePageMeta({
 
 const config = useRuntimeConfig()
 const authStore = useAuthStore()
-const toast = useToast()
 
 // OAuth 로그인 핸들러
 const loginWithGoogle = () => {
@@ -32,8 +33,6 @@ const schema = z.object({
   path: ['passwordConfirm'],
 })
 
-type Schema = z.output<typeof schema>
-
 // 폼 상태
 const state = reactive({
   email: '',
@@ -43,37 +42,63 @@ const state = reactive({
   nickname: '',
 })
 
+const errors = reactive({
+  email: '',
+  password: '',
+  passwordConfirm: '',
+  name: '',
+  nickname: '',
+})
+
 const isLoading = ref(false)
+const errorMessage = ref('')
+
+// 폼 검증
+function validateForm() {
+  // Reset errors
+  Object.keys(errors).forEach((key) => {
+    errors[key as keyof typeof errors] = ''
+  })
+
+  const result = schema.safeParse(state)
+
+  if (!result.success) {
+    result.error.errors.forEach((err) => {
+      const field = err.path[0] as keyof typeof errors
+      if (field in errors) {
+        errors[field] = err.message
+      }
+    })
+    return false
+  }
+  return true
+}
 
 // 회원가입 처리
-async function onSubmit(event: FormSubmitEvent<Schema>) {
+async function onSubmit() {
+  errorMessage.value = ''
+
+  if (!validateForm()) {
+    return
+  }
+
   isLoading.value = true
 
   try {
     await authStore.signup({
-      email: event.data.email,
-      password: event.data.password,
-      name: event.data.name,
-      nickname: event.data.nickname || undefined,
-    })
-
-    toast.add({
-      title: '회원가입 완료',
-      description: '환영합니다! TechBuddy에 가입되었습니다.',
-      color: 'success',
+      email: state.email,
+      password: state.password,
+      name: state.name,
+      nickname: state.nickname || undefined,
     })
 
     // 앱 메인으로 이동
-    navigateTo('/app')
+    navigateTo('/')
   }
   catch (error: unknown) {
     const apiError = error as { data?: { message?: string | string[] } }
     const message = apiError?.data?.message || '회원가입에 실패했습니다'
-    toast.add({
-      title: '회원가입 실패',
-      description: Array.isArray(message) ? message[0] : message,
-      color: 'error',
-    })
+    errorMessage.value = Array.isArray(message) ? message[0] : message
   }
   finally {
     isLoading.value = false
@@ -85,152 +110,158 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   <div>
     <!-- 헤더 -->
     <div class="text-center mb-6">
-      <h1 class="text-2xl font-bold text-white">
+      <h1 class="text-2xl font-bold text-foreground">
         회원가입
       </h1>
-      <p class="mt-2 text-sm text-gray-400">
-        TechBuddy와 함께 성장하세요
+      <p class="mt-2 text-sm text-muted-foreground">
+        FLOWIT과 함께 성장하세요
       </p>
     </div>
 
-    <!-- 회원가입 폼 -->
-    <UForm
-      :schema="schema"
-      :state="state"
-      class="space-y-4"
-      @submit="onSubmit"
+    <!-- 에러 메시지 -->
+    <div
+      v-if="errorMessage"
+      class="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm"
     >
-      <UFormField
-        label="이메일"
-        name="email"
-        required
-      >
-        <UInput
+      {{ errorMessage }}
+    </div>
+
+    <!-- 회원가입 폼 -->
+    <form class="space-y-4" @submit.prevent="onSubmit">
+      <div class="space-y-2">
+        <Label for="email">이메일 <span class="text-destructive">*</span></Label>
+        <Input
+          id="email"
           v-model="state.email"
           type="email"
           placeholder="example@email.com"
-          icon="i-heroicons-envelope"
-          size="lg"
-          :ui="{ root: 'w-full' }"
+          :class="{ 'border-destructive': errors.email }"
         />
-      </UFormField>
+        <p v-if="errors.email" class="text-sm text-destructive">
+          {{ errors.email }}
+        </p>
+      </div>
 
-      <UFormField
-        label="비밀번호"
-        name="password"
-        required
-        hint="최소 8자 이상"
-      >
-        <UInput
+      <div class="space-y-2">
+        <div class="flex justify-between">
+          <Label for="password">비밀번호 <span class="text-destructive">*</span></Label>
+          <span class="text-xs text-muted-foreground">최소 8자 이상</span>
+        </div>
+        <Input
+          id="password"
           v-model="state.password"
           type="password"
           placeholder="비밀번호를 입력하세요"
-          icon="i-heroicons-lock-closed"
-          size="lg"
-          :ui="{ root: 'w-full' }"
+          :class="{ 'border-destructive': errors.password }"
         />
-      </UFormField>
+        <p v-if="errors.password" class="text-sm text-destructive">
+          {{ errors.password }}
+        </p>
+      </div>
 
-      <UFormField
-        label="비밀번호 확인"
-        name="passwordConfirm"
-        required
-      >
-        <UInput
+      <div class="space-y-2">
+        <Label for="passwordConfirm">비밀번호 확인 <span class="text-destructive">*</span></Label>
+        <Input
+          id="passwordConfirm"
           v-model="state.passwordConfirm"
           type="password"
           placeholder="비밀번호를 다시 입력하세요"
-          icon="i-heroicons-lock-closed"
-          size="lg"
-          :ui="{ root: 'w-full' }"
+          :class="{ 'border-destructive': errors.passwordConfirm }"
         />
-      </UFormField>
+        <p v-if="errors.passwordConfirm" class="text-sm text-destructive">
+          {{ errors.passwordConfirm }}
+        </p>
+      </div>
 
-      <UFormField
-        label="이름"
-        name="name"
-        required
-      >
-        <UInput
+      <div class="space-y-2">
+        <Label for="name">이름 <span class="text-destructive">*</span></Label>
+        <Input
+          id="name"
           v-model="state.name"
           type="text"
           placeholder="이름을 입력하세요"
-          icon="i-heroicons-user"
-          size="lg"
-          :ui="{ root: 'w-full' }"
+          :class="{ 'border-destructive': errors.name }"
         />
-      </UFormField>
+        <p v-if="errors.name" class="text-sm text-destructive">
+          {{ errors.name }}
+        </p>
+      </div>
 
-      <UFormField
-        label="닉네임"
-        name="nickname"
-        hint="선택사항"
-      >
-        <UInput
+      <div class="space-y-2">
+        <div class="flex justify-between">
+          <Label for="nickname">닉네임</Label>
+          <span class="text-xs text-muted-foreground">선택사항</span>
+        </div>
+        <Input
+          id="nickname"
           v-model="state.nickname"
           type="text"
           placeholder="닉네임을 입력하세요"
-          icon="i-heroicons-at-symbol"
-          size="lg"
-          :ui="{ root: 'w-full' }"
         />
-      </UFormField>
+      </div>
 
-      <UButton
+      <Button
         type="submit"
-        block
-        size="lg"
-        :loading="isLoading"
-        class="mt-6"
+        class="w-full mt-6"
+        :disabled="isLoading"
       >
-        회원가입
-      </UButton>
-    </UForm>
+        <span v-if="isLoading" class="flex items-center gap-2">
+          <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          회원가입 중...
+        </span>
+        <span v-else>회원가입</span>
+      </Button>
+    </form>
 
     <!-- 구분선 -->
     <div class="relative my-6">
       <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-gray-700" />
+        <div class="w-full border-t border-border" />
       </div>
       <div class="relative flex justify-center text-sm">
-        <span class="px-2 bg-gray-900 text-gray-500">또는</span>
+        <span class="px-2 bg-background text-muted-foreground">또는</span>
       </div>
     </div>
 
     <!-- OAuth 소셜 로그인 버튼 -->
     <div class="space-y-3">
-      <button
+      <Button
         type="button"
-        class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white hover:bg-gray-100 text-gray-900 font-medium rounded-lg transition-colors"
+        variant="outline"
+        class="w-full"
         @click="loginWithGoogle"
       >
-        <Icon icon="logos:google-icon" width="20" height="20" />
+        <Icon icon="logos:google-icon" width="20" height="20" class="mr-2" />
         Google로 계속하기
-      </button>
+      </Button>
 
-      <button
+      <Button
         type="button"
-        class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg border border-gray-600 transition-colors"
+        variant="outline"
+        class="w-full"
         @click="loginWithGitHub"
       >
-        <Icon icon="mdi:github" width="22" height="22" />
+        <Icon icon="mdi:github" width="22" height="22" class="mr-2" />
         GitHub로 계속하기
-      </button>
+      </Button>
     </div>
 
     <!-- 구분선 -->
     <div class="relative my-6">
       <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-gray-700" />
+        <div class="w-full border-t border-border" />
       </div>
     </div>
 
     <!-- 로그인 링크 -->
-    <p class="text-center text-sm text-gray-400">
+    <p class="text-center text-sm text-muted-foreground">
       이미 계정이 있으신가요?
       <NuxtLink
         to="/auth/login"
-        class="font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+        class="font-medium text-primary hover:text-primary/80 transition-colors"
       >
         로그인
       </NuxtLink>
