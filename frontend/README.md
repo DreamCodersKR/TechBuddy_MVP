@@ -1,4 +1,4 @@
-# TechBuddy Frontend
+# FLOWIT Frontend
 
 IT 부트캠프 학생과 취준생을 위한 커뮤니티 플랫폼 - Frontend
 
