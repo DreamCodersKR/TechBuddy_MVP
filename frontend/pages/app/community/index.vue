@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { BOARD_SLUG_MAP, getBoardSlug } from '~/types/board'
+import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/ui/pagination'
+import { Icon } from '@iconify/vue'
 
 definePageMeta({
   layout: 'app',
@@ -69,7 +72,7 @@ watch(boardSlug, () => {
 
 // 페이지 메타데이터
 useHead({
-  title: computed(() => currentBoard.value?.name ? `${currentBoard.value.name} - TechBuddy` : '커뮤니티 - TechBuddy'),
+  title: computed(() => currentBoard.value?.name ? `${currentBoard.value.name} - FLOWIT` : '커뮤니티 - FLOWIT'),
 })
 </script>
 
@@ -77,16 +80,16 @@ useHead({
   <div>
     <!-- 에러 상태 -->
     <div v-if="hasError" class="text-center py-16">
-      <UIcon name="i-heroicons-exclamation-triangle" class="w-16 h-16 text-red-500 mx-auto mb-4" />
-      <h2 class="text-xl font-semibold text-white mb-2">
+      <Icon icon="heroicons:exclamation-triangle" class="w-16 h-16 text-destructive mx-auto mb-4" />
+      <h2 class="text-xl font-semibold text-foreground mb-2">
         오류가 발생했습니다
       </h2>
-      <p class="text-gray-400 mb-6">
+      <p class="text-muted-foreground mb-6">
         {{ errorMessage }}
       </p>
-      <UButton to="/app" color="primary">
+      <Button as="a" href="/app">
         홈으로 돌아가기
-      </UButton>
+      </Button>
     </div>
 
     <!-- 정상 상태 -->
@@ -95,21 +98,17 @@ useHead({
       <div class="mb-6">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h1 class="text-2xl font-bold text-white">
+            <h1 class="text-2xl font-bold text-foreground">
               {{ currentBoard?.name || '커뮤니티' }}
             </h1>
-            <p v-if="currentBoard?.description" class="mt-1 text-sm text-gray-400">
+            <p v-if="currentBoard?.description" class="mt-1 text-sm text-muted-foreground">
               {{ currentBoard.description }}
             </p>
           </div>
-          <UButton
-            :to="`/app/community/write?board=${boardSlug}`"
-            color="primary"
-            size="md"
-          >
-            <UIcon name="i-heroicons-pencil" class="w-4 h-4 mr-1" />
+          <Button as="a" :href="`/app/community/write?board=${boardSlug}`">
+            <Icon icon="heroicons:pencil" class="w-4 h-4 mr-1" />
             글쓰기
-          </UButton>
+          </Button>
         </div>
 
         <!-- 게시판 탭 네비게이션 -->
@@ -119,8 +118,8 @@ useHead({
             :key="slug"
             class="px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
             :class="boardSlug === slug
-              ? 'bg-indigo-600 text-white'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'"
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-card text-muted-foreground hover:bg-accent hover:text-foreground'"
             @click="handleBoardChange(slug)"
           >
             {{ name }}
@@ -143,12 +142,11 @@ useHead({
 
           <!-- 페이지네이션 -->
           <div v-if="meta && meta.totalPages > 1" class="flex justify-center mt-8">
-            <UPagination
-              :model-value="currentPage"
-              :total="meta.total"
-              :page-count="meta.limit"
-              :max="5"
-              @update:model-value="handlePageChange"
+            <Pagination
+              :current-page="currentPage"
+              :total-pages="meta.totalPages"
+              :max-visible="5"
+              @update:current-page="handlePageChange"
             />
           </div>
         </div>

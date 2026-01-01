@@ -12,9 +12,9 @@
           class="inline-flex items-center gap-2"
         >
           <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white">
-            TB
+            FL
           </div>
-          <span class="text-2xl font-bold text-white">TechBuddy</span>
+          <span class="text-2xl font-bold text-white">FLOWIT</span>
         </NuxtLink>
       </div>
 

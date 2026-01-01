@@ -5,7 +5,7 @@
       <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center gap-8">
-            <span class="text-xl font-bold text-foreground">TechBuddy</span>
+            <span class="text-xl font-bold text-foreground">FLOWIT</span>
             <div class="hidden md:flex items-center gap-6">
               <a
                 href="#"
@@ -227,7 +227,7 @@
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="flex flex-col md:flex-row items-center justify-between gap-6">
           <div class="text-center md:text-left">
-            <span class="text-lg font-bold text-foreground">TechBuddy</span>
+            <span class="text-lg font-bold text-foreground">FLOWIT</span>
             <p class="text-sm text-muted-foreground mt-1">
               IT 부트캠프 학생을 위한 성장 플랫폼
             </p>
@@ -260,7 +260,7 @@
           </div>
         </div>
         <div class="text-center mt-8 text-sm text-muted-foreground">
-          © 2025 TechBuddy. All rights reserved.
+          © 2025 FLOWIT. All rights reserved.
         </div>
       </div>
     </footer>
@@ -271,7 +271,7 @@
 import { MessageSquare, Users, Folder } from 'lucide-vue-next'
 
 useHead({
-  title: 'TechBuddy - IT 부트캠프 학생을 위한 성장 플랫폼',
+  title: 'FLOWIT - IT 부트캠프 학생을 위한 성장 플랫폼',
   meta: [
     {
       name: 'description',

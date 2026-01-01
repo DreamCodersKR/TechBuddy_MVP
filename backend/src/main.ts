@@ -45,7 +45,7 @@ async function bootstrap() {
 
   // Swagger 설정
   const config = new DocumentBuilder()
-    .setTitle('TechBuddy API')
+    .setTitle('FLOWIT API')
     .setDescription('IT 부트캠프 학생을 위한 성장 플랫폼 API')
     .setVersion('1.0')
     .addBearerAuth()

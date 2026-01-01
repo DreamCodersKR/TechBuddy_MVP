@@ -2,7 +2,7 @@
 // 랜딩 페이지 - 비로그인 상태 서비스 소개
 
 useHead({
-  title: 'TechBuddy - IT 부트캠프 학생 커뮤니티',
+  title: 'FLOWIT - IT 커뮤니티 플랫폼',
   meta: [
     {
       name: 'description',
@@ -19,7 +19,7 @@ useHead({
       <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <!-- Logo -->
         <NuxtLink to="/" class="text-xl font-bold">
-          TechBuddy
+          FLOWIT
         </NuxtLink>
 
         <!-- Navigation -->
@@ -34,9 +34,9 @@ useHead({
             멘토링
             <span class="text-xs px-1.5 py-0.5 bg-gray-800 rounded text-gray-500">Coming Soon</span>
           </span>
-          <NuxtLink to="/about" class="text-gray-400 hover:text-white transition-colors">
+          <a href="#about" class="text-gray-400 hover:text-white transition-colors">
             소개
-          </NuxtLink>
+          </a>
         </nav>
 
         <!-- CTA -->
@@ -61,7 +61,7 @@ useHead({
     <section class="pt-32 pb-20 px-6">
       <div class="max-w-4xl mx-auto text-center">
         <h1 class="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-          TechBuddy
+          FLOWIT
         </h1>
         <p class="text-2xl md:text-3xl text-gray-300 mb-4">
           IT인들을 위한 커뮤니티
@@ -76,12 +76,12 @@ useHead({
           >
             시작하기
           </NuxtLink>
-          <NuxtLink
-            to="/about"
+          <a
+            href="#about"
             class="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-semibold text-lg transition-colors"
           >
             자세히 보기
-          </NuxtLink>
+          </a>
         </div>
       </div>
     </section>
@@ -241,12 +241,38 @@ useHead({
       </div>
     </section>
 
+    <!-- About Section -->
+    <section id="about" class="py-20 px-6">
+      <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-3xl md:text-4xl font-bold mb-6">
+          FLOWIT 소개
+        </h2>
+        <p class="text-xl text-gray-400 mb-8">
+          IT 부트캠프 수료생 및 취업 준비생을 위한 커뮤니티 플랫폼입니다.
+        </p>
+        <div class="grid md:grid-cols-3 gap-8 text-left">
+          <div class="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+            <h3 class="font-semibold text-lg mb-2">정보 비대칭 해소</h3>
+            <p class="text-gray-400 text-sm">현실적인 취업 정보와 부트캠프 후기를 공유합니다.</p>
+          </div>
+          <div class="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+            <h3 class="font-semibold text-lg mb-2">동료 네트워킹</h3>
+            <p class="text-gray-400 text-sm">같은 길을 걷는 동료들과 함께 성장하세요.</p>
+          </div>
+          <div class="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+            <h3 class="font-semibold text-lg mb-2">실무 경험</h3>
+            <p class="text-gray-400 text-sm">프로젝트 협업을 통해 실무 경험을 쌓으세요.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer class="py-12 px-6 border-t border-gray-800">
       <div class="max-w-6xl mx-auto">
         <div class="grid md:grid-cols-3 gap-8 mb-8">
           <div>
-            <h3 class="text-lg font-bold mb-4">TechBuddy</h3>
+            <h3 class="text-lg font-bold mb-4">FLOWIT</h3>
             <p class="text-gray-500 text-sm">
               IT 부트캠프 학생과 취준생을 위한<br />
               커뮤니티 기반 성장 플랫폼
@@ -263,12 +289,12 @@ useHead({
           <div>
             <h4 class="font-semibold mb-4 text-gray-300">소개</h4>
             <ul class="space-y-2 text-gray-500 text-sm">
-              <li><NuxtLink to="/about" class="hover:text-white transition-colors">TechBuddy 소개</NuxtLink></li>
+              <li><a href="#about" class="hover:text-white transition-colors">FLOWIT 소개</a></li>
             </ul>
           </div>
         </div>
         <div class="pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
-          &copy; 2024 TechBuddy. All rights reserved.
+          &copy; 2025 FLOWIT. All rights reserved.
         </div>
       </div>
     </footer>
