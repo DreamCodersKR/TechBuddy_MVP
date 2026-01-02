@@ -1,302 +1,369 @@
 <script setup lang="ts">
-// 랜딩 페이지 - 비로그인 상태 서비스 소개
+import { Icon } from '@iconify/vue'
+
+// 메인 페이지 = 커뮤니티 홈
+definePageMeta({
+  layout: 'default',
+})
 
 useHead({
   title: 'FLOWIT - IT 커뮤니티 플랫폼',
   meta: [
     {
       name: 'description',
-      content: 'IT 부트캠프 학생과 취준생을 위한 커뮤니티 기반 성장 플랫폼',
+      content: 'IT 개발자를 위한 커뮤니티 플랫폼. 인사이트 공유, Q&A, 팀원 모집까지.',
     },
   ],
 })
+
+// 실시간 인기글 데이터
+const popularPosts = ref([
+  { id: 1, rank: 1, category: '자유', title: 'AI랑 일하기 재미있네요.', author: '사용자', time: '1시간', views: 12, comments: 6 },
+  { id: 2, rank: 2, category: '취업/진로', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6 },
+  { id: 3, rank: 3, category: 'AI', title: '개인적인 2026 AI 전망', author: '사용자', time: '1시간', views: 12, comments: 6 },
+  { id: 4, rank: 4, category: '자유', title: 'LLM과 자연어로 대화하게 두지 마세요.', author: '사용자', time: '1시간', views: 12, comments: 6 },
+  { id: 5, rank: 5, category: '자유', title: '포트폴리오 조언 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6 },
+])
+
+// 실시간 인기 Q&A 데이터
+const popularQna = ref([
+  { id: 1, rank: 1, category: '기술', title: 'AI랑 일하기 재미있네요.', author: '사용자', time: '1시간', views: 12, comments: 6 },
+  { id: 2, rank: 2, category: '취업/진로', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6 },
+  { id: 3, rank: 3, category: '기타', title: '개인적인 2026 AI 전망', author: '사용자', time: '1시간', views: 12, comments: 6 },
+  { id: 4, rank: 4, category: '기술', title: 'LLM과 자연어로 대화하게 두지 마세요.', author: '사용자', time: '1시간', views: 12, comments: 6 },
+  { id: 5, rank: 5, category: '기술', title: '포트폴리오 조언 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6 },
+])
+
+// 새로운 인사이트 데이터
+const insightPosts = ref([
+  { id: 1, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: true },
+  { id: 2, category: '취업/진로', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: true },
+  { id: 3, category: '기타', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 4, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 5, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 6, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 7, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 8, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 9, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 10, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+])
+const insightPage = ref(1)
+
+// 답변 대기 Q&A 데이터
+const waitingQna = ref([
+  { id: 1, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: true },
+  { id: 2, category: '취업/진로', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: true },
+  { id: 3, category: '기타', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 4, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 5, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 6, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 7, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 8, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 9, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+  { id: 10, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
+])
+const waitingPage = ref(1)
+
+// 팀원 모집 데이터 (탭 없이 타입으로 구분)
+const recruitPosts = ref([
+  {
+    id: 1,
+    type: '프로젝트',
+    title: '[백엔드, 프론트엔드 모집] 단기간에 서비스 출시 도전할 팀원 모집합니다!',
+    deadline: '2025. 12. 24',
+    dDay: 'D-8',
+    duration: '9개월',
+    views: 12,
+    comments: 12,
+    positions: ['프론트엔드', '백엔드'],
+  },
+  {
+    id: 2,
+    type: '스터디',
+    title: '[백엔드, 프론트엔드 모집] 단기간에 서비스 출시 도전할 팀원 모집합니다!',
+    deadline: '2025. 12. 24',
+    dDay: '오늘 마감',
+    duration: '9개월',
+    views: 12,
+    comments: 12,
+    positions: ['프론트엔드', '백엔드'],
+  },
+  {
+    id: 3,
+    type: '프로젝트',
+    title: '[백엔드, 프론트엔드 모집] 단기간에 서비스 출시 도전할 팀원 모집합니다!',
+    deadline: '2025. 12. 24',
+    dDay: '오늘 마감',
+    duration: '9개월',
+    views: 12,
+    comments: 12,
+    positions: ['프론트엔드', '백엔드'],
+  },
+  {
+    id: 4,
+    type: '프로젝트',
+    title: '[백엔드, 프론트엔드 모집] 단기간에 서비스 출시 도전할 팀원 모집합니다!',
+    deadline: '2025. 12. 24',
+    dDay: '모집 마감',
+    duration: '9개월',
+    views: 12,
+    comments: 12,
+    positions: ['프론트엔드', '백엔드'],
+  },
+])
+
+// D-day 스타일 클래스
+function getDdayClass(dDay: string) {
+  if (dDay === '모집 마감') return 'bg-muted text-muted-foreground'
+  if (dDay === '오늘 마감') return 'bg-destructive/10 text-destructive'
+  return 'bg-primary/10 text-primary'
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 text-white">
-    <!-- Header -->
-    <header class="fixed top-0 left-0 right-0 z-50 bg-gray-950/80 backdrop-blur-md border-b border-gray-800">
-      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <!-- Logo -->
-        <NuxtLink to="/" class="text-xl font-bold">
-          FLOWIT
-        </NuxtLink>
-
-        <!-- Navigation -->
-        <nav class="hidden md:flex items-center gap-8">
-          <a href="#community" class="text-gray-400 hover:text-white transition-colors">
-            커뮤니티
-          </a>
-          <a href="#project" class="text-gray-400 hover:text-white transition-colors">
-            프로젝트
-          </a>
-          <span class="text-gray-600 cursor-not-allowed flex items-center gap-1">
-            멘토링
-            <span class="text-xs px-1.5 py-0.5 bg-gray-800 rounded text-gray-500">Coming Soon</span>
-          </span>
-          <a href="#about" class="text-gray-400 hover:text-white transition-colors">
-            소개
-          </a>
-        </nav>
-
-        <!-- CTA -->
-        <div class="flex items-center gap-4">
-          <NuxtLink
-            to="/auth/login"
-            class="hidden sm:block text-gray-400 hover:text-white transition-colors"
-          >
-            로그인
-          </NuxtLink>
-          <NuxtLink
-            to="/auth/signup"
-            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-medium transition-colors"
-          >
-            시작하기
-          </NuxtLink>
-        </div>
-      </div>
-    </header>
-
-    <!-- Hero Section -->
-    <section class="pt-32 pb-20 px-6">
-      <div class="max-w-4xl mx-auto text-center">
-        <h1 class="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-          FLOWIT
-        </h1>
-        <p class="text-2xl md:text-3xl text-gray-300 mb-4">
-          IT인들을 위한 커뮤니티
-        </p>
-        <p class="text-lg text-gray-500 mb-10">
-          인사이트 공유, 프로젝트 관리, 멘토링까지
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <NuxtLink
-            to="/auth/signup"
-            class="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold text-lg transition-colors"
-          >
-            시작하기
-          </NuxtLink>
-          <a
-            href="#about"
-            class="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-semibold text-lg transition-colors"
-          >
-            자세히 보기
-          </a>
-        </div>
+  <div class="container py-8 space-y-12">
+    <!-- 소개 배너 -->
+    <section>
+      <div class="bg-muted rounded-lg p-12 text-center">
+        <p class="text-muted-foreground">소개 배너</p>
       </div>
     </section>
 
-    <!-- Community Section -->
-    <section id="community" class="py-20 px-6 bg-gray-900/50">
-      <div class="max-w-6xl mx-auto">
-        <div class="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 class="text-3xl md:text-4xl font-bold mb-4">
-              커뮤니티
-            </h2>
-            <p class="text-xl text-gray-400 mb-6">
-              인사이트를 나누고, 네트워크를 넓히세요
-            </p>
-            <ul class="space-y-3 text-gray-300">
-              <li class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-indigo-600/20 flex items-center justify-center">
-                  <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                </span>
-                자유롭게 정보 공유
-              </li>
-              <li class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-indigo-600/20 flex items-center justify-center">
-                  <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                </span>
-                프로젝트 팀원 모집
-              </li>
-              <li class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-indigo-600/20 flex items-center justify-center">
-                  <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                </span>
-                취업/진로 상담
-              </li>
-            </ul>
-          </div>
-          <div class="bg-gray-800 rounded-2xl p-8 border border-gray-700">
-            <div class="space-y-4">
-              <div class="h-4 bg-gray-700 rounded w-3/4"></div>
-              <div class="h-4 bg-gray-700 rounded w-1/2"></div>
-              <div class="h-20 bg-gray-700/50 rounded mt-4"></div>
-              <div class="flex gap-2 mt-4">
-                <div class="h-8 w-16 bg-indigo-600/30 rounded"></div>
-                <div class="h-8 w-16 bg-gray-700 rounded"></div>
-              </div>
-            </div>
-            <p class="text-center text-gray-500 mt-4 text-sm">앱 스크린샷 (개발 후 추가)</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Project Section -->
-    <section id="project" class="py-20 px-6">
-      <div class="max-w-6xl mx-auto">
-        <div class="grid md:grid-cols-2 gap-12 items-center">
-          <div class="order-2 md:order-1 bg-gray-800 rounded-2xl p-8 border border-gray-700">
-            <div class="space-y-4">
-              <div class="flex gap-4">
-                <div class="flex-1 bg-gray-700/50 rounded p-3">
-                  <div class="text-xs text-gray-500 mb-2">Todo</div>
-                  <div class="h-12 bg-gray-600/50 rounded mb-2"></div>
-                  <div class="h-12 bg-gray-600/50 rounded"></div>
-                </div>
-                <div class="flex-1 bg-gray-700/50 rounded p-3">
-                  <div class="text-xs text-gray-500 mb-2">In Progress</div>
-                  <div class="h-12 bg-indigo-600/30 rounded"></div>
-                </div>
-                <div class="flex-1 bg-gray-700/50 rounded p-3">
-                  <div class="text-xs text-gray-500 mb-2">Done</div>
-                  <div class="h-12 bg-green-600/30 rounded"></div>
-                </div>
-              </div>
-            </div>
-            <p class="text-center text-gray-500 mt-4 text-sm">앱 스크린샷 (개발 후 추가)</p>
-          </div>
-          <div class="order-1 md:order-2">
-            <h2 class="text-3xl md:text-4xl font-bold mb-4">
-              프로젝트
-            </h2>
-            <p class="text-xl text-gray-400 mb-6">
-              팀을 구성하고 함께 만들어가세요
-            </p>
-            <ul class="space-y-3 text-gray-300">
-              <li class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-indigo-600/20 flex items-center justify-center">
-                  <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                </span>
-                칸반 보드로 태스크 관리
-              </li>
-              <li class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-indigo-600/20 flex items-center justify-center">
-                  <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                </span>
-                팀원 초대 및 역할 관리
-              </li>
-              <li class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-indigo-600/20 flex items-center justify-center">
-                  <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                </span>
-                실시간 협업
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Mentoring Section (Coming Soon) -->
-    <section id="mentoring" class="py-20 px-6 bg-gray-900/50">
-      <div class="max-w-6xl mx-auto">
-        <div class="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <div class="flex items-center gap-3 mb-4">
-              <h2 class="text-3xl md:text-4xl font-bold">
-                멘토링
-              </h2>
-              <span class="px-3 py-1 bg-indigo-600/20 text-indigo-400 rounded-full text-sm font-medium">
-                Coming Soon
+    <!-- 실시간 인기글 -->
+    <section>
+      <h2 class="text-lg font-bold text-foreground mb-4">실시간 인기글</h2>
+      <div class="border border-border rounded-lg bg-card">
+        <ul class="divide-y divide-border">
+          <li
+            v-for="post in popularPosts"
+            :key="post.id"
+            class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
+          >
+            <span
+              class="flex-shrink-0 w-6 text-sm font-bold text-center"
+              :class="post.rank <= 3 ? 'text-primary' : 'text-muted-foreground'"
+            >
+              {{ post.rank }}
+            </span>
+            <span class="flex-shrink-0 text-sm text-muted-foreground">[{{ post.category }}]</span>
+            <span class="flex-1 text-sm text-foreground truncate">{{ post.title }}</span>
+            <div class="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{{ post.author }}</span>
+              <span>{{ post.time }}</span>
+              <span class="flex items-center gap-1">
+                <Icon icon="heroicons:eye" class="w-4 h-4" />
+                {{ post.views }}
+              </span>
+              <span class="flex items-center gap-1">
+                <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
+                {{ post.comments }}
               </span>
             </div>
-            <p class="text-xl text-gray-400 mb-6">
-              현직자에게 조언을 받아보세요
-            </p>
-            <ul class="space-y-3 text-gray-300">
-              <li class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                  <span class="w-2 h-2 rounded-full bg-gray-500"></span>
-                </span>
-                1:1 멘토링 매칭
-              </li>
-              <li class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                  <span class="w-2 h-2 rounded-full bg-gray-500"></span>
-                </span>
-                커리어 상담
-              </li>
-              <li class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                  <span class="w-2 h-2 rounded-full bg-gray-500"></span>
-                </span>
-                이력서/포트폴리오 피드백
-              </li>
-            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 실시간 인기 Q&A -->
+    <section>
+      <h2 class="text-lg font-bold text-foreground mb-4">실시간 인기 Q&A</h2>
+      <div class="border border-border rounded-lg bg-card">
+        <ul class="divide-y divide-border">
+          <li
+            v-for="qna in popularQna"
+            :key="qna.id"
+            class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
+          >
+            <span
+              class="flex-shrink-0 w-6 text-sm font-bold text-center"
+              :class="qna.rank <= 3 ? 'text-primary' : 'text-muted-foreground'"
+            >
+              {{ qna.rank }}
+            </span>
+            <span class="flex-shrink-0 text-sm text-muted-foreground">[{{ qna.category }}]</span>
+            <span class="flex-1 text-sm text-foreground truncate">{{ qna.title }}</span>
+            <div class="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{{ qna.author }}</span>
+              <span>{{ qna.time }}</span>
+              <span class="flex items-center gap-1">
+                <Icon icon="heroicons:eye" class="w-4 h-4" />
+                {{ qna.views }}
+              </span>
+              <span class="flex items-center gap-1">
+                <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
+                {{ qna.comments }}
+              </span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 새로운 인사이트를 얻어가세요 -->
+    <section>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-foreground">새로운 인사이트를 얻어가세요</h2>
+        <NuxtLink to="/community" class="text-sm text-muted-foreground hover:text-foreground">
+          더보기 >
+        </NuxtLink>
+      </div>
+      <div class="border border-border rounded-lg bg-card">
+        <ul class="divide-y divide-border">
+          <li
+            v-for="post in insightPosts"
+            :key="post.id"
+            class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
+          >
+            <span class="flex-shrink-0 text-sm text-muted-foreground">[{{ post.category }}]</span>
+            <span class="flex-1 text-sm text-foreground truncate">{{ post.title }}</span>
+            <span v-if="post.isNew" class="flex-shrink-0 text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">N</span>
+            <div class="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{{ post.author }}</span>
+              <span>{{ post.time }}</span>
+              <span class="flex items-center gap-1">
+                <Icon icon="heroicons:eye" class="w-4 h-4" />
+                {{ post.views }}
+              </span>
+              <span class="flex items-center gap-1">
+                <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
+                {{ post.comments }}
+              </span>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <!-- 페이지네이션 -->
+      <div class="flex justify-center gap-1 mt-6">
+        <button
+          v-for="page in 4"
+          :key="page"
+          class="w-8 h-8 rounded text-sm font-medium transition-colors"
+          :class="insightPage === page ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-accent'"
+          @click="insightPage = page"
+        >
+          {{ page }}
+        </button>
+      </div>
+    </section>
+
+    <!-- 현재 답변을 기다리고 있어요 -->
+    <section>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-foreground">현재 답변을 기다리고 있어요</h2>
+        <NuxtLink to="/qna" class="text-sm text-muted-foreground hover:text-foreground">
+          더보기 >
+        </NuxtLink>
+      </div>
+      <div class="border border-border rounded-lg bg-card">
+        <ul class="divide-y divide-border">
+          <li
+            v-for="qna in waitingQna"
+            :key="qna.id"
+            class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
+          >
+            <span class="flex-shrink-0 text-sm text-muted-foreground">[{{ qna.category }}]</span>
+            <span class="flex-1 text-sm text-foreground truncate">{{ qna.title }}</span>
+            <span v-if="qna.isNew" class="flex-shrink-0 text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">N</span>
+            <div class="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{{ qna.author }}</span>
+              <span>{{ qna.time }}</span>
+              <span class="flex items-center gap-1">
+                <Icon icon="heroicons:eye" class="w-4 h-4" />
+                {{ qna.views }}
+              </span>
+              <span class="flex items-center gap-1">
+                <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
+                {{ qna.comments }}
+              </span>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <!-- 페이지네이션 -->
+      <div class="flex justify-center gap-1 mt-6">
+        <button
+          v-for="page in 4"
+          :key="page"
+          class="w-8 h-8 rounded text-sm font-medium transition-colors"
+          :class="waitingPage === page ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-accent'"
+          @click="waitingPage = page"
+        >
+          {{ page }}
+        </button>
+      </div>
+    </section>
+
+    <!-- 프로젝트 기능 소개 배너 -->
+    <section>
+      <div class="bg-amber-50 rounded-lg p-12 text-center">
+        <p class="text-amber-800">프로젝트 기능 소개 배너</p>
+      </div>
+    </section>
+
+    <!-- 지금, 함께 할 개발자를 찾고 있어요 -->
+    <section>
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-bold text-foreground">지금, 함께 할 개발자를 찾고 있어요</h2>
+        <NuxtLink to="/recruit" class="text-sm text-muted-foreground hover:text-foreground">
+          더보기 >
+        </NuxtLink>
+      </div>
+
+      <!-- 모집 카드 그리드 -->
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div
+          v-for="recruit in recruitPosts"
+          :key="recruit.id"
+          class="border border-border rounded-lg bg-card p-4 hover:border-primary/50 transition-colors cursor-pointer"
+        >
+          <!-- 타입 배지 + D-day -->
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs px-2 py-1 bg-primary/10 text-primary rounded font-medium">
+              {{ recruit.type }}
+            </span>
           </div>
-          <div class="bg-gray-800/50 rounded-2xl p-8 border border-gray-700/50">
-            <div class="text-center py-12">
-              <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-700 flex items-center justify-center">
-                <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-              </div>
-              <p class="text-gray-500">준비 중입니다</p>
+
+          <!-- 마감일 + D-day -->
+          <div class="flex items-center justify-between text-xs mb-2">
+            <span class="text-muted-foreground">마감일 {{ recruit.deadline }}</span>
+            <span
+              class="px-2 py-0.5 rounded font-medium"
+              :class="getDdayClass(recruit.dDay)"
+            >
+              {{ recruit.dDay }}
+            </span>
+          </div>
+
+          <!-- 제목 -->
+          <p class="text-sm text-foreground line-clamp-2 mb-3 leading-relaxed">{{ recruit.title }}</p>
+
+          <!-- 프로젝트 기간 -->
+          <p class="text-xs text-muted-foreground mb-3">프로젝트 기간 {{ recruit.duration }}</p>
+
+          <!-- 조회수/댓글 + 포지션 -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+              <span class="flex items-center gap-1">
+                <Icon icon="heroicons:eye" class="w-3 h-3" />
+                {{ recruit.views }}
+              </span>
+              <span class="flex items-center gap-1">
+                <Icon icon="heroicons:chat-bubble-left" class="w-3 h-3" />
+                {{ recruit.comments }}
+              </span>
+            </div>
+            <div class="flex gap-1">
+              <span
+                v-for="position in recruit.positions"
+                :key="position"
+                class="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded"
+              >
+                {{ position }}
+              </span>
             </div>
           </div>
         </div>
       </div>
     </section>
-
-    <!-- About Section -->
-    <section id="about" class="py-20 px-6">
-      <div class="max-w-4xl mx-auto text-center">
-        <h2 class="text-3xl md:text-4xl font-bold mb-6">
-          FLOWIT 소개
-        </h2>
-        <p class="text-xl text-gray-400 mb-8">
-          IT 부트캠프 수료생 및 취업 준비생을 위한 커뮤니티 플랫폼입니다.
-        </p>
-        <div class="grid md:grid-cols-3 gap-8 text-left">
-          <div class="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-            <h3 class="font-semibold text-lg mb-2">정보 비대칭 해소</h3>
-            <p class="text-gray-400 text-sm">현실적인 취업 정보와 부트캠프 후기를 공유합니다.</p>
-          </div>
-          <div class="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-            <h3 class="font-semibold text-lg mb-2">동료 네트워킹</h3>
-            <p class="text-gray-400 text-sm">같은 길을 걷는 동료들과 함께 성장하세요.</p>
-          </div>
-          <div class="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-            <h3 class="font-semibold text-lg mb-2">실무 경험</h3>
-            <p class="text-gray-400 text-sm">프로젝트 협업을 통해 실무 경험을 쌓으세요.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="py-12 px-6 border-t border-gray-800">
-      <div class="max-w-6xl mx-auto">
-        <div class="grid md:grid-cols-3 gap-8 mb-8">
-          <div>
-            <h3 class="text-lg font-bold mb-4">FLOWIT</h3>
-            <p class="text-gray-500 text-sm">
-              IT 부트캠프 학생과 취준생을 위한<br />
-              커뮤니티 기반 성장 플랫폼
-            </p>
-          </div>
-          <div>
-            <h4 class="font-semibold mb-4 text-gray-300">서비스</h4>
-            <ul class="space-y-2 text-gray-500 text-sm">
-              <li><a href="#community" class="hover:text-white transition-colors">커뮤니티</a></li>
-              <li><a href="#project" class="hover:text-white transition-colors">프로젝트</a></li>
-              <li><span class="text-gray-600">멘토링 (Coming Soon)</span></li>
-            </ul>
-          </div>
-          <div>
-            <h4 class="font-semibold mb-4 text-gray-300">소개</h4>
-            <ul class="space-y-2 text-gray-500 text-sm">
-              <li><a href="#about" class="hover:text-white transition-colors">FLOWIT 소개</a></li>
-            </ul>
-          </div>
-        </div>
-        <div class="pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
-          &copy; 2025 FLOWIT. All rights reserved.
-        </div>
-      </div>
-    </footer>
   </div>
 </template>

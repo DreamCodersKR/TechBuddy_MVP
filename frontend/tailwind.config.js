@@ -9,6 +9,13 @@ export default {
     './app.vue',
   ],
   theme: {
+    container: {
+      center: true,
+      padding: '1rem',
+      screens: {
+        '2xl': '1280px',
+      },
+    },
     extend: {
       colors: {
         border: 'hsl(var(--border))',
