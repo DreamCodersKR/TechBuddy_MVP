@@ -12,7 +12,6 @@ definePageMeta({
 
 const route = useRoute()
 const authStore = useAuthStore()
-const toast = useToast()
 
 const isProcessing = ref(true)
 const errorMessage = ref<string | null>(null)
@@ -27,55 +26,34 @@ onMounted(async () => {
     // 에러 체크
     if (error) {
       errorMessage.value = error
-      toast.add({
-        title: '로그인 실패',
-        description: error,
-        color: 'error',
-      })
+      console.error('OAuth error:', error)
       return
     }
 
     // 토큰 유효성 체크
     if (!accessToken) {
       errorMessage.value = '인증 토큰이 없습니다.'
-      toast.add({
-        title: '로그인 실패',
-        description: '인증 토큰이 없습니다. 다시 시도해주세요.',
-        color: 'error',
-      })
+      console.error('No access token')
       return
     }
 
     // 토큰 저장 및 사용자 정보 복원
     await authStore.setOAuthToken(accessToken)
 
-    // 성공 메시지
+    // 성공 로그
     if (isNewUser) {
-      toast.add({
-        title: '회원가입 완료',
-        description: 'FLOWIT에 오신 것을 환영합니다!',
-        color: 'success',
-      })
+      console.log('회원가입 완료')
     }
     else {
-      toast.add({
-        title: '로그인 성공',
-        description: '환영합니다!',
-        color: 'success',
-      })
+      console.log('로그인 성공')
     }
 
     // 메인 페이지로 이동
-    navigateTo('/app')
+    navigateTo('/')
   }
   catch (err) {
     console.error('OAuth callback error:', err)
     errorMessage.value = '인증 처리 중 오류가 발생했습니다.'
-    toast.add({
-      title: '오류 발생',
-      description: '인증 처리 중 오류가 발생했습니다. 다시 시도해주세요.',
-      color: 'error',
-    })
   }
   finally {
     isProcessing.value = false

@@ -123,7 +123,7 @@ const userInitials = computed(() => {
               <Button variant="ghost" class="relative h-8 w-8 rounded-full">
                 <Avatar class="h-8 w-8">
                   <AvatarImage :src="authStore.currentUser?.avatarUrl ?? undefined" :alt="authStore.currentUser?.nickname ?? undefined" />
-                  <AvatarFallback>{{ userInitials }}</AvatarFallback>
+                  <AvatarFallback v-if="!authStore.currentUser?.avatarUrl">{{ userInitials }}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -131,10 +131,10 @@ const userInitials = computed(() => {
               <div class="flex items-center gap-2 p-2">
                 <Avatar class="h-8 w-8">
                   <AvatarImage :src="authStore.currentUser?.avatarUrl ?? undefined" :alt="authStore.currentUser?.nickname ?? undefined" />
-                  <AvatarFallback>{{ userInitials }}</AvatarFallback>
+                  <AvatarFallback v-if="!authStore.currentUser?.avatarUrl">{{ userInitials }}</AvatarFallback>
                 </Avatar>
                 <div class="flex flex-col space-y-0.5">
-                  <p class="text-sm font-medium">{{ authStore.currentUser?.nickname }}</p>
+                  <p class="text-sm font-medium">{{ authStore.currentUser?.nickname || authStore.currentUser?.email?.split('@')[0] }}</p>
                   <p class="text-xs text-muted-foreground">{{ authStore.currentUser?.email }}</p>
                 </div>
               </div>
@@ -227,10 +227,10 @@ const userInitials = computed(() => {
                   <div class="flex items-center gap-3 px-3 py-2">
                     <Avatar class="h-10 w-10">
                       <AvatarImage :src="authStore.currentUser?.avatarUrl ?? undefined" :alt="authStore.currentUser?.nickname ?? undefined" />
-                      <AvatarFallback>{{ userInitials }}</AvatarFallback>
+                      <AvatarFallback v-if="!authStore.currentUser?.avatarUrl">{{ userInitials }}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p class="font-medium">{{ authStore.currentUser?.nickname }}</p>
+                      <p class="font-medium">{{ authStore.currentUser?.nickname || authStore.currentUser?.email?.split('@')[0] }}</p>
                       <p class="text-xs text-muted-foreground">{{ authStore.currentUser?.email }}</p>
                     </div>
                   </div>
