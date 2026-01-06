@@ -116,68 +116,75 @@ const userInitials = computed(() => {
         </Button>
 
         <!-- Auth Section -->
-        <template v-if="authStore.isAuthenticated">
-          <!-- Profile Dropdown -->
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="ghost" class="relative h-8 w-8 rounded-full">
-                <Avatar class="h-8 w-8">
-                  <AvatarImage :src="authStore.currentUser?.avatarUrl ?? undefined" :alt="authStore.currentUser?.nickname ?? undefined" />
-                  <AvatarFallback v-if="!authStore.currentUser?.avatarUrl">{{ userInitials }}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent class="w-56" align="end">
-              <div class="flex items-center gap-2 p-2">
-                <Avatar class="h-8 w-8">
-                  <AvatarImage :src="authStore.currentUser?.avatarUrl ?? undefined" :alt="authStore.currentUser?.nickname ?? undefined" />
-                  <AvatarFallback v-if="!authStore.currentUser?.avatarUrl">{{ userInitials }}</AvatarFallback>
-                </Avatar>
-                <div class="flex flex-col space-y-0.5">
-                  <p class="text-sm font-medium">{{ authStore.currentUser?.nickname || authStore.currentUser?.email?.split('@')[0] }}</p>
-                  <p class="text-xs text-muted-foreground">{{ authStore.currentUser?.email }}</p>
+        <ClientOnly>
+          <template v-if="authStore.isAuthenticated">
+            <!-- Profile Dropdown -->
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="ghost" class="relative h-8 w-8 rounded-full">
+                  <Avatar class="h-8 w-8">
+                    <AvatarImage :src="authStore.currentUser?.avatarUrl ?? undefined" :alt="authStore.currentUser?.nickname ?? undefined" />
+                    <AvatarFallback v-if="!authStore.currentUser?.avatarUrl">{{ userInitials }}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent class="w-56" align="end">
+                <div class="flex items-center gap-2 p-2">
+                  <Avatar class="h-8 w-8">
+                    <AvatarImage :src="authStore.currentUser?.avatarUrl ?? undefined" :alt="authStore.currentUser?.nickname ?? undefined" />
+                    <AvatarFallback v-if="!authStore.currentUser?.avatarUrl">{{ userInitials }}</AvatarFallback>
+                  </Avatar>
+                  <div class="flex flex-col space-y-0.5">
+                    <p class="text-sm font-medium">{{ authStore.currentUser?.nickname || authStore.currentUser?.email?.split('@')[0] }}</p>
+                    <p class="text-xs text-muted-foreground">{{ authStore.currentUser?.email }}</p>
+                  </div>
                 </div>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem as-child>
-                <NuxtLink to="/mypage" class="cursor-pointer">
-                  <Icon icon="heroicons:user" class="mr-2 h-4 w-4" />
-                  마이페이지
-                </NuxtLink>
-              </DropdownMenuItem>
-              <DropdownMenuItem as-child>
-                <NuxtLink to="/mypage/posts" class="cursor-pointer">
-                  <Icon icon="heroicons:document-text" class="mr-2 h-4 w-4" />
-                  내 게시글
-                </NuxtLink>
-              </DropdownMenuItem>
-              <DropdownMenuItem as-child>
-                <NuxtLink to="/mypage/bookmarks" class="cursor-pointer">
-                  <Icon icon="heroicons:bookmark" class="mr-2 h-4 w-4" />
-                  북마크
-                </NuxtLink>
-              </DropdownMenuItem>
-              <DropdownMenuItem as-child>
-                <NuxtLink to="/settings" class="cursor-pointer">
-                  <Icon icon="heroicons:cog-6-tooth" class="mr-2 h-4 w-4" />
-                  설정
-                </NuxtLink>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem class="cursor-pointer text-destructive" @click="handleLogout">
-                <Icon icon="heroicons:arrow-right-on-rectangle" class="mr-2 h-4 w-4" />
-                로그아웃
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </template>
-        <template v-else>
-          <NuxtLink to="/auth/login">
-            <Button variant="ghost" size="sm">
-              로그인
-            </Button>
-          </NuxtLink>
-        </template>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem as-child>
+                  <NuxtLink to="/mypage" class="cursor-pointer">
+                    <Icon icon="heroicons:user" class="mr-2 h-4 w-4" />
+                    마이페이지
+                  </NuxtLink>
+                </DropdownMenuItem>
+                <DropdownMenuItem as-child>
+                  <NuxtLink to="/mypage/posts" class="cursor-pointer">
+                    <Icon icon="heroicons:document-text" class="mr-2 h-4 w-4" />
+                    내 게시글
+                  </NuxtLink>
+                </DropdownMenuItem>
+                <DropdownMenuItem as-child>
+                  <NuxtLink to="/mypage/bookmarks" class="cursor-pointer">
+                    <Icon icon="heroicons:bookmark" class="mr-2 h-4 w-4" />
+                    북마크
+                  </NuxtLink>
+                </DropdownMenuItem>
+                <DropdownMenuItem as-child>
+                  <NuxtLink to="/settings" class="cursor-pointer">
+                    <Icon icon="heroicons:cog-6-tooth" class="mr-2 h-4 w-4" />
+                    설정
+                  </NuxtLink>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem class="cursor-pointer text-destructive" @click="handleLogout">
+                  <Icon icon="heroicons:arrow-right-on-rectangle" class="mr-2 h-4 w-4" />
+                  로그아웃
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </template>
+          <template v-else>
+            <NuxtLink to="/auth/login">
+              <Button variant="ghost" size="sm">
+                로그인
+              </Button>
+            </NuxtLink>
+          </template>
+
+          <!-- SSR Fallback: 로딩 placeholder -->
+          <template #fallback>
+            <div class="h-8 w-8 rounded-full bg-muted animate-pulse" />
+          </template>
+        </ClientOnly>
 
         <!-- Mobile Menu Button -->
         <Sheet v-model:open="isMobileMenuOpen">
