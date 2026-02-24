@@ -6,6 +6,7 @@ interface AuthState {
   accessToken: string | null
   isLoading: boolean
   isRefreshing: boolean
+  apiBaseUrl: string
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -14,6 +15,7 @@ export const useAuthStore = defineStore('auth', {
     accessToken: null,
     isLoading: false,
     isRefreshing: false,
+    apiBaseUrl: '',
   }),
 
   getters: {
@@ -22,16 +24,19 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    init(apiBaseUrl: string): void {
+      this.apiBaseUrl = apiBaseUrl
+    },
+
     /**
      * 로그인
      * - credentials: 'include'로 HttpOnly Cookie(Refresh Token) 수신
      */
     async login(credentials: LoginRequest): Promise<void> {
-      const config = useRuntimeConfig()
       this.isLoading = true
 
       try {
-        const response = await $fetch<AuthResponse>(`${config.public.apiBaseUrl}/auth/login`, {
+        const response = await $fetch<AuthResponse>(`${this.apiBaseUrl}/auth/login`, {
           method: 'POST',
           body: credentials,
           credentials: 'include', // HttpOnly Cookie 수신을 위해 필수
@@ -49,11 +54,10 @@ export const useAuthStore = defineStore('auth', {
      * - credentials: 'include'로 HttpOnly Cookie(Refresh Token) 수신
      */
     async signup(data: SignupRequest): Promise<void> {
-      const config = useRuntimeConfig()
       this.isLoading = true
 
       try {
-        const response = await $fetch<AuthResponse>(`${config.public.apiBaseUrl}/auth/signup`, {
+        const response = await $fetch<AuthResponse>(`${this.apiBaseUrl}/auth/signup`, {
           method: 'POST',
           body: data,
           credentials: 'include', // HttpOnly Cookie 수신을 위해 필수
@@ -72,11 +76,9 @@ export const useAuthStore = defineStore('auth', {
      * - 프론트엔드 상태 초기화
      */
     async logout(): Promise<void> {
-      const config = useRuntimeConfig()
-
       try {
         // 서버에 로그아웃 요청 (Refresh Token 무효화)
-        await $fetch(`${config.public.apiBaseUrl}/auth/logout`, {
+        await $fetch(`${this.apiBaseUrl}/auth/logout`, {
           method: 'POST',
           credentials: 'include', // HttpOnly Cookie 전송
         })
@@ -91,8 +93,10 @@ export const useAuthStore = defineStore('auth', {
       this.accessToken = null
 
       // 쿠키에서 Access Token 제거
-      const tokenCookie = useCookie('accessToken')
-      tokenCookie.value = null
+      if (import.meta.client) {
+        const tokenCookie = useCookie('accessToken')
+        tokenCookie.value = null
+      }
 
       // 로그인 페이지로 이동
       navigateTo('/auth/login')
@@ -109,11 +113,10 @@ export const useAuthStore = defineStore('auth', {
         return false
       }
 
-      const config = useRuntimeConfig()
       this.isRefreshing = true
 
       try {
-        const response = await $fetch<AuthResponse>(`${config.public.apiBaseUrl}/auth/refresh`, {
+        const response = await $fetch<AuthResponse>(`${this.apiBaseUrl}/auth/refresh`, {
           method: 'POST',
           credentials: 'include', // HttpOnly Cookie(Refresh Token) 전송
         })
@@ -123,11 +126,12 @@ export const useAuthStore = defineStore('auth', {
       }
       catch {
         // Refresh Token도 만료되었거나 유효하지 않음
-        // 전체 로그아웃 처리
         this.user = null
         this.accessToken = null
-        const tokenCookie = useCookie('accessToken')
-        tokenCookie.value = null
+        if (import.meta.client) {
+          const tokenCookie = useCookie('accessToken')
+          tokenCookie.value = null
+        }
         return false
       }
       finally {
@@ -142,13 +146,15 @@ export const useAuthStore = defineStore('auth', {
       this.user = response.user
       this.accessToken = response.accessToken
 
-      // 쿠키에 Access Token 저장 (15분 유지 - Access Token 만료 시간과 동일)
-      const tokenCookie = useCookie('accessToken', {
-        maxAge: 60 * 15, // 15분
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-      })
-      tokenCookie.value = response.accessToken
+      // 쿠키에 Access Token 저장 (클라이언트 전용 - SSR에서는 useCookie 컨텍스트 불가)
+      if (import.meta.client) {
+        const tokenCookie = useCookie('accessToken', {
+          maxAge: 60 * 15, // 15분
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+        })
+        tokenCookie.value = response.accessToken
+      }
     },
 
     /**
@@ -157,8 +163,6 @@ export const useAuthStore = defineStore('auth', {
      * - 사용자 정보 조회하여 상태 업데이트
      */
     async setOAuthToken(accessToken: string): Promise<void> {
-      const config = useRuntimeConfig()
-
       // 토큰 저장
       this.accessToken = accessToken
       const tokenCookie = useCookie('accessToken', {
@@ -170,7 +174,7 @@ export const useAuthStore = defineStore('auth', {
 
       // 사용자 정보 조회
       try {
-        const user = await $fetch<User>(`${config.public.apiBaseUrl}/auth/me`, {
+        const user = await $fetch<User>(`${this.apiBaseUrl}/auth/me`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -200,12 +204,11 @@ export const useAuthStore = defineStore('auth', {
         }
       }
 
-      const config = useRuntimeConfig()
       this.isLoading = true
 
       try {
         // 토큰으로 사용자 정보 조회
-        const user = await $fetch<User>(`${config.public.apiBaseUrl}/auth/me`, {
+        const user = await $fetch<User>(`${this.apiBaseUrl}/auth/me`, {
           headers: {
             Authorization: `Bearer ${tokenCookie.value || this.accessToken}`,
           },

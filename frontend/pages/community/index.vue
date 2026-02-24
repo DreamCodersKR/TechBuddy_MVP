@@ -297,10 +297,12 @@ const isSortOpen = ref(false)
 
       <!-- 글쓰기 버튼 (하단 고정) -->
       <div class="fixed bottom-6 right-6 z-40">
-        <Button class="rounded-full shadow-lg px-6">
-          <Icon icon="heroicons:pencil" class="mr-2 h-4 w-4" />
-          {{ currentCategoryLabel }} 글쓰기
-        </Button>
+        <NuxtLink to="/community/write">
+          <Button class="rounded-full shadow-lg px-6">
+            <Icon icon="heroicons:pencil" class="mr-2 h-4 w-4" />
+            {{ currentCategoryLabel }} 글쓰기
+          </Button>
+        </NuxtLink>
       </div>
     </template>
   </div>
