@@ -41,7 +41,7 @@ export function usePostList() {
       if (mergedQuery.limit) params.append('limit', String(mergedQuery.limit))
       if (mergedQuery.search) params.append('search', mergedQuery.search)
       if (mergedQuery.sortBy) params.append('sortBy', mergedQuery.sortBy)
-      if (mergedQuery.sortOrder) params.append('sortOrder', mergedQuery.sortOrder)
+      if (mergedQuery.sortOrder) params.append('order', mergedQuery.sortOrder)
 
       const response = await $fetch<PostListResponse>(
         `${config.public.apiBaseUrl}/posts?${params.toString()}`

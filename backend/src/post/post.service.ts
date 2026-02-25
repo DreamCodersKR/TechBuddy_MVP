@@ -88,6 +88,9 @@ export class PostService {
           author: {
             select: { id: true, name: true, nickname: true, avatarUrl: true },
           },
+          board: {
+            select: { id: true, name: true },
+          },
           postTags: {
             include: { tag: true },
           },
@@ -254,6 +257,9 @@ export class PostService {
         include: {
           author: {
             select: { id: true, name: true, nickname: true, avatarUrl: true },
+          },
+          board: {
+            select: { id: true, name: true },
           },
           postTags: {
             include: { tag: true },

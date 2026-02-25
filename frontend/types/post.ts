@@ -36,7 +36,11 @@ export interface PostListItem {
     nickname: string | null
     avatarUrl: string | null
   }
-  tags: PostTag[]
+  board: {
+    id: string
+    name: string
+  } | null
+  postTags: Array<{ tag: { name: string } }>
   _count: {
     comments: number
     likes: number

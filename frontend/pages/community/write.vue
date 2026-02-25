@@ -143,9 +143,7 @@ async function handleSubmit() {
       content: form.content,
       tags: form.tags,
     })
-    // 작성 완료 → 게시글 상세 페이지로 이동 (DRE-43 완료 후 활성화)
-    // 현재는 커뮤니티 목록으로 이동
-    await router.push(`/community`)
+    await router.push(`/community/${result.id}`)
   }
   catch (error: unknown) {
     const err = error as { statusCode?: number; data?: { message?: string } }
