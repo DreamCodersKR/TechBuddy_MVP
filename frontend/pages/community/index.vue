@@ -199,6 +199,10 @@ onMounted(async () => {
                     {{ post.viewCount }}
                   </span>
                   <span class="flex items-center gap-1">
+                    <Icon icon="heroicons:heart" class="w-4 h-4" />
+                    {{ post._count.likes }}
+                  </span>
+                  <span class="flex items-center gap-1">
                     <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
                     {{ post._count.comments }}
                   </span>
@@ -253,6 +257,10 @@ onMounted(async () => {
                   <span class="flex items-center gap-1">
                     <Icon icon="heroicons:eye" class="w-4 h-4" />
                     {{ post.viewCount }}
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <Icon icon="heroicons:heart" class="w-4 h-4" />
+                    {{ post._count.likes }}
                   </span>
                   <span class="flex items-center gap-1">
                     <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
@@ -365,6 +373,10 @@ onMounted(async () => {
                 <span class="flex items-center gap-1">
                   <Icon icon="heroicons:eye" class="w-4 h-4" />
                   {{ post.viewCount }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <Icon icon="heroicons:heart" class="w-4 h-4" />
+                  {{ post._count.likes }}
                 </span>
                 <span class="flex items-center gap-1">
                   <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />

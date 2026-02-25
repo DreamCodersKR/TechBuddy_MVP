@@ -62,6 +62,10 @@ const loadError = ref('')
 const isBookmarked = ref(false)
 const isBookmarkLoading = ref(false)
 
+const isLiked = ref(false)
+const likeCount = ref(0)
+const isLikeLoading = ref(false)
+
 const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
 
@@ -96,8 +100,10 @@ async function fetchPost() {
   isLoading.value = true
   try {
     post.value = await $fetch<Post>(`${authStore.apiBaseUrl}/posts/${postId}`)
+    likeCount.value = post.value._count.likes
     if (authStore.isAuthenticated) {
       fetchBookmarkStatus()
+      fetchLikeStatus()
     }
   }
   catch {
@@ -115,6 +121,44 @@ async function fetchBookmarkStatus() {
   }
   catch {
     // 북마크 상태 조회 실패 시 무시
+  }
+}
+
+async function fetchLikeStatus() {
+  try {
+    const result = await authGet<{ liked: boolean; count: number }>(`/likes/post/${postId}/status`)
+    isLiked.value = result.liked
+    likeCount.value = result.count
+  }
+  catch {
+    // 좋아요 상태 조회 실패 시 무시
+  }
+}
+
+// ─── 좋아요 토글 ────────────────────────────────────────
+async function toggleLike() {
+  if (!authStore.isAuthenticated) {
+    await router.push('/auth/login')
+    return
+  }
+  if (isLikeLoading.value) return
+
+  // Optimistic UI
+  isLiked.value = !isLiked.value
+  likeCount.value += isLiked.value ? 1 : -1
+
+  isLikeLoading.value = true
+  try {
+    const result = await authPost<{ liked: boolean }>(`/likes/post/${postId}`)
+    isLiked.value = result.liked
+  }
+  catch {
+    // 실패 시 롤백
+    isLiked.value = !isLiked.value
+    likeCount.value += isLiked.value ? 1 : -1
+  }
+  finally {
+    isLikeLoading.value = false
   }
 }
 
@@ -238,40 +282,23 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- 액션 버튼 -->
-        <div class="flex items-center gap-1 shrink-0">
-          <!-- 북마크 -->
+        <!-- 액션 버튼 (본인만: 수정/삭제) -->
+        <div v-if="isAuthor" class="flex items-center gap-1 shrink-0">
+          <NuxtLink :to="`/community/edit/${postId}`">
+            <Button variant="ghost" size="sm" class="text-muted-foreground hover:text-foreground">
+              <Icon icon="heroicons:pencil-square" class="w-4 h-4 mr-1" />
+              수정
+            </Button>
+          </NuxtLink>
           <Button
             variant="ghost"
             size="sm"
-            :disabled="isBookmarkLoading"
-            @click="toggleBookmark"
+            class="text-muted-foreground hover:text-destructive"
+            @click="showDeleteDialog = true"
           >
-            <Icon
-              :icon="isBookmarked ? 'heroicons:bookmark-solid' : 'heroicons:bookmark'"
-              class="w-4 h-4"
-              :class="isBookmarked ? 'text-primary' : ''"
-            />
+            <Icon icon="heroicons:trash" class="w-4 h-4 mr-1" />
+            삭제
           </Button>
-
-          <!-- 수정/삭제 (본인만) -->
-          <template v-if="isAuthor">
-            <NuxtLink :to="`/community/edit/${postId}`">
-              <Button variant="ghost" size="sm" class="text-muted-foreground hover:text-foreground">
-                <Icon icon="heroicons:pencil-square" class="w-4 h-4 mr-1" />
-                수정
-              </Button>
-            </NuxtLink>
-            <Button
-              variant="ghost"
-              size="sm"
-              class="text-muted-foreground hover:text-destructive"
-              @click="showDeleteDialog = true"
-            >
-              <Icon icon="heroicons:trash" class="w-4 h-4 mr-1" />
-              삭제
-            </Button>
-          </template>
         </div>
       </div>
 
@@ -290,8 +317,41 @@ onMounted(() => {
       <div class="border-t border-border mb-8" />
 
       <!-- 본문 마크다운 -->
-      <div class="min-h-[200px] mb-12">
+      <div class="min-h-[200px] mb-8">
         <PostMarkdownViewer :content="post.content" />
+      </div>
+
+      <!-- 좋아요 / 북마크 액션 바 -->
+      <div class="flex items-center justify-center gap-4 py-6 border-y border-border mb-8">
+        <button
+          class="flex items-center gap-2 px-5 py-2 rounded-full border transition-colors"
+          :class="isLiked
+            ? 'border-rose-400 bg-rose-50 text-rose-500 dark:bg-rose-950/30'
+            : 'border-border text-muted-foreground hover:border-rose-300 hover:text-rose-400'"
+          :disabled="isLikeLoading"
+          @click="toggleLike"
+        >
+          <Icon
+            :icon="isLiked ? 'heroicons:heart-solid' : 'heroicons:heart'"
+            class="w-5 h-5"
+          />
+          <span class="text-sm font-medium">{{ likeCount }}</span>
+        </button>
+
+        <button
+          class="flex items-center gap-2 px-5 py-2 rounded-full border transition-colors"
+          :class="isBookmarked
+            ? 'border-primary/50 bg-primary/5 text-primary'
+            : 'border-border text-muted-foreground hover:border-primary/30 hover:text-primary'"
+          :disabled="isBookmarkLoading"
+          @click="toggleBookmark"
+        >
+          <Icon
+            :icon="isBookmarked ? 'heroicons:bookmark-solid' : 'heroicons:bookmark'"
+            class="w-5 h-5"
+          />
+          <span class="text-sm font-medium">북마크</span>
+        </button>
       </div>
 
       <!-- 댓글 섹션 -->
