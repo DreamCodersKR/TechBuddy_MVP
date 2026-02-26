@@ -69,6 +69,8 @@ const isLikeLoading = ref(false)
 const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
 
+const commentCount = ref(0)
+
 // ─── 계산 속성 ──────────────────────────────────────────
 const isAuthor = computed(
   () => authStore.isAuthenticated && post.value?.authorId === authStore.currentUser?.id,
@@ -101,6 +103,7 @@ async function fetchPost() {
   try {
     post.value = await $fetch<Post>(`${authStore.apiBaseUrl}/posts/${postId}`)
     likeCount.value = post.value._count.likes
+    commentCount.value = post.value._count.comments
     if (authStore.isAuthenticated) {
       fetchBookmarkStatus()
       fetchLikeStatus()
@@ -357,49 +360,13 @@ onMounted(() => {
       <!-- 댓글 섹션 -->
       <div class="border-t border-border pt-8">
         <h2 class="text-base font-bold text-foreground mb-6">
-          댓글 {{ post._count.comments }}개
+          댓글 {{ commentCount }}개
         </h2>
-
-        <!-- 댓글 목록 -->
-        <ul v-if="post.comments.length > 0" class="space-y-5 mb-6">
-          <li
-            v-for="comment in post.comments"
-            :key="comment.id"
-            class="flex gap-3"
-          >
-            <div class="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-              <img
-                v-if="comment.author.avatarUrl"
-                :src="comment.author.avatarUrl"
-                :alt="comment.author.nickname || comment.author.name"
-                class="w-full h-full object-cover"
-              >
-              <Icon v-else icon="heroicons:user-circle" class="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-sm font-medium text-foreground">
-                  {{ comment.author.nickname || comment.author.name }}
-                </span>
-                <span class="text-xs text-muted-foreground">
-                  {{ formatDate(comment.createdAt) }}
-                </span>
-              </div>
-              <p class="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                {{ comment.content }}
-              </p>
-            </div>
-          </li>
-        </ul>
-
-        <div v-else class="text-center py-8 text-muted-foreground text-sm">
-          첫 댓글을 남겨보세요.
-        </div>
-
-        <!-- 댓글 작성 영역 (DRE-44) -->
-        <div class="mt-4 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          댓글 작성 기능은 곧 제공됩니다.
-        </div>
+        <CommentsCommentList
+          :post-id="postId"
+          :initial-comments="post.comments"
+          @count-change="commentCount += $event"
+        />
       </div>
     </article>
 
