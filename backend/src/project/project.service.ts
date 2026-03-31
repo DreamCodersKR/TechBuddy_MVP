@@ -31,11 +31,11 @@ export class ProjectService {
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         createdById,
-        // PM 역할로 자동 추가
+        // ADMIN 역할로 자동 추가
         members: {
           create: {
             userId: createdById,
-            role: ProjectRole.PM,
+            role: ProjectRole.ADMIN,
           },
         },
       },
@@ -49,9 +49,6 @@ export class ProjectService {
               select: { id: true, name: true, nickname: true, avatarUrl: true },
             },
           },
-        },
-        organization: {
-          select: { id: true, name: true },
         },
       },
     });
@@ -67,11 +64,10 @@ export class ProjectService {
     params: {
       page?: number;
       limit?: number;
-      organizationId?: string;
       status?: string;
     },
   ) {
-    const { page = 1, limit = 20, organizationId, status } = params;
+    const { page = 1, limit = 20, status } = params;
     const skip = (page - 1) * limit;
 
     const where = {
@@ -79,7 +75,6 @@ export class ProjectService {
       members: {
         some: { userId }, // 본인이 멤버인 프로젝트만
       },
-      ...(organizationId && { organizationId }),
       ...(status && { status: status as any }),
     };
 
@@ -92,9 +87,6 @@ export class ProjectService {
         include: {
           createdBy: {
             select: { id: true, name: true, nickname: true, avatarUrl: true },
-          },
-          organization: {
-            select: { id: true, name: true },
           },
           _count: {
             select: { members: true, tasks: true },
@@ -126,9 +118,6 @@ export class ProjectService {
         createdBy: {
           select: { id: true, name: true, nickname: true, avatarUrl: true },
         },
-        organization: {
-          select: { id: true, name: true },
-        },
         members: {
           include: {
             user: {
@@ -137,7 +126,7 @@ export class ProjectService {
           },
         },
         _count: {
-          select: { tasks: true, files: true },
+          select: { tasks: true },
         },
       },
     });
@@ -157,10 +146,10 @@ export class ProjectService {
 
   /**
    * 프로젝트 수정
-   * - PM만 수정 가능
+   * - ADMIN만 수정 가능
    */
   async update(id: string, userId: string, updateProjectDto: UpdateProjectDto) {
-    await this.checkPMRole(id, userId);
+    await this.checkAdminRole(id, userId);
 
     const { startDate, endDate, ...rest } = updateProjectDto;
 
@@ -179,9 +168,6 @@ export class ProjectService {
         createdBy: {
           select: { id: true, name: true, nickname: true, avatarUrl: true },
         },
-        organization: {
-          select: { id: true, name: true },
-        },
         members: {
           include: {
             user: {
@@ -195,10 +181,10 @@ export class ProjectService {
 
   /**
    * 프로젝트 삭제 (Soft Delete)
-   * - PM만 삭제 가능
+   * - ADMIN만 삭제 가능
    */
   async remove(id: string, userId: string) {
-    await this.checkPMRole(id, userId);
+    await this.checkAdminRole(id, userId);
 
     await this.prisma.project.update({
       where: { id },
@@ -210,14 +196,14 @@ export class ProjectService {
 
   /**
    * Overview 저장
-   * - PM 또는 TEAM_LEADER만 수정 가능
+   * - ADMIN만 수정 가능
    */
   async updateOverview(
     id: string,
     userId: string,
     updateOverviewDto: UpdateOverviewDto,
   ) {
-    await this.checkLeaderRole(id, userId);
+    await this.checkAdminRole(id, userId);
 
     return this.prisma.project.update({
       where: { id },
@@ -232,9 +218,9 @@ export class ProjectService {
   }
 
   /**
-   * PM 권한 체크
+   * ADMIN 권한 체크
    */
-  private async checkPMRole(projectId: string, userId: string) {
+  private async checkAdminRole(projectId: string, userId: string) {
     const member = await this.prisma.projectMember.findUnique({
       where: {
         projectId_userId: { projectId, userId },
@@ -242,30 +228,11 @@ export class ProjectService {
     });
 
     if (!member) {
-      throw new ForbiddenException('프로젝트 멤버가 아닙니다');
+      throw new ForbiddenException('워크스페이스 멤버가 아닙니다');
     }
 
-    if (member.role !== ProjectRole.PM) {
-      throw new ForbiddenException('PM만 이 작업을 수행할 수 있습니다');
-    }
-  }
-
-  /**
-   * PM 또는 TEAM_LEADER 권한 체크
-   */
-  private async checkLeaderRole(projectId: string, userId: string) {
-    const member = await this.prisma.projectMember.findUnique({
-      where: {
-        projectId_userId: { projectId, userId },
-      },
-    });
-
-    if (!member) {
-      throw new ForbiddenException('프로젝트 멤버가 아닙니다');
-    }
-
-    if (member.role !== ProjectRole.PM && member.role !== ProjectRole.TEAM_LEADER) {
-      throw new ForbiddenException('PM 또는 팀 리더만 이 작업을 수행할 수 있습니다');
+    if (member.role !== ProjectRole.ADMIN) {
+      throw new ForbiddenException('관리자만 이 작업을 수행할 수 있습니다');
     }
   }
 
@@ -275,15 +242,15 @@ export class ProjectService {
 
   /**
    * 멤버 초대
-   * - PM 또는 TEAM_LEADER만 초대 가능
+   * - ADMIN만 초대 가능
    */
   async inviteMember(
     projectId: string,
     userId: string,
     inviteMemberDto: InviteMemberDto,
   ) {
-    // 권한 체크 (PM 또는 TEAM_LEADER)
-    await this.checkLeaderRole(projectId, userId);
+    // 권한 체크 (ADMIN)
+    await this.checkAdminRole(projectId, userId);
 
     // 프로젝트 존재 확인
     const project = await this.prisma.project.findUnique({
@@ -365,12 +332,11 @@ export class ProjectService {
       orderBy: { joinedAt: 'asc' },
     });
 
-    // 역할별 정렬 (PM → TEAM_LEADER → MEMBER → MENTOR)
+    // 역할별 정렬 (ADMIN → MEMBER → MENTOR)
     const roleOrder = {
-      [ProjectRole.PM]: 0,
-      [ProjectRole.TEAM_LEADER]: 1,
-      [ProjectRole.MEMBER]: 2,
-      [ProjectRole.MENTOR]: 3,
+      [ProjectRole.ADMIN]: 0,
+      [ProjectRole.MEMBER]: 1,
+      [ProjectRole.MENTOR]: 2,
     };
 
     return members.sort((a, b) => roleOrder[a.role] - roleOrder[b.role]);
@@ -378,8 +344,8 @@ export class ProjectService {
 
   /**
    * 멤버 역할 변경
-   * - PM만 변경 가능
-   * - PM 역할은 변경 불가
+   * - ADMIN만 변경 가능
+   * - ADMIN 역할은 변경 불가
    */
   async updateMemberRole(
     projectId: string,
@@ -387,8 +353,8 @@ export class ProjectService {
     userId: string,
     updateMemberRoleDto: UpdateMemberRoleDto,
   ) {
-    // PM 권한 체크
-    await this.checkPMRole(projectId, userId);
+    // ADMIN 권한 체크
+    await this.checkAdminRole(projectId, userId);
 
     // 대상 멤버 확인
     const targetMember = await this.prisma.projectMember.findUnique({
@@ -401,17 +367,17 @@ export class ProjectService {
     });
 
     if (!targetMember || targetMember.projectId !== projectId) {
-      throw new NotFoundException('프로젝트 멤버를 찾을 수 없습니다');
+      throw new NotFoundException('워크스페이스 멤버를 찾을 수 없습니다');
     }
 
-    // PM 역할 변경 방지
-    if (targetMember.role === ProjectRole.PM) {
-      throw new ForbiddenException('PM의 역할은 변경할 수 없습니다');
+    // ADMIN 역할 변경 방지
+    if (targetMember.role === ProjectRole.ADMIN) {
+      throw new ForbiddenException('관리자의 역할은 변경할 수 없습니다');
     }
 
-    // PM으로 변경하려는 경우 방지
-    if (updateMemberRoleDto.role === ProjectRole.PM) {
-      throw new ForbiddenException('PM 역할로 변경할 수 없습니다. PM 위임 기능을 사용하세요.');
+    // ADMIN으로 변경하려는 경우 방지
+    if (updateMemberRoleDto.role === ProjectRole.ADMIN) {
+      throw new ForbiddenException('관리자 역할로 변경할 수 없습니다');
     }
 
     // 역할 변경
@@ -444,24 +410,24 @@ export class ProjectService {
 
     // 본인 탈퇴인 경우
     if (targetMember.userId === userId) {
-      // PM은 나갈 수 없음
-      if (targetMember.role === ProjectRole.PM) {
-        throw new ForbiddenException('PM은 프로젝트를 나갈 수 없습니다. 먼저 PM을 위임하세요.');
+      // ADMIN은 나갈 수 없음
+      if (targetMember.role === ProjectRole.ADMIN) {
+        throw new ForbiddenException('관리자는 워크스페이스를 나갈 수 없습니다');
       }
 
       await this.prisma.projectMember.delete({
         where: { id: memberId },
       });
 
-      return { message: '프로젝트에서 나갔습니다' };
+      return { message: '워크스페이스에서 나갔습니다' };
     }
 
-    // 다른 멤버 내보내기인 경우 - 권한 체크
-    await this.checkLeaderRole(projectId, userId);
+    // 다른 멤버 내보내기인 경우 - ADMIN 권한 체크
+    await this.checkAdminRole(projectId, userId);
 
-    // PM 삭제 방지
-    if (targetMember.role === ProjectRole.PM) {
-      throw new ForbiddenException('PM은 내보낼 수 없습니다');
+    // ADMIN 삭제 방지
+    if (targetMember.role === ProjectRole.ADMIN) {
+      throw new ForbiddenException('관리자는 내보낼 수 없습니다');
     }
 
     await this.prisma.projectMember.delete({

@@ -6,7 +6,7 @@ export class UpdateMemberRoleDto {
   @ApiProperty({
     description: '변경할 역할',
     enum: ProjectRole,
-    example: ProjectRole.TEAM_LEADER,
+    example: ProjectRole.MEMBER,
   })
   @IsEnum(ProjectRole)
   @IsNotEmpty()

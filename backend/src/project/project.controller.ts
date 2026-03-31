@@ -54,7 +54,6 @@ export class ProjectController {
   @ApiOperation({ summary: '프로젝트 목록 조회 (본인이 멤버인 프로젝트만)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'organizationId', required: false, type: String })
   @ApiQuery({
     name: 'status',
     required: false,
@@ -66,13 +65,11 @@ export class ProjectController {
     @CurrentUser() user: any,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('organizationId') organizationId?: string,
     @Query('status') status?: string,
   ) {
     return this.projectService.findAll(user.id, {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
-      organizationId,
       status,
     });
   }
@@ -98,10 +95,10 @@ export class ProjectController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '프로젝트 수정 (PM만 가능)' })
-  @ApiResponse({ status: 200, description: '프로젝트 수정 성공' })
+  @ApiOperation({ summary: '워크스페이스 수정 (관리자만 가능)' })
+  @ApiResponse({ status: 200, description: '워크스페이스 수정 성공' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  @ApiResponse({ status: 403, description: 'PM 권한 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
   @ApiResponse({ status: 404, description: '프로젝트를 찾을 수 없음' })
   update(
     @Param('id') id: string,
@@ -117,10 +114,10 @@ export class ProjectController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '프로젝트 삭제 (PM만 가능, Soft Delete)' })
-  @ApiResponse({ status: 200, description: '프로젝트 삭제 성공' })
+  @ApiOperation({ summary: '워크스페이스 삭제 (관리자만 가능, Soft Delete)' })
+  @ApiResponse({ status: 200, description: '워크스페이스 삭제 성공' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  @ApiResponse({ status: 403, description: 'PM 권한 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
   @ApiResponse({ status: 404, description: '프로젝트를 찾을 수 없음' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.projectService.remove(id, user.id);
@@ -132,10 +129,10 @@ export class ProjectController {
   @Patch(':id/overview')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Overview 저장 (PM/팀리더만 가능)' })
+  @ApiOperation({ summary: 'Overview 저장 (관리자만 가능)' })
   @ApiResponse({ status: 200, description: 'Overview 저장 성공' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  @ApiResponse({ status: 403, description: 'PM 또는 팀리더 권한 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
   @ApiResponse({ status: 404, description: '프로젝트를 찾을 수 없음' })
   updateOverview(
     @Param('id') id: string,
@@ -155,10 +152,10 @@ export class ProjectController {
   @Post(':projectId/members')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '프로젝트 멤버 초대 (PM/팀리더만 가능)' })
+  @ApiOperation({ summary: '워크스페이스 멤버 초대 (관리자만 가능)' })
   @ApiResponse({ status: 201, description: '멤버 초대 성공' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  @ApiResponse({ status: 403, description: 'PM 또는 팀리더 권한 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
   @ApiResponse({ status: 404, description: '프로젝트 또는 사용자를 찾을 수 없음' })
   @ApiResponse({ status: 409, description: '이미 프로젝트 멤버입니다' })
   inviteMember(
@@ -193,10 +190,10 @@ export class ProjectController {
   @Patch(':projectId/members/:memberId/role')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '멤버 역할 변경 (PM만 가능)' })
+  @ApiOperation({ summary: '멤버 역할 변경 (관리자만 가능)' })
   @ApiResponse({ status: 200, description: '역할 변경 성공' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  @ApiResponse({ status: 403, description: 'PM 권한 필요 / PM 역할 변경 불가' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요 / 관리자 역할 변경 불가' })
   @ApiResponse({ status: 404, description: '프로젝트 멤버를 찾을 수 없음' })
   updateMemberRole(
     @Param('projectId') projectId: string,

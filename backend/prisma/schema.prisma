@@ -4,8 +4,9 @@
 // Framework: NestJS
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -17,27 +18,25 @@ generator client {
 // ============================================
 
 enum UserRole {
-  GENERAL_USER
-  CERTIFIED_MENTOR
-}
-
-enum OrganizationMemberRole {
+  USER
   ADMIN
-  STUDENT
-  GRADUATE
 }
 
-enum OrganizationMemberStatus {
-  PENDING
-  APPROVED
-  REJECTED
+enum UserPlan {
+  FREE
+  PRO
+  PREMIUM
+}
+
+enum WorkspaceType {
+  PROJECT
+  STUDY
 }
 
 enum ProjectRole {
-  PM
-  TEAM_LEADER
-  MEMBER
-  MENTOR
+  ADMIN  // 관리자 (구 PM)
+  MEMBER // 멤버
+  MENTOR // 멘토 (준비중)
 }
 
 enum ProjectStatus {
@@ -46,25 +45,76 @@ enum ProjectStatus {
   ARCHIVED
 }
 
+enum SprintStatus {
+  PLANNED  // 예정
+  ACTIVE   // 진행중
+  COMPLETED // 완료
+}
+
 enum TaskStatus {
   TODO
   IN_PROGRESS
-  DONE
+  REVIEW // 검토중
   HELP
+  DONE
 }
 
 enum TaskPriority {
   HIGH
   MEDIUM
   LOW
+  URGENT // 긴급
+}
+
+enum TaskType {
+  CODE      // 코드
+  DOCUMENT  // 문서
+  DESIGN    // 디자인
+  PLANNING  // 기획
+  RESEARCH  // 리서치
+  OTHER     // 기타
 }
 
 enum NotificationType {
   TASK_ASSIGNED
   TASK_STATUS_CHANGED
   COMMENT_ADDED
-  MENTORING_REQUEST
   HELP_REQUESTED
+}
+
+enum AgoraStatus {
+  OPEN   // 미채택
+  CLOSED // 채택완료
+}
+
+enum RecruitType {
+  PROJECT
+  STUDY
+}
+
+enum ApplicationStatus {
+  PENDING  // 검토중
+  ACCEPTED // 수락
+  REJECTED // 거절
+}
+
+enum CreditTransactionType {
+  EARN   // 획득 (아고라 채택 등)
+  SPEND  // 소비 (AI멘토링, 아고라 현상금)
+  REFUND // 환불
+}
+
+enum BadgeType {
+  NEW_MEMBER   // 신규 가입
+  ACTIVITY     // 활동 레벨
+  SUBSCRIBER   // 구독 중
+  LOYALTY      // 구독 6개월 연속
+  ORGANIZATION // 소속 (Enterprise)
+}
+
+enum AIMessageRole {
+  USER
+  ASSISTANT
 }
 
 // ============================================
@@ -73,15 +123,21 @@ enum NotificationType {
 
 // 1. 사용자
 model User {
-  id         String  @id @default(uuid())
-  email      String  @unique
-  password   String?
-  name       String
-  nickname   String? @unique
-  role       UserRole @default(GENERAL_USER)
-  bio        String?
-  techStack  String[]
-  avatarUrl  String?
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String?
+  name         String
+  nickname     String?  @unique
+  role         UserRole @default(USER)
+  plan         UserPlan @default(FREE)
+  credit       Int      @default(0)
+  xp           Int      @default(0)
+  level        Int      @default(1)
+  bio          String?
+  techStack    String[]
+  avatarUrl    String?
+  githubUrl    String?
+  portfolioUrl String?
 
   // OAuth 관련 필드
   provider   String? // 'google', 'github', null(일반 로그인)
@@ -90,105 +146,42 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  organizationMemberships OrganizationMember[]
-  createdPromotions       OrganizationPromotion[]
-  posts                   Post[]                  @relation("UserPosts")
-  postComments            PostComment[]
-  postLikes               PostLike[]
-  postBookmarks           PostBookmark[]
+  // Relations - 커뮤니티
+  posts         Post[]         @relation("UserPosts")
+  postComments  PostComment[]
+  postLikes     PostLike[]
+  postBookmarks PostBookmark[]
 
+  // Relations - PM툴
   createdProjects    Project[]       @relation("ProjectCreator")
   projectMemberships ProjectMember[]
   assignedTasks      Task[]          @relation("TaskAssignee")
   createdTasks       Task[]          @relation("TaskCreator")
   taskComments       TaskComment[]
-  uploadedFiles      ProjectFile[]
 
+  // Relations - 팀원모집
+  recruits            Recruit[]
+  recruitApplications RecruitApplication[]
+
+  // Relations - 아고라
+  agoraQuestions Agora[]
+  agoraAnswers   AgoraAnswer[]
+
+  // Relations - 크레딧/뱃지
+  creditTransactions CreditTransaction[]
+  userBadges         UserBadge[]
+
+  // Relations - AI멘토링
+  aiConversations AIConversation[]
+
+  // Relations - 알림/인증
   notifications     Notification[] @relation("NotificationRecipient")
   sentNotifications Notification[] @relation("NotificationSender")
+  refreshTokens     RefreshToken[]
 
-  // Phase 3: 멘토링
-  mentorProfile             MentorProfile?
-  mentoringRequests         MentoringRequest[] @relation("MentoringRequestUser")
-  receivedMentoringRequests MentoringRequest[] @relation("MentoringRequestMentor")
-  chatRoomMemberships       ChatRoom[]         @relation("UserChatRooms")
-  chatMessages              ChatMessage[]
-
-  approvedMembers OrganizationMember[] @relation("ApprovedBy")
-  refreshTokens   RefreshToken[]
-
-  @@unique([provider, providerId]) // OAuth 사용자 고유 식별
+  @@unique([provider, providerId])
   @@index([email])
   @@map("users")
-}
-
-// 2. 교육기관
-model Organization {
-  id           String  @id @default(uuid())
-  name         String  @unique
-  description  String?
-  location     String?
-  studentCount Int     @default(0)
-  logoUrl      String?
-  websiteUrl   String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  members    OrganizationMember[]
-  promotions OrganizationPromotion[]
-  projects   Project[]
-
-  @@index([name])
-  @@map("organizations")
-}
-
-// 3. 기관 소속
-model OrganizationMember {
-  id             String                   @id @default(uuid())
-  organizationId String
-  userId         String
-  role           OrganizationMemberRole
-  status         OrganizationMemberStatus @default(PENDING)
-  requestedAt    DateTime                 @default(now())
-  approvedAt     DateTime?
-  approvedById   String?
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  approvedBy   User?        @relation("ApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
-
-  @@unique([organizationId, userId])
-  @@index([userId])
-  @@index([organizationId])
-  @@map("organization_members")
-}
-
-// 4. 교육기관 홍보 게시글
-model OrganizationPromotion {
-  id             String  @id @default(uuid())
-  organizationId String
-  title          String
-  content        String
-  externalLink   String
-  linkText       String  @default("지원하기")
-  imageUrl       String?
-  viewCount      Int     @default(0)
-  createdById    String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy    User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@index([createdById])
-  @@map("organization_promotions")
 }
 
 // 5. 게시판
@@ -323,40 +316,43 @@ model PostTag {
 }
 
 // ============================================
-// Phase 2: 프로젝트 관리 기능
+// PM툴: 워크스페이스 (프로젝트 / 스터디룸)
 // ============================================
 
-// 12. 프로젝트
+// 12. 워크스페이스 (구 Project)
 model Project {
-  id             String        @id @default(uuid())
-  name           String
-  description    String?
-  overview       String?       @db.Text // Markdown
-  startDate      DateTime?
-  endDate        DateTime?
-  status         ProjectStatus @default(ACTIVE)
-  isPublic       Boolean       @default(false)
-  organizationId String
-  createdById    String
+  id            String        @id @default(uuid())
+  name          String
+  description   String?
+  overview      String?       @db.Text
+  type          WorkspaceType @default(PROJECT)
+  techStack     String[]
+  coverImageUrl String?
+  githubUrl     String?
+  startDate     DateTime?
+  endDate       DateTime?
+  status        ProjectStatus @default(ACTIVE)
+  isPublic      Boolean       @default(false)
+  createdById   String
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  deletedAt DateTime? // Soft Delete
+  deletedAt DateTime?
 
   // Relations
-  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy    User            @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  members      ProjectMember[]
-  tasks        Task[]
-  files        ProjectFile[]
+  createdBy User            @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  members   ProjectMember[]
+  tasks     Task[]
+  sprints   Sprint[]
+  recruits  Recruit[]
 
-  @@index([organizationId])
   @@index([createdById])
   @@index([status])
+  @@index([type])
   @@map("projects")
 }
 
-// 13. 프로젝트 멤버
+// 13. 워크스페이스 멤버
 model ProjectMember {
   id        String      @id @default(uuid())
   projectId String
@@ -375,16 +371,41 @@ model ProjectMember {
   @@map("project_members")
 }
 
+// Sprint
+model Sprint {
+  id          String       @id @default(uuid())
+  projectId   String
+  name        String
+  goal        String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      SprintStatus @default(PLANNED)
+  createdById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([projectId])
+  @@index([status])
+  @@map("sprints")
+}
+
 // 14. 작업(태스크)
 model Task {
   id          String       @id @default(uuid())
   projectId   String
+  sprintId    String?      // Sprint 연결 (optional)
   title       String
   description String?
   assigneeId  String?
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
-  helpReason  String? // status가 HELP일 때만 사용
+  taskType    TaskType?    // AI멘토링 유형 분류
+  helpReason  String?
   dueDate     DateTime?
   createdById String
 
@@ -393,12 +414,14 @@ model Task {
 
   // Relations
   project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sprint    Sprint?       @relation(fields: [sprintId], references: [id], onDelete: SetNull)
   assignee  User?         @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   createdBy User          @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
   labels    TaskLabel[]
   comments  TaskComment[]
 
   @@index([projectId])
+  @@index([sprintId])
   @@index([assigneeId])
   @@index([status])
   @@index([createdById])
@@ -437,32 +460,181 @@ model TaskComment {
   @@map("task_comments")
 }
 
-// 17. 산출문서
-model ProjectFile {
-  id           String  @id @default(uuid())
-  projectId    String
-  name         String
-  originalName String
-  folder       String // '기획서', '설계서', '발표자료', '기타'
-  description  String?
-  fileSize     BigInt
-  mimeType     String?
-  fileUrl      String
-  uploadedById String
+// ============================================
+// 커뮤니티: 팀원모집
+// ============================================
 
-  uploadedAt DateTime @default(now())
+model Recruit {
+  id          String      @id @default(uuid())
+  projectId   String      // 연결된 워크스페이스 (필수)
+  authorId    String
+  title       String
+  description String      @db.Text
+  type        RecruitType
+  positions   String[]    // 포지션 태그
+  maxMembers  Int
+  deadline    DateTime?
+  isClosed    Boolean     @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  uploadedBy User    @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  project      Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author       User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  applications RecruitApplication[]
 
   @@index([projectId])
-  @@index([uploadedById])
-  @@index([folder])
-  @@map("project_files")
+  @@index([authorId])
+  @@index([type])
+  @@index([isClosed])
+  @@map("recruits")
 }
 
-// 18. 알림
+model RecruitApplication {
+  id          String            @id @default(uuid())
+  recruitId   String
+  applicantId String
+  message     String?
+  status      ApplicationStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  recruit   Recruit @relation(fields: [recruitId], references: [id], onDelete: Cascade)
+  applicant User    @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@unique([recruitId, applicantId])
+  @@index([recruitId])
+  @@index([applicantId])
+  @@map("recruit_applications")
+}
+
+// ============================================
+// 커뮤니티: 아고라 (크레딧 현상금 Q&A)
+// ============================================
+
+model Agora {
+  id        String      @id @default(uuid())
+  authorId  String
+  title     String
+  content   String      @db.Text
+  bounty    Int         @default(1) // 크레딧 현상금
+  status    AgoraStatus @default(OPEN)
+  viewCount Int         @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  answers AgoraAnswer[]
+
+  @@index([authorId])
+  @@index([status])
+  @@index([bounty])
+  @@map("agoras")
+}
+
+model AgoraAnswer {
+  id         String  @id @default(uuid())
+  agoraId    String
+  authorId   String
+  content    String  @db.Text
+  isAccepted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  agora  Agora @relation(fields: [agoraId], references: [id], onDelete: Cascade)
+  author User  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([agoraId])
+  @@index([authorId])
+  @@map("agora_answers")
+}
+
+// ============================================
+// 크레딧 & 뱃지
+// ============================================
+
+model CreditTransaction {
+  id          String                @id @default(uuid())
+  userId      String
+  amount      Int                   // 양수: 획득, 음수: 소비
+  type        CreditTransactionType
+  description String
+  relatedId   String?               // 관련 엔티티 ID (아고라 ID 등)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@map("credit_transactions")
+}
+
+model UserBadge {
+  id       String    @id @default(uuid())
+  userId   String
+  badge    BadgeType
+  earnedAt DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badge])
+  @@index([userId])
+  @@map("user_badges")
+}
+
+// ============================================
+// AI 멘토링
+// ============================================
+
+model AIConversation {
+  id     String  @id @default(uuid())
+  userId String
+  title  String?
+  taskId String? // Help 상태에서 연결된 Task ID
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AIMessage[]
+
+  @@index([userId])
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id             String        @id @default(uuid())
+  conversationId String
+  role           AIMessageRole
+  content        String        @db.Text
+  taskType       String?       // TaskType 문자열 (CODE, DOCUMENT 등)
+  modelUsed      String?       // 사용된 AI 모델 (예: claude-haiku-4-5)
+  creditsUsed    Int           @default(0)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
+
+// ============================================
+// 알림
+// ============================================
+
 model Notification {
   id          String           @id @default(uuid())
   recipientId String
@@ -471,7 +643,7 @@ model Notification {
   title       String
   message     String
   isRead      Boolean          @default(false)
-  relatedId   String? // 관련 엔티티 ID (프로젝트, 태스크 등)
+  relatedId   String?
 
   createdAt DateTime @default(now())
 
@@ -486,104 +658,13 @@ model Notification {
 }
 
 // ============================================
-// Phase 3: 멘토링 기능 (추후)
-// ============================================
-
-// 19. 멘토 프로필
-model MentorProfile {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  specialization    String[] // 전문 분야
-  techStack         String[] // 기술 스택
-  yearsOfExperience Int
-  availableTime     String? // 가능 시간대
-  introduction      String? // 자기소개
-  mentoringStyle    String? // 멘토링 스타일
-  rating            Float    @default(0.0)
-  reviewCount       Int      @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mentoringRequests MentoringRequest[]
-
-  @@index([userId])
-  @@map("mentor_profiles")
-}
-
-// 20. 멘토링 신청
-model MentoringRequest {
-  id              String    @id @default(uuid())
-  userId          String // 멘티
-  mentorId        String // 멘토
-  mentorProfileId String
-  message         String // 신청 메시지
-  status          String    @default("PENDING") // PENDING, ACCEPTED, REJECTED, COMPLETED
-  scheduledAt     DateTime? // 예정 시간
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user          User          @relation("MentoringRequestUser", fields: [userId], references: [id], onDelete: Cascade)
-  mentor        User          @relation("MentoringRequestMentor", fields: [mentorId], references: [id], onDelete: Cascade)
-  mentorProfile MentorProfile @relation(fields: [mentorProfileId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([mentorId])
-  @@index([mentorProfileId])
-  @@index([status])
-  @@map("mentoring_requests")
-}
-
-// 21. 채팅방
-model ChatRoom {
-  id      String  @id @default(uuid())
-  name    String?
-  isGroup Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  members  User[]        @relation("UserChatRooms")
-  messages ChatMessage[]
-
-  @@map("chat_rooms")
-}
-
-// 22. 채팅 메시지
-model ChatMessage {
-  id         String  @id @default(uuid())
-  chatRoomId String
-  senderId   String
-  content    String
-  fileUrl    String? // 첨부 파일
-  isRead     Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-  // Relations
-  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
-  sender   User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
-
-  @@index([chatRoomId])
-  @@index([senderId])
-  @@index([createdAt])
-  @@map("chat_messages")
-}
-
-// ============================================
 // 인증: Refresh Token
 // ============================================
 
-// 23. Refresh Token
 model RefreshToken {
   id        String   @id @default(uuid())
   userId    String
-  tokenHash String   @unique // 토큰을 SHA-256 해시하여 저장
+  tokenHash String   @unique
   expiresAt DateTime
   isRevoked Boolean  @default(false)
 
