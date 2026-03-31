@@ -1,0 +1,203 @@
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateAgoraDto } from './dto/create-agora.dto';
+import { CreateAgoraAnswerDto } from './dto/create-agora-answer.dto';
+import { AgoraStatus, CreditTransactionType } from '@prisma/client';
+
+@Injectable()
+export class AgoraService {
+  constructor(private prisma: PrismaService) {}
+
+  // ========================
+  // 질문 CRUD
+  // ========================
+
+  async findAll(params: { status?: string; page?: number; limit?: number }) {
+    const { status, page = 1, limit = 20 } = params;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      ...(status && { status: status as AgoraStatus }),
+    };
+
+    const [items, total] = await Promise.all([
+      this.prisma.agora.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+          _count: { select: { answers: true } },
+        },
+      }),
+      this.prisma.agora.count({ where }),
+    ]);
+
+    return {
+      data: items,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async findOne(id: string) {
+    const agora = await this.prisma.agora.findUnique({
+      where: { id },
+      include: {
+        author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+        answers: {
+          include: {
+            author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+          },
+          orderBy: [{ isAccepted: 'desc' }, { createdAt: 'asc' }],
+        },
+      },
+    });
+
+    if (!agora) throw new NotFoundException('질문을 찾을 수 없습니다');
+
+    // 조회수 증가
+    await this.prisma.agora.update({ where: { id }, data: { viewCount: { increment: 1 } } });
+
+    return agora;
+  }
+
+  async create(userId: string, dto: CreateAgoraDto) {
+    // 크레딧 확인
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다');
+    if (user.credit < dto.bounty)
+      throw new BadRequestException('크레딧이 부족합니다');
+
+    // 트랜잭션: 질문 생성 + 크레딧 차감 + 거래내역
+    return this.prisma.$transaction(async (tx) => {
+      const agora = await tx.agora.create({
+        data: { ...dto, authorId: userId },
+      });
+      await tx.user.update({
+        where: { id: userId },
+        data: { credit: { decrement: dto.bounty } },
+      });
+      await tx.creditTransaction.create({
+        data: {
+          userId,
+          amount: -dto.bounty,
+          type: CreditTransactionType.SPEND,
+          description: `아고라 현상금 - ${dto.title}`,
+          relatedId: agora.id,
+        },
+      });
+      return agora;
+    });
+  }
+
+  async remove(id: string, userId: string) {
+    const agora = await this.prisma.agora.findUnique({
+      where: { id },
+      include: { _count: { select: { answers: true } } },
+    });
+
+    if (!agora) throw new NotFoundException('질문을 찾을 수 없습니다');
+    if (agora.authorId !== userId) throw new ForbiddenException('삭제 권한이 없습니다');
+    if (agora._count.answers > 0)
+      throw new ForbiddenException('답변이 달린 질문은 삭제할 수 없습니다');
+    if (agora.status === AgoraStatus.CLOSED)
+      throw new ForbiddenException('채택 완료된 질문은 삭제할 수 없습니다');
+
+    // 트랜잭션: 삭제 + 현상금 환불
+    await this.prisma.$transaction(async (tx) => {
+      await tx.agora.delete({ where: { id } });
+      await tx.user.update({
+        where: { id: userId },
+        data: { credit: { increment: agora.bounty } },
+      });
+      await tx.creditTransaction.create({
+        data: {
+          userId,
+          amount: agora.bounty,
+          type: CreditTransactionType.REFUND,
+          description: `아고라 현상금 환불 - ${agora.title}`,
+          relatedId: id,
+        },
+      });
+    });
+
+    return { message: '질문이 삭제되었습니다 (현상금 환불 완료)' };
+  }
+
+  // ========================
+  // 답변 CRUD
+  // ========================
+
+  async createAnswer(agoraId: string, userId: string, dto: CreateAgoraAnswerDto) {
+    const agora = await this.prisma.agora.findUnique({ where: { id: agoraId } });
+    if (!agora) throw new NotFoundException('질문을 찾을 수 없습니다');
+    if (agora.status === AgoraStatus.CLOSED)
+      throw new ForbiddenException('채택 완료된 질문에는 답변할 수 없습니다');
+    if (agora.authorId === userId)
+      throw new ForbiddenException('본인 질문에는 답변할 수 없습니다');
+
+    return this.prisma.agoraAnswer.create({
+      data: { ...dto, agoraId, authorId: userId },
+      include: {
+        author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+      },
+    });
+  }
+
+  async removeAnswer(agoraId: string, answerId: string, userId: string) {
+    const answer = await this.prisma.agoraAnswer.findUnique({ where: { id: answerId } });
+    if (!answer || answer.agoraId !== agoraId)
+      throw new NotFoundException('답변을 찾을 수 없습니다');
+    if (answer.authorId !== userId) throw new ForbiddenException('삭제 권한이 없습니다');
+    if (answer.isAccepted) throw new ForbiddenException('채택된 답변은 삭제할 수 없습니다');
+
+    await this.prisma.agoraAnswer.delete({ where: { id: answerId } });
+    return { message: '답변이 삭제되었습니다' };
+  }
+
+  // ========================
+  // 채택
+  // ========================
+
+  async acceptAnswer(agoraId: string, answerId: string, userId: string) {
+    const agora = await this.prisma.agora.findUnique({
+      where: { id: agoraId },
+      include: { _count: { select: { answers: true } } },
+    });
+    if (!agora) throw new NotFoundException('질문을 찾을 수 없습니다');
+    if (agora.authorId !== userId) throw new ForbiddenException('질문 작성자만 채택할 수 있습니다');
+    if (agora.status === AgoraStatus.CLOSED)
+      throw new ForbiddenException('이미 채택 완료된 질문입니다');
+
+    const answer = await this.prisma.agoraAnswer.findUnique({ where: { id: answerId } });
+    if (!answer || answer.agoraId !== agoraId)
+      throw new NotFoundException('답변을 찾을 수 없습니다');
+
+    // 트랜잭션: 채택 + 현상금 지급 + 크레딧 거래내역 + XP 지급
+    await this.prisma.$transaction(async (tx) => {
+      await tx.agoraAnswer.update({ where: { id: answerId }, data: { isAccepted: true } });
+      await tx.agora.update({ where: { id: agoraId }, data: { status: AgoraStatus.CLOSED } });
+      await tx.user.update({
+        where: { id: answer.authorId },
+        data: { credit: { increment: agora.bounty }, xp: { increment: 100 } },
+      });
+      await tx.creditTransaction.create({
+        data: {
+          userId: answer.authorId,
+          amount: agora.bounty,
+          type: CreditTransactionType.EARN,
+          description: `아고라 답변 채택 현상금 - ${agora.title}`,
+          relatedId: agoraId,
+        },
+      });
+    });
+
+    return { message: '답변이 채택되었습니다' };
+  }
+}

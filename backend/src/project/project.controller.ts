@@ -27,8 +27,8 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators';
 
-@ApiTags('Projects')
-@Controller('projects')
+@ApiTags('Workspaces')
+@Controller('workspaces')
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 

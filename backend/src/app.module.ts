@@ -11,6 +11,10 @@ import { CommentModule } from './comment/comment.module';
 import { LikeModule } from './like/like.module';
 import { BookmarkModule } from './bookmark/bookmark.module';
 import { ProjectModule } from './project/project.module';
+import { SprintModule } from './sprint/sprint.module';
+import { AgoraModule } from './agora/agora.module';
+import { RecruitModule } from './recruit/recruit.module';
+import { AiMentorModule } from './ai-mentor/ai-mentor.module';
 
 @Module({
   imports: [
@@ -27,6 +31,10 @@ import { ProjectModule } from './project/project.module';
     LikeModule,
     BookmarkModule,
     ProjectModule,
+    SprintModule,
+    AgoraModule,
+    RecruitModule,
+    AiMentorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
