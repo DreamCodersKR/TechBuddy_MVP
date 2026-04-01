@@ -12,48 +12,8 @@ useHead({
   title: '팀원 모집 - FLOWIT',
 })
 
-// 임시 모집 글 데이터
-const recruitPosts = ref([
-  {
-    id: 1,
-    title: '사이드 프로젝트 프론트엔드 개발자 모집',
-    description: '주말마다 함께 사이드 프로젝트를 진행할 프론트엔드 개발자를 모집합니다.',
-    author: '팀장A',
-    techStack: ['React', 'TypeScript', 'Tailwind'],
-    positions: ['프론트엔드'],
-    currentMembers: 2,
-    maxMembers: 4,
-    deadline: '2025-01-15',
-    views: 234,
-    createdAt: '2025-01-02',
-  },
-  {
-    id: 2,
-    title: '포트폴리오용 풀스택 프로젝트 팀원 구합니다',
-    description: '취업용 포트폴리오를 함께 만들 팀원을 모집합니다. 2개월 내 MVP 완성이 목표입니다.',
-    author: '기획자B',
-    techStack: ['Next.js', 'Node.js', 'PostgreSQL'],
-    positions: ['백엔드', '프론트엔드'],
-    currentMembers: 3,
-    maxMembers: 5,
-    deadline: '2025-01-20',
-    views: 456,
-    createdAt: '2025-01-01',
-  },
-  {
-    id: 3,
-    title: 'AI 기반 서비스 MVP 개발 팀 모집',
-    description: 'AI를 활용한 서비스 MVP를 개발할 팀원을 모집합니다. 창업에 관심 있으신 분 환영!',
-    author: '창업자C',
-    techStack: ['Python', 'FastAPI', 'React'],
-    positions: ['AI/ML', '백엔드'],
-    currentMembers: 1,
-    maxMembers: 4,
-    deadline: '2025-01-25',
-    views: 678,
-    createdAt: '2024-12-30',
-  },
-])
+// TODO: API 연동 (R-6)
+const recruitPosts = ref([])
 
 // 포지션 필터
 const positionFilters = ['전체', '프론트엔드', '백엔드', '풀스택', 'AI/ML', '기획', '디자인']

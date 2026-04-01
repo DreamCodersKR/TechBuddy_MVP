@@ -16,31 +16,31 @@ import {
 const route = useRoute()
 const authStore = useAuthStore()
 
-// 현재 프로젝트 ID (URL에서 추출)
-const projectId = computed(() => route.params.id as string)
+// 현재 워크스페이스 ID (URL에서 추출)
+const workspaceId = computed(() => route.params.id as string)
 
 // 사이드바 메뉴 아이템
 const sidebarItems = computed(() => [
   {
     label: '보드',
     icon: 'heroicons:view-columns',
-    to: `/projects/${projectId.value}`,
+    to: `/workspaces/${workspaceId.value}`,
     exact: true,
   },
   {
     label: '멤버',
     icon: 'heroicons:users',
-    to: `/projects/${projectId.value}/members`,
+    to: `/workspaces/${workspaceId.value}/members`,
   },
   {
     label: '설정',
     icon: 'heroicons:cog-6-tooth',
-    to: `/projects/${projectId.value}/settings`,
+    to: `/workspaces/${workspaceId.value}/settings`,
   },
 ])
 
 // 현재 경로가 메뉴 아이템과 일치하는지 확인
-function isActive(item: typeof sidebarItems.value[0]) {
+function isActive(item: (typeof sidebarItems.value)[0]) {
   if (item.exact) {
     return route.path === item.to
   }
@@ -83,11 +83,11 @@ async function handleLogout() {
       <!-- Back to Projects -->
       <div class="p-3 border-b border-border">
         <NuxtLink
-          to="/projects"
+          to="/workspaces"
           class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         >
           <Icon icon="heroicons:arrow-left" class="h-4 w-4" />
-          <span v-if="!isSidebarCollapsed">프로젝트 목록</span>
+          <span v-if="!isSidebarCollapsed">워크스페이스 목록</span>
         </NuxtLink>
       </div>
 

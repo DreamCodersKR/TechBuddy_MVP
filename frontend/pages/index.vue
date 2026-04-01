@@ -25,7 +25,7 @@ const popularPosts = ref([
   { id: 5, rank: 5, category: '자유', title: '포트폴리오 조언 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6 },
 ])
 
-// 실시간 인기 Q&A 데이터
+// 실시간 인기 아고라 데이터
 const popularQna = ref([
   { id: 1, rank: 1, category: '기술', title: 'AI랑 일하기 재미있네요.', author: '사용자', time: '1시간', views: 12, comments: 6 },
   { id: 2, rank: 2, category: '취업/진로', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6 },
@@ -49,7 +49,7 @@ const insightPosts = ref([
 ])
 const insightPage = ref(1)
 
-// 답변 대기 Q&A 데이터
+// 답변 대기 아고라 데이터
 const waitingQna = ref([
   { id: 1, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: true },
   { id: 2, category: '취업/진로', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: true },
@@ -250,7 +250,7 @@ function getDdayClass(dDay: string) {
     <section>
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-bold text-foreground">현재 답변을 기다리고 있어요</h2>
-        <NuxtLink to="/qna" class="text-sm text-muted-foreground hover:text-foreground">
+        <NuxtLink to="/agora" class="text-sm text-muted-foreground hover:text-foreground">
           더보기 >
         </NuxtLink>
       </div>
