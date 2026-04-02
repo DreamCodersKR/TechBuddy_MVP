@@ -27,6 +27,7 @@ export class RecruitService {
         orderBy: { createdAt: 'desc' },
         include: {
           author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+          project: { select: { id: true, name: true, type: true } },
           _count: { select: { applications: true } },
         },
       }),
