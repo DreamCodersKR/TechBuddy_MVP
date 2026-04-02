@@ -13,8 +13,8 @@ const selectedCategory = computed(() => {
 const categoryItems = [
   { label: '전체', value: 'all' },
   { label: '자유', value: 'free' },
-  { label: '취업/진로', value: 'career' },
-  { label: 'AI', value: 'ai' },
+  { label: '취업·진로', value: 'career' },
+  { label: '아티클', value: 'article' },
 ]
 
 // 카테고리가 활성화되었는지 확인

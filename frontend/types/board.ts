@@ -16,8 +16,8 @@ export interface BoardListResponse {
 // 게시판 slug 매핑 (URL 친화적)
 export const BOARD_SLUG_MAP: Record<string, string> = {
   free: '자유게시판',
-  project: '프로젝트 구인',
   career: '취업/진로',
+  article: '아티클',
 } as const
 
 // 게시판 name으로 slug 찾기

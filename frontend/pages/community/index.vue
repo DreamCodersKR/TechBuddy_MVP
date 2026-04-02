@@ -23,8 +23,8 @@ const selectedCategory = computed(() => (route.query.category as string) || 'all
 const categoryLabels: Record<string, string> = {
   all: '전체',
   free: '자유',
-  career: '취업/진로',
-  ai: 'AI',
+  career: '취업·진로',
+  article: '아티클',
 }
 
 const currentCategoryLabel = computed(() => categoryLabels[selectedCategory.value] || '전체')
