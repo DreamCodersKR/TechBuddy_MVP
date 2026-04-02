@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 
-// 메인 페이지 = 커뮤니티 홈
 definePageMeta({
   layout: 'default',
 })
@@ -16,101 +15,20 @@ useHead({
   ],
 })
 
-// 실시간 인기글 데이터
-const popularPosts = ref([
-  { id: 1, rank: 1, category: '자유', title: 'AI랑 일하기 재미있네요.', author: '사용자', time: '1시간', views: 12, comments: 6 },
-  { id: 2, rank: 2, category: '취업/진로', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6 },
-  { id: 3, rank: 3, category: 'AI', title: '개인적인 2026 AI 전망', author: '사용자', time: '1시간', views: 12, comments: 6 },
-  { id: 4, rank: 4, category: '자유', title: 'LLM과 자연어로 대화하게 두지 마세요.', author: '사용자', time: '1시간', views: 12, comments: 6 },
-  { id: 5, rank: 5, category: '자유', title: '포트폴리오 조언 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6 },
-])
+const {
+  popularPosts,
+  popularAgora,
+  insightPosts,
+  waitingAgora,
+  recruitPosts,
+  loading,
+  fetchAll,
+  getBoardName,
+  agoraIsNew,
+  postIsNew,
+} = useHome()
 
-// 실시간 인기 아고라 데이터
-const popularQna = ref([
-  { id: 1, rank: 1, category: '기술', title: 'AI랑 일하기 재미있네요.', author: '사용자', time: '1시간', views: 12, comments: 6 },
-  { id: 2, rank: 2, category: '취업/진로', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6 },
-  { id: 3, rank: 3, category: '기타', title: '개인적인 2026 AI 전망', author: '사용자', time: '1시간', views: 12, comments: 6 },
-  { id: 4, rank: 4, category: '기술', title: 'LLM과 자연어로 대화하게 두지 마세요.', author: '사용자', time: '1시간', views: 12, comments: 6 },
-  { id: 5, rank: 5, category: '기술', title: '포트폴리오 조언 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6 },
-])
-
-// 새로운 인사이트 데이터
-const insightPosts = ref([
-  { id: 1, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: true },
-  { id: 2, category: '취업/진로', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: true },
-  { id: 3, category: '기타', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 4, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 5, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 6, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 7, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 8, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 9, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 10, category: '자유', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-])
-const insightPage = ref(1)
-
-// 답변 대기 아고라 데이터
-const waitingQna = ref([
-  { id: 1, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: true },
-  { id: 2, category: '취업/진로', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: true },
-  { id: 3, category: '기타', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 4, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 5, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 6, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 7, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 8, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 9, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-  { id: 10, category: '기술', title: '현업자분들의 진심 어린 답변 부탁드립니다.', author: '사용자', time: '1시간', views: 12, comments: 6, isNew: false },
-])
-const waitingPage = ref(1)
-
-// 팀원 모집 데이터 (탭 없이 타입으로 구분)
-const recruitPosts = ref([
-  {
-    id: 1,
-    type: '프로젝트',
-    title: '[백엔드, 프론트엔드 모집] 단기간에 서비스 출시 도전할 팀원 모집합니다!',
-    deadline: '2025. 12. 24',
-    dDay: 'D-8',
-    duration: '9개월',
-    views: 12,
-    comments: 12,
-    positions: ['프론트엔드', '백엔드'],
-  },
-  {
-    id: 2,
-    type: '스터디',
-    title: '[백엔드, 프론트엔드 모집] 단기간에 서비스 출시 도전할 팀원 모집합니다!',
-    deadline: '2025. 12. 24',
-    dDay: '오늘 마감',
-    duration: '9개월',
-    views: 12,
-    comments: 12,
-    positions: ['프론트엔드', '백엔드'],
-  },
-  {
-    id: 3,
-    type: '프로젝트',
-    title: '[백엔드, 프론트엔드 모집] 단기간에 서비스 출시 도전할 팀원 모집합니다!',
-    deadline: '2025. 12. 24',
-    dDay: '오늘 마감',
-    duration: '9개월',
-    views: 12,
-    comments: 12,
-    positions: ['프론트엔드', '백엔드'],
-  },
-  {
-    id: 4,
-    type: '프로젝트',
-    title: '[백엔드, 프론트엔드 모집] 단기간에 서비스 출시 도전할 팀원 모집합니다!',
-    deadline: '2025. 12. 24',
-    dDay: '모집 마감',
-    duration: '9개월',
-    views: 12,
-    comments: 12,
-    positions: ['프론트엔드', '백엔드'],
-  },
-])
+await fetchAll()
 
 // D-day 스타일 클래스
 function getDdayClass(dDay: string) {
@@ -133,69 +51,97 @@ function getDdayClass(dDay: string) {
     <section>
       <h2 class="text-lg font-bold text-foreground mb-4">실시간 인기글</h2>
       <div class="border border-border rounded-lg bg-card">
-        <ul class="divide-y divide-border">
-          <li
-            v-for="post in popularPosts"
-            :key="post.id"
-            class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
-          >
-            <span
-              class="flex-shrink-0 w-6 text-sm font-bold text-center"
-              :class="post.rank <= 3 ? 'text-primary' : 'text-muted-foreground'"
+        <!-- 로딩 스켈레톤 -->
+        <template v-if="loading">
+          <div v-for="n in 5" :key="n" class="flex items-center gap-4 px-4 py-3 border-b border-border last:border-0">
+            <div class="w-6 h-4 bg-muted animate-pulse rounded" />
+            <div class="w-16 h-4 bg-muted animate-pulse rounded" />
+            <div class="flex-1 h-4 bg-muted animate-pulse rounded" />
+          </div>
+        </template>
+        <template v-else-if="popularPosts.length > 0">
+          <ul class="divide-y divide-border">
+            <li
+              v-for="(post, index) in popularPosts"
+              :key="post.id"
+              class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
+              @click="navigateTo(`/community/${post.id}`)"
             >
-              {{ post.rank }}
-            </span>
-            <span class="flex-shrink-0 text-sm text-muted-foreground">[{{ post.category }}]</span>
-            <span class="flex-1 text-sm text-foreground truncate">{{ post.title }}</span>
-            <div class="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{{ post.author }}</span>
-              <span>{{ post.time }}</span>
-              <span class="flex items-center gap-1">
-                <Icon icon="heroicons:eye" class="w-4 h-4" />
-                {{ post.views }}
+              <span
+                class="flex-shrink-0 w-6 text-sm font-bold text-center"
+                :class="index < 3 ? 'text-primary' : 'text-muted-foreground'"
+              >
+                {{ index + 1 }}
               </span>
-              <span class="flex items-center gap-1">
-                <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
-                {{ post.comments }}
-              </span>
-            </div>
-          </li>
-        </ul>
+              <span class="flex-shrink-0 text-sm text-muted-foreground">[{{ getBoardName(post) }}]</span>
+              <span class="flex-1 text-sm text-foreground truncate">{{ post.title }}</span>
+              <div class="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>{{ post.author.nickname ?? post.author.name }}</span>
+                <span>{{ useRelativeTime(post.createdAt) }}</span>
+                <span class="flex items-center gap-1">
+                  <Icon icon="heroicons:eye" class="w-4 h-4" />
+                  {{ post.viewCount }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
+                  {{ post._count.comments }}
+                </span>
+              </div>
+            </li>
+          </ul>
+        </template>
+        <div v-else class="py-8 text-center text-sm text-muted-foreground">
+          아직 게시글이 없습니다.
+        </div>
       </div>
     </section>
 
-    <!-- 실시간 인기 Q&A -->
+    <!-- 실시간 인기 아고라 -->
     <section>
-      <h2 class="text-lg font-bold text-foreground mb-4">실시간 인기 Q&A</h2>
+      <h2 class="text-lg font-bold text-foreground mb-4">실시간 인기 아고라</h2>
       <div class="border border-border rounded-lg bg-card">
-        <ul class="divide-y divide-border">
-          <li
-            v-for="qna in popularQna"
-            :key="qna.id"
-            class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
-          >
-            <span
-              class="flex-shrink-0 w-6 text-sm font-bold text-center"
-              :class="qna.rank <= 3 ? 'text-primary' : 'text-muted-foreground'"
+        <template v-if="loading">
+          <div v-for="n in 5" :key="n" class="flex items-center gap-4 px-4 py-3 border-b border-border last:border-0">
+            <div class="w-6 h-4 bg-muted animate-pulse rounded" />
+            <div class="flex-1 h-4 bg-muted animate-pulse rounded" />
+          </div>
+        </template>
+        <template v-else-if="popularAgora.length > 0">
+          <ul class="divide-y divide-border">
+            <li
+              v-for="(item, index) in popularAgora"
+              :key="item.id"
+              class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
+              @click="navigateTo(`/agora/${item.id}`)"
             >
-              {{ qna.rank }}
-            </span>
-            <span class="flex-shrink-0 text-sm text-muted-foreground">[{{ qna.category }}]</span>
-            <span class="flex-1 text-sm text-foreground truncate">{{ qna.title }}</span>
-            <div class="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{{ qna.author }}</span>
-              <span>{{ qna.time }}</span>
-              <span class="flex items-center gap-1">
-                <Icon icon="heroicons:eye" class="w-4 h-4" />
-                {{ qna.views }}
+              <span
+                class="flex-shrink-0 w-6 text-sm font-bold text-center"
+                :class="index < 3 ? 'text-primary' : 'text-muted-foreground'"
+              >
+                {{ index + 1 }}
               </span>
-              <span class="flex items-center gap-1">
-                <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
-                {{ qna.comments }}
+              <span class="flex-shrink-0 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                {{ item.bounty }}C
               </span>
-            </div>
-          </li>
-        </ul>
+              <span class="flex-1 text-sm text-foreground truncate">{{ item.title }}</span>
+              <div class="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>{{ item.author.nickname ?? item.author.name }}</span>
+                <span>{{ useRelativeTime(item.createdAt) }}</span>
+                <span class="flex items-center gap-1">
+                  <Icon icon="heroicons:eye" class="w-4 h-4" />
+                  {{ item.viewCount }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
+                  {{ item._count.answers }}
+                </span>
+              </div>
+            </li>
+          </ul>
+        </template>
+        <div v-else class="py-8 text-center text-sm text-muted-foreground">
+          아직 아고라 질문이 없습니다.
+        </div>
       </div>
     </section>
 
@@ -208,41 +154,41 @@ function getDdayClass(dDay: string) {
         </NuxtLink>
       </div>
       <div class="border border-border rounded-lg bg-card">
-        <ul class="divide-y divide-border">
-          <li
-            v-for="post in insightPosts"
-            :key="post.id"
-            class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
-          >
-            <span class="flex-shrink-0 text-sm text-muted-foreground">[{{ post.category }}]</span>
-            <span class="flex-1 text-sm text-foreground truncate">{{ post.title }}</span>
-            <span v-if="post.isNew" class="flex-shrink-0 text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">N</span>
-            <div class="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{{ post.author }}</span>
-              <span>{{ post.time }}</span>
-              <span class="flex items-center gap-1">
-                <Icon icon="heroicons:eye" class="w-4 h-4" />
-                {{ post.views }}
-              </span>
-              <span class="flex items-center gap-1">
-                <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
-                {{ post.comments }}
-              </span>
-            </div>
-          </li>
-        </ul>
-      </div>
-      <!-- 페이지네이션 -->
-      <div class="flex justify-center gap-1 mt-6">
-        <button
-          v-for="page in 4"
-          :key="page"
-          class="w-8 h-8 rounded text-sm font-medium transition-colors"
-          :class="insightPage === page ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-accent'"
-          @click="insightPage = page"
-        >
-          {{ page }}
-        </button>
+        <template v-if="loading">
+          <div v-for="n in 5" :key="n" class="flex items-center gap-4 px-4 py-3 border-b border-border last:border-0">
+            <div class="w-16 h-4 bg-muted animate-pulse rounded" />
+            <div class="flex-1 h-4 bg-muted animate-pulse rounded" />
+          </div>
+        </template>
+        <template v-else-if="insightPosts.length > 0">
+          <ul class="divide-y divide-border">
+            <li
+              v-for="post in insightPosts"
+              :key="post.id"
+              class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
+              @click="navigateTo(`/community/${post.id}`)"
+            >
+              <span class="flex-shrink-0 text-sm text-muted-foreground">[{{ getBoardName(post) }}]</span>
+              <span class="flex-1 text-sm text-foreground truncate">{{ post.title }}</span>
+              <span v-if="postIsNew(post)" class="flex-shrink-0 text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">N</span>
+              <div class="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>{{ post.author.nickname ?? post.author.name }}</span>
+                <span>{{ useRelativeTime(post.createdAt) }}</span>
+                <span class="flex items-center gap-1">
+                  <Icon icon="heroicons:eye" class="w-4 h-4" />
+                  {{ post.viewCount }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
+                  {{ post._count.comments }}
+                </span>
+              </div>
+            </li>
+          </ul>
+        </template>
+        <div v-else class="py-8 text-center text-sm text-muted-foreground">
+          아직 게시글이 없습니다.
+        </div>
       </div>
     </section>
 
@@ -255,41 +201,43 @@ function getDdayClass(dDay: string) {
         </NuxtLink>
       </div>
       <div class="border border-border rounded-lg bg-card">
-        <ul class="divide-y divide-border">
-          <li
-            v-for="qna in waitingQna"
-            :key="qna.id"
-            class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
-          >
-            <span class="flex-shrink-0 text-sm text-muted-foreground">[{{ qna.category }}]</span>
-            <span class="flex-1 text-sm text-foreground truncate">{{ qna.title }}</span>
-            <span v-if="qna.isNew" class="flex-shrink-0 text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">N</span>
-            <div class="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{{ qna.author }}</span>
-              <span>{{ qna.time }}</span>
-              <span class="flex items-center gap-1">
-                <Icon icon="heroicons:eye" class="w-4 h-4" />
-                {{ qna.views }}
+        <template v-if="loading">
+          <div v-for="n in 5" :key="n" class="flex items-center gap-4 px-4 py-3 border-b border-border last:border-0">
+            <div class="w-16 h-4 bg-muted animate-pulse rounded" />
+            <div class="flex-1 h-4 bg-muted animate-pulse rounded" />
+          </div>
+        </template>
+        <template v-else-if="waitingAgora.length > 0">
+          <ul class="divide-y divide-border">
+            <li
+              v-for="item in waitingAgora"
+              :key="item.id"
+              class="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors"
+              @click="navigateTo(`/agora/${item.id}`)"
+            >
+              <span class="flex-shrink-0 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                {{ item.bounty }}C
               </span>
-              <span class="flex items-center gap-1">
-                <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
-                {{ qna.comments }}
-              </span>
-            </div>
-          </li>
-        </ul>
-      </div>
-      <!-- 페이지네이션 -->
-      <div class="flex justify-center gap-1 mt-6">
-        <button
-          v-for="page in 4"
-          :key="page"
-          class="w-8 h-8 rounded text-sm font-medium transition-colors"
-          :class="waitingPage === page ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-accent'"
-          @click="waitingPage = page"
-        >
-          {{ page }}
-        </button>
+              <span class="flex-1 text-sm text-foreground truncate">{{ item.title }}</span>
+              <span v-if="agoraIsNew(item)" class="flex-shrink-0 text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">N</span>
+              <div class="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>{{ item.author.nickname ?? item.author.name }}</span>
+                <span>{{ useRelativeTime(item.createdAt) }}</span>
+                <span class="flex items-center gap-1">
+                  <Icon icon="heroicons:eye" class="w-4 h-4" />
+                  {{ item.viewCount }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <Icon icon="heroicons:chat-bubble-left" class="w-4 h-4" />
+                  {{ item._count.answers }}
+                </span>
+              </div>
+            </li>
+          </ul>
+        </template>
+        <div v-else class="py-8 text-center text-sm text-muted-foreground">
+          아직 답변 대기 중인 질문이 없습니다.
+        </div>
       </div>
     </section>
 
@@ -310,59 +258,70 @@ function getDdayClass(dDay: string) {
       </div>
 
       <!-- 모집 카드 그리드 -->
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div
-          v-for="recruit in recruitPosts"
-          :key="recruit.id"
-          class="border border-border rounded-lg bg-card p-4 hover:border-primary/50 transition-colors cursor-pointer"
-        >
-          <!-- 타입 배지 + D-day -->
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs px-2 py-1 bg-primary/10 text-primary rounded font-medium">
-              {{ recruit.type }}
-            </span>
+      <template v-if="loading">
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div v-for="n in 4" :key="n" class="border border-border rounded-lg bg-card p-4">
+            <div class="h-4 bg-muted animate-pulse rounded mb-3 w-16" />
+            <div class="h-4 bg-muted animate-pulse rounded mb-2" />
+            <div class="h-10 bg-muted animate-pulse rounded" />
           </div>
-
-          <!-- 마감일 + D-day -->
-          <div class="flex items-center justify-between text-xs mb-2">
-            <span class="text-muted-foreground">마감일 {{ recruit.deadline }}</span>
-            <span
-              class="px-2 py-0.5 rounded font-medium"
-              :class="getDdayClass(recruit.dDay)"
-            >
-              {{ recruit.dDay }}
-            </span>
-          </div>
-
-          <!-- 제목 -->
-          <p class="text-sm text-foreground line-clamp-2 mb-3 leading-relaxed">{{ recruit.title }}</p>
-
-          <!-- 프로젝트 기간 -->
-          <p class="text-xs text-muted-foreground mb-3">프로젝트 기간 {{ recruit.duration }}</p>
-
-          <!-- 조회수/댓글 + 포지션 -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-xs text-muted-foreground">
-              <span class="flex items-center gap-1">
-                <Icon icon="heroicons:eye" class="w-3 h-3" />
-                {{ recruit.views }}
-              </span>
-              <span class="flex items-center gap-1">
-                <Icon icon="heroicons:chat-bubble-left" class="w-3 h-3" />
-                {{ recruit.comments }}
+        </div>
+      </template>
+      <template v-else-if="recruitPosts.length > 0">
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div
+            v-for="recruit in recruitPosts"
+            :key="recruit.id"
+            class="border border-border rounded-lg bg-card p-4 hover:border-primary/50 transition-colors cursor-pointer"
+            @click="navigateTo(`/recruit/${recruit.id}`)"
+          >
+            <!-- 타입 배지 -->
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs px-2 py-1 bg-primary/10 text-primary rounded font-medium">
+                {{ recruit.type === 'PROJECT' ? '프로젝트' : '스터디' }}
               </span>
             </div>
-            <div class="flex gap-1">
-              <span
-                v-for="position in recruit.positions"
-                :key="position"
-                class="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded"
-              >
-                {{ position }}
+
+            <!-- 마감일 + D-day -->
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="text-muted-foreground">
+                {{ recruit.deadline ? `마감일 ${new Date(recruit.deadline).toLocaleDateString('ko-KR')}` : '마감일 미정' }}
               </span>
+              <span
+                v-if="recruit.deadline || recruit.isClosed"
+                class="px-2 py-0.5 rounded font-medium"
+                :class="getDdayClass(calcDDay(recruit.deadline, recruit.isClosed))"
+              >
+                {{ calcDDay(recruit.deadline, recruit.isClosed) }}
+              </span>
+            </div>
+
+            <!-- 제목 -->
+            <p class="text-sm text-foreground line-clamp-2 mb-3 leading-relaxed">{{ recruit.title }}</p>
+
+            <!-- 조회수/댓글 + 포지션 -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                <span class="flex items-center gap-1">
+                  <Icon icon="heroicons:users" class="w-3 h-3" />
+                  {{ recruit._count.applications }}명 지원
+                </span>
+              </div>
+              <div class="flex gap-1 flex-wrap justify-end">
+                <span
+                  v-for="position in recruit.positions.slice(0, 2)"
+                  :key="position"
+                  class="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded"
+                >
+                  {{ position }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
+      </template>
+      <div v-else class="py-8 text-center text-sm text-muted-foreground">
+        현재 모집 중인 팀이 없습니다.
       </div>
     </section>
   </div>

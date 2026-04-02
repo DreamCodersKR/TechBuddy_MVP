@@ -31,7 +31,7 @@ const menuItems = [
 function isActive(path: string) {
   // 커뮤니티: /community, /qna, /recruit (메인 페이지 제외)
   if (path === '/community') {
-    return route.path.startsWith('/community') || route.path.startsWith('/qna') || route.path.startsWith('/recruit')
+    return route.path.startsWith('/community') || route.path.startsWith('/agora') || route.path.startsWith('/recruit')
   }
   return route.path.startsWith(path)
 }

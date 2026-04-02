@@ -9,7 +9,7 @@ const shouldShowSubNav = computed(() => {
   // 메인 페이지는 정확히 '/'일 때만
   if (route.path === '/') return true
   // 나머지는 해당 경로로 시작하면 표시
-  return ['/community', '/qna', '/recruit'].some(path => {
+  return ['/community', '/agora', '/recruit'].some(path => {
     return route.path === path || route.path.startsWith(`${path}/`)
   })
 })

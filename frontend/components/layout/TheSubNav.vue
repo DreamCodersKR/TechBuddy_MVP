@@ -8,7 +8,7 @@ const route = useRoute()
 // 게시판 = /community, Q&A = /qna, 팀원 모집 = /recruit
 const subMenuItems = [
   { label: '게시판', to: '/community' },
-  { label: 'Q&A', to: '/qna' },
+  { label: '아고라', to: '/agora' },
   { label: '팀원 모집', to: '/recruit' },
 ]
 
