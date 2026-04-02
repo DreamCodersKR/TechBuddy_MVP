@@ -8,6 +8,7 @@ export interface User {
   bio: string | null
   role: 'USER' | 'ADMIN'
   techStack: string[]
+  credit: number
   createdAt: string
   updatedAt: string
 }
