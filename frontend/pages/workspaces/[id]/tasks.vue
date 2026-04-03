@@ -75,12 +75,16 @@ const filtered = computed(() => {
   )
 })
 
+// ─── HELP 액션 모달 ──────────────────────────────────────
+const helpModalTask = ref<Task | null>(null)
+
 // ─── 인라인 상태 변경 ────────────────────────────────────
 async function changeStatus(task: Task, status: TaskStatus) {
   const prev = task.status
   task.status = status
   try {
     await authPatch(`/workspaces/${workspaceId}/tasks/${task.id}`, { status })
+    if (status === 'HELP') helpModalTask.value = task
   }
   catch { task.status = prev }
 }
@@ -311,5 +315,12 @@ onMounted(() => { loadTasks() })
         칸반 보기
       </Button>
     </div>
+
+    <!-- HELP 액션 모달 -->
+    <WorkspaceHelpActionModal
+      v-if="helpModalTask"
+      :task="helpModalTask"
+      @close="helpModalTask = null"
+    />
   </div>
 </template>

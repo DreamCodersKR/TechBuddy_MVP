@@ -123,12 +123,16 @@ async function handleCreate() {
   finally { isCreating.value = false }
 }
 
+// ─── HELP 액션 모달 ──────────────────────────────────────
+const helpModalTask = ref<Task | null>(null)
+
 // ─── 태스크 상태 변경 ────────────────────────────────────
 async function moveTask(task: Task, newStatus: TaskStatus) {
   const prev = task.status
   task.status = newStatus
   try {
     await authPatch(`/workspaces/${workspaceId}/tasks/${task.id}`, { status: newStatus })
+    if (newStatus === 'HELP') helpModalTask.value = task
   }
   catch { task.status = prev }
 }
@@ -157,6 +161,7 @@ async function handleTaskUpdate() {
     const idx = tasks.value.findIndex(t => t.id === updated.id)
     if (idx !== -1) tasks.value[idx] = updated
     selectedTask.value = null
+    if (updated.status === 'HELP') helpModalTask.value = updated
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
@@ -561,5 +566,12 @@ onMounted(() => { loadData() })
         </div>
       </div>
     </div>
+
+    <!-- HELP 액션 모달 -->
+    <WorkspaceHelpActionModal
+      v-if="helpModalTask"
+      :task="helpModalTask"
+      @close="helpModalTask = null"
+    />
   </div>
 </template>

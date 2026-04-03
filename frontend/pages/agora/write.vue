@@ -21,14 +21,15 @@ definePageMeta({
 
 useHead({ title: '질문 작성 - FLOWIT' })
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const { post: authPost } = useAuthFetch()
 
 // ─── 폼 상태 ──────────────────────────────────────────────
 const form = reactive({
-  title: '',
-  content: '',
+  title: (route.query.title as string) || '',
+  content: (route.query.content as string) || '',
   bounty: 10,
 })
 
