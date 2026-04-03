@@ -15,6 +15,7 @@ import { SprintModule } from './sprint/sprint.module';
 import { AgoraModule } from './agora/agora.module';
 import { RecruitModule } from './recruit/recruit.module';
 import { AiMentorModule } from './ai-mentor/ai-mentor.module';
+import { TaskModule } from './task/task.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AiMentorModule } from './ai-mentor/ai-mentor.module';
     AgoraModule,
     RecruitModule,
     AiMentorModule,
+    TaskModule,
   ],
   controllers: [AppController],
   providers: [AppService],
