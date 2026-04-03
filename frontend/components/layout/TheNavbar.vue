@@ -24,7 +24,7 @@ const authStore = useAuthStore()
 // 메인 메뉴 아이템
 const menuItems = [
   { label: '커뮤니티', to: '/community' },
-  { label: '프로젝트', to: '/projects' },
+  { label: '프로젝트', to: '/workspaces' },
 ]
 
 // 현재 경로가 메뉴 아이템과 일치하는지 확인
