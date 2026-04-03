@@ -88,6 +88,13 @@ export class ProjectService {
           createdBy: {
             select: { id: true, name: true, nickname: true, avatarUrl: true },
           },
+          members: {
+            include: {
+              user: {
+                select: { id: true, nickname: true, avatarUrl: true },
+              },
+            },
+          },
           _count: {
             select: { members: true, tasks: true },
           },
