@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -11,6 +12,7 @@ import {
   PublicUserResponseDto,
 } from './dto';
 import * as bcrypt from 'bcrypt';
+import { BadgeType, CreditTransactionType } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -35,17 +37,36 @@ export class UserService {
     // 비밀번호 해싱
     const hashedPassword = await this.hashPassword(password);
 
-    // 사용자 생성
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        nickname: nickname || null,
-        avatarUrl: avatarUrl || null,
-        bio: bio || null,
-        techStack: techStack || [],
-      },
+    // 사용자 생성 + 웰컴 크레딧 100 + NEW_MEMBER 뱃지 + XP 50 (트랜잭션)
+    const user = await this.prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name,
+          nickname: nickname || null,
+          avatarUrl: avatarUrl || null,
+          bio: bio || null,
+          techStack: techStack || [],
+          credit: 100,
+          xp: 50,
+        },
+      });
+      await tx.creditTransaction.create({
+        data: {
+          userId: newUser.id,
+          amount: 100,
+          type: CreditTransactionType.EARN,
+          description: '가입 웰컴 크레딧',
+        },
+      });
+      await tx.userBadge.create({
+        data: {
+          userId: newUser.id,
+          badge: BadgeType.NEW_MEMBER,
+        },
+      });
+      return newUser;
     });
 
     return new UserResponseDto(user);
@@ -94,6 +115,10 @@ export class UserService {
         avatarUrl: true,
         bio: true,
         techStack: true,
+        xp: true,
+        level: true,
+        githubUrl: true,
+        portfolioUrl: true,
         createdAt: true,
       },
     });
@@ -153,13 +178,25 @@ export class UserService {
       }
     }
 
-    // 비밀번호가 포함된 경우 해싱
+    // 비밀번호가 포함된 경우 현재 비밀번호 검증 후 해싱
     const updateData = { ...updateUserDto } as Partial<UpdateUserDto> & {
       password?: string;
+      currentPassword?: string;
     };
     if (updateUserDto.password) {
+      if (!updateUserDto.currentPassword) {
+        throw new UnauthorizedException('현재 비밀번호를 입력해주세요');
+      }
+      if (!existingUser.password) {
+        throw new UnauthorizedException('소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다');
+      }
+      const isValid = await this.validatePassword(updateUserDto.currentPassword, existingUser.password);
+      if (!isValid) {
+        throw new UnauthorizedException('현재 비밀번호가 올바르지 않습니다');
+      }
       updateData.password = await this.hashPassword(updateUserDto.password);
     }
+    delete updateData.currentPassword;
 
     // 사용자 정보 업데이트
     const updatedUser = await this.prisma.user.update({

@@ -25,6 +25,7 @@ const authStore = useAuthStore()
 const menuItems = [
   { label: '커뮤니티', to: '/community' },
   { label: '프로젝트', to: '/workspaces' },
+  { label: 'FLOWIT AI', to: '/ai-mentor' },
 ]
 
 // 현재 경로가 메뉴 아이템과 일치하는지 확인
@@ -221,7 +222,10 @@ const userInitials = computed(() => {
                   :key="item.to"
                   :to="item.to"
                   class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
-                  :class="isActive(item.to) ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'"
+                  :class="[
+                    isActive(item.to) ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
+                    item.to === '/ai-mentor' ? 'text-violet-600 dark:text-violet-400' : '',
+                  ]"
                   @click="isMobileMenuOpen = false"
                 >
                   {{ item.label }}

@@ -49,6 +49,7 @@ export class PostService {
     page?: number;
     limit?: number;
     boardId?: string;
+    authorId?: string;
     sortBy?: 'createdAt' | 'viewCount';
     order?: 'asc' | 'desc';
     tags?: string[];
@@ -57,6 +58,7 @@ export class PostService {
       page = 1,
       limit = 20,
       boardId,
+      authorId,
       sortBy = 'createdAt',
       order = 'desc',
       tags,
@@ -67,6 +69,7 @@ export class PostService {
     const where: Prisma.PostWhereInput = {
       isPublished: true,
       ...(boardId && { boardId }),
+      ...(authorId && { authorId }),
       ...(tags?.length && {
         postTags: {
           some: {

@@ -74,4 +74,31 @@ export class UpdateUserDto {
   @IsEnum(UserRole)
   @IsOptional()
   role?: UserRole;
+
+  @ApiProperty({
+    description: 'GitHub URL',
+    example: 'https://github.com/username',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  githubUrl?: string;
+
+  @ApiProperty({
+    description: '포트폴리오 URL',
+    example: 'https://portfolio.example.com',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  portfolioUrl?: string;
+
+  @ApiProperty({
+    description: '현재 비밀번호 (비밀번호 변경 시 필요)',
+    example: 'currentPassword123',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  currentPassword?: string;
 }

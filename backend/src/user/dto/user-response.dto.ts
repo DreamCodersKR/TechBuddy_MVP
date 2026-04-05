@@ -1,5 +1,6 @@
 import { Exclude } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { UserPlan } from '@prisma/client';
 
 export class UserResponseDto {
   @ApiProperty({
@@ -54,6 +55,45 @@ export class UserResponseDto {
     type: [String],
   })
   techStack: string[];
+
+  @ApiProperty({
+    description: 'XP (경험치)',
+    example: 150,
+  })
+  xp: number;
+
+  @ApiProperty({
+    description: '레벨',
+    example: 2,
+  })
+  level: number;
+
+  @ApiProperty({
+    description: '크레딧 잔액',
+    example: 100,
+  })
+  credit: number;
+
+  @ApiProperty({
+    description: '플랜',
+    enum: UserPlan,
+    example: 'FREE',
+  })
+  plan: UserPlan;
+
+  @ApiProperty({
+    description: 'GitHub URL',
+    example: 'https://github.com/username',
+    nullable: true,
+  })
+  githubUrl: string | null;
+
+  @ApiProperty({
+    description: '포트폴리오 URL',
+    example: 'https://portfolio.example.com',
+    nullable: true,
+  })
+  portfolioUrl: string | null;
 
   @ApiProperty({
     description: '계정 생성일',

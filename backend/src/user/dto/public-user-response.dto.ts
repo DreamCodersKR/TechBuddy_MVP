@@ -45,6 +45,32 @@ export class PublicUserResponseDto {
   techStack: string[];
 
   @ApiProperty({
+    description: 'XP (경험치)',
+    example: 150,
+  })
+  xp: number;
+
+  @ApiProperty({
+    description: '레벨',
+    example: 2,
+  })
+  level: number;
+
+  @ApiProperty({
+    description: 'GitHub URL',
+    example: 'https://github.com/username',
+    nullable: true,
+  })
+  githubUrl: string | null;
+
+  @ApiProperty({
+    description: '포트폴리오 URL',
+    example: 'https://portfolio.example.com',
+    nullable: true,
+  })
+  portfolioUrl: string | null;
+
+  @ApiProperty({
     description: '계정 생성일',
     example: '2025-11-27T00:00:00.000Z',
   })

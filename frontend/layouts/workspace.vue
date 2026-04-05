@@ -62,6 +62,8 @@ const sidebarItems = computed(() => [
   },
 ])
 
+const aiMentorItem = { label: 'AI 멘토', icon: 'heroicons:sparkles', to: '/ai-mentor' }
+
 function isActive(item: (typeof sidebarItems.value)[0]) {
   if (item.exact) return route.path === item.to
   return route.path.startsWith(item.to)
@@ -148,8 +150,20 @@ async function handleLogout() {
         </NuxtLink>
       </nav>
 
-      <!-- Bottom: User Profile -->
-      <div class="absolute bottom-0 left-0 right-0 p-3 border-t border-border">
+      <!-- Bottom: AI 멘토 + User Profile -->
+      <div class="absolute bottom-0 left-0 right-0 border-t border-border">
+        <!-- AI 멘토 -->
+        <div class="p-3 border-b border-border">
+          <NuxtLink
+            :to="aiMentorItem.to"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full"
+            :class="$route.path.startsWith('/ai-mentor') ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 font-medium' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'"
+          >
+            <Icon :icon="aiMentorItem.icon" class="h-4 w-4 flex-shrink-0 text-violet-500" />
+            <span v-if="!isSidebarCollapsed">{{ aiMentorItem.label }}</span>
+          </NuxtLink>
+        </div>
+      <div class="p-3">
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <button class="flex items-center gap-3 px-3 py-2 rounded-lg w-full hover:bg-accent transition-colors">
@@ -199,6 +213,7 @@ async function handleLogout() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
       </div>
     </aside>
 

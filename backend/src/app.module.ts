@@ -16,6 +16,8 @@ import { AgoraModule } from './agora/agora.module';
 import { RecruitModule } from './recruit/recruit.module';
 import { AiMentorModule } from './ai-mentor/ai-mentor.module';
 import { TaskModule } from './task/task.module';
+import { CreditModule } from './credit/credit.module';
+import { BadgeModule } from './badge/badge.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { TaskModule } from './task/task.module';
     RecruitModule,
     AiMentorModule,
     TaskModule,
+    CreditModule,
+    BadgeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

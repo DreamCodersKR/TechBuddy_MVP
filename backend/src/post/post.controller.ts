@@ -50,11 +50,13 @@ export class PostController {
   @ApiQuery({ name: 'sortBy', required: false, enum: ['createdAt', 'viewCount'] })
   @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'] })
   @ApiQuery({ name: 'tags', required: false, type: [String] })
+  @ApiQuery({ name: 'authorId', required: false, type: String })
   @ApiResponse({ status: 200, description: '게시글 목록 조회 성공' })
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('boardId') boardId?: string,
+    @Query('authorId') authorId?: string,
     @Query('sortBy') sortBy?: 'createdAt' | 'viewCount',
     @Query('order') order?: 'asc' | 'desc',
     @Query('tags') tags?: string[],
@@ -63,6 +65,7 @@ export class PostController {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       boardId,
+      authorId,
       sortBy,
       order,
       tags: tags ? (Array.isArray(tags) ? tags : [tags]) : undefined,
