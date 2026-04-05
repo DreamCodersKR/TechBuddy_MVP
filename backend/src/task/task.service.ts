@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateTaskDto, UpdateTaskDto } from './dto';
+import { CreateTaskDto, UpdateTaskDto, CreateCommentDto, UpdateCommentDto } from './dto';
 import { ProjectRole, TaskStatus } from '@prisma/client';
 
 const TASK_INCLUDE = {
@@ -106,5 +106,66 @@ export class TaskService {
 
     await this.prisma.task.delete({ where: { id: taskId } });
     return { message: '태스크가 삭제됐습니다' };
+  }
+
+  // ─── 태스크 코멘트 ──────────────────────────────────────────
+
+  private async checkTask(workspaceId: string, taskId: string) {
+    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
+    if (!task || task.projectId !== workspaceId)
+      throw new NotFoundException('태스크를 찾을 수 없습니다');
+    return task;
+  }
+
+  async createComment(workspaceId: string, taskId: string, userId: string, dto: CreateCommentDto) {
+    await this.checkMember(workspaceId, userId);
+    await this.checkTask(workspaceId, taskId);
+
+    return this.prisma.taskComment.create({
+      data: { taskId, authorId: userId, content: dto.content },
+      include: { author: { select: { id: true, name: true, nickname: true, avatarUrl: true } } },
+    });
+  }
+
+  async findComments(workspaceId: string, taskId: string, userId: string) {
+    await this.checkMember(workspaceId, userId);
+    await this.checkTask(workspaceId, taskId);
+
+    return this.prisma.taskComment.findMany({
+      where: { taskId },
+      include: { author: { select: { id: true, name: true, nickname: true, avatarUrl: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async updateComment(workspaceId: string, taskId: string, commentId: string, userId: string, dto: UpdateCommentDto) {
+    await this.checkMember(workspaceId, userId);
+    await this.checkTask(workspaceId, taskId);
+
+    const comment = await this.prisma.taskComment.findUnique({ where: { id: commentId } });
+    if (!comment || comment.taskId !== taskId)
+      throw new NotFoundException('코멘트를 찾을 수 없습니다');
+    if (comment.authorId !== userId)
+      throw new ForbiddenException('본인 코멘트만 수정할 수 있습니다');
+
+    return this.prisma.taskComment.update({
+      where: { id: commentId },
+      data: { content: dto.content },
+      include: { author: { select: { id: true, name: true, nickname: true, avatarUrl: true } } },
+    });
+  }
+
+  async deleteComment(workspaceId: string, taskId: string, commentId: string, userId: string) {
+    const member = await this.checkMember(workspaceId, userId);
+    await this.checkTask(workspaceId, taskId);
+
+    const comment = await this.prisma.taskComment.findUnique({ where: { id: commentId } });
+    if (!comment || comment.taskId !== taskId)
+      throw new NotFoundException('코멘트를 찾을 수 없습니다');
+    if (member.role !== ProjectRole.ADMIN && comment.authorId !== userId)
+      throw new ForbiddenException('본인 코멘트만 삭제할 수 있습니다');
+
+    await this.prisma.taskComment.delete({ where: { id: commentId } });
+    return { message: '코멘트가 삭제됐습니다' };
   }
 }

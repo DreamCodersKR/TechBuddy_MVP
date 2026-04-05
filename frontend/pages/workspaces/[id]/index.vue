@@ -8,7 +8,7 @@ useHead({ title: '칸반 보드 - FLOWIT' })
 
 const route = useRoute()
 const workspaceId = route.params.id as string
-const { get: authGet, post: authPost, patch: authPatch } = useAuthFetch()
+const { get: authGet, post: authPost, patch: authPatch, delete: authDel } = useAuthFetch()
 const authStore = useAuthStore()
 
 // ─── 타입 ────────────────────────────────────────────────
@@ -31,6 +31,14 @@ interface Task {
 interface Member {
   role: string
   user: { id: string, name: string, nickname: string | null, avatarUrl: string | null }
+}
+
+interface TaskComment {
+  id: string
+  content: string
+  createdAt: string
+  updatedAt: string
+  author: { id: string, name: string, nickname: string | null, avatarUrl: string | null }
 }
 
 // ─── 상태 ────────────────────────────────────────────────
@@ -178,6 +186,84 @@ const selectedTask = ref<Task | null>(null)
 
 function openTaskDetail(task: Task) {
   selectedTask.value = { ...task }
+}
+
+// ─── 태스크 코멘트 ────────────────────────────────────────
+const comments = ref<TaskComment[]>([])
+const newComment = ref('')
+const editingCommentId = ref<string | null>(null)
+const editingContent = ref('')
+const isSubmittingComment = ref(false)
+
+watch(selectedTask, (task) => {
+  if (task) {
+    comments.value = []
+    newComment.value = ''
+    editingCommentId.value = null
+    loadComments()
+  }
+})
+
+async function loadComments() {
+  if (!selectedTask.value) return
+  try {
+    comments.value = await authGet<TaskComment[]>(
+      `/workspaces/${workspaceId}/tasks/${selectedTask.value.id}/comments`,
+    )
+  }
+  catch { comments.value = [] }
+}
+
+async function submitComment() {
+  if (!newComment.value.trim() || !selectedTask.value) return
+  isSubmittingComment.value = true
+  try {
+    const comment = await authPost<TaskComment>(
+      `/workspaces/${workspaceId}/tasks/${selectedTask.value.id}/comments`,
+      { content: newComment.value.trim() },
+    )
+    comments.value.push(comment)
+    newComment.value = ''
+  }
+  catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    alert(err?.data?.message || '코멘트 작성에 실패했습니다.')
+  }
+  finally { isSubmittingComment.value = false }
+}
+
+function startEditComment(comment: TaskComment) {
+  editingCommentId.value = comment.id
+  editingContent.value = comment.content
+}
+
+async function saveEditComment(commentId: string) {
+  if (!editingContent.value.trim() || !selectedTask.value) return
+  try {
+    const updated = await authPatch<TaskComment>(
+      `/workspaces/${workspaceId}/tasks/${selectedTask.value.id}/comments/${commentId}`,
+      { content: editingContent.value.trim() },
+    )
+    const idx = comments.value.findIndex(c => c.id === commentId)
+    if (idx !== -1) comments.value[idx] = updated
+    editingCommentId.value = null
+  }
+  catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    alert(err?.data?.message || '코멘트 수정에 실패했습니다.')
+  }
+}
+
+async function removeComment(commentId: string) {
+  if (!selectedTask.value) return
+  try {
+    await authDel(`/workspaces/${workspaceId}/tasks/${selectedTask.value.id}/comments/${commentId}`)
+    comments.value = comments.value.filter(c => c.id !== commentId)
+  }
+  catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    alert(err?.data?.message || '코멘트 삭제에 실패했습니다.')
+  }
 }
 
 async function handleTaskUpdate() {
@@ -504,7 +590,7 @@ onMounted(() => { loadData() })
       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
       @click.self="selectedTask = null"
     >
-      <div class="bg-card border border-border rounded-xl w-full max-w-lg p-6 space-y-4">
+      <div class="bg-card border border-border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="font-semibold text-foreground">
             태스크 상세
@@ -610,6 +696,135 @@ onMounted(() => { loadData() })
           <Button @click="handleTaskUpdate">
             저장
           </Button>
+        </div>
+
+        <!-- 코멘트 섹션 -->
+        <div class="border-t border-border pt-4 space-y-3">
+          <h4 class="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <Icon icon="heroicons:chat-bubble-left-ellipsis" class="w-4 h-4" />
+            코멘트
+            <span class="text-xs font-normal text-muted-foreground">({{ comments.length }})</span>
+          </h4>
+
+          <!-- 코멘트 목록 -->
+          <div
+            v-if="comments.length > 0"
+            class="space-y-3 max-h-64 overflow-y-auto pr-1"
+          >
+            <div
+              v-for="comment in comments"
+              :key="comment.id"
+              class="flex gap-2.5"
+            >
+              <!-- 아바타 -->
+              <div class="h-7 w-7 rounded-full bg-muted flex-shrink-0 flex items-center justify-center text-xs font-medium overflow-hidden mt-0.5">
+                <img
+                  v-if="comment.author.avatarUrl"
+                  :src="comment.author.avatarUrl"
+                  class="h-full w-full object-cover"
+                >
+                <span v-else>{{ (comment.author.nickname ?? comment.author.name).slice(0, 1) }}</span>
+              </div>
+
+              <!-- 내용 -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-xs font-medium text-foreground">{{ comment.author.nickname ?? comment.author.name }}</span>
+                  <span class="text-xs text-muted-foreground">{{ useRelativeTime(comment.createdAt) }}</span>
+                </div>
+
+                <!-- 수정 모드 -->
+                <div
+                  v-if="editingCommentId === comment.id"
+                  class="space-y-1.5"
+                >
+                  <textarea
+                    v-model="editingContent"
+                    rows="2"
+                    class="w-full px-2.5 py-1.5 text-xs border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                    @keydown.enter.ctrl="saveEditComment(comment.id)"
+                    @keydown.esc="editingCommentId = null"
+                  />
+                  <div class="flex gap-1.5">
+                    <button
+                      class="text-xs px-2 py-0.5 bg-primary text-primary-foreground rounded hover:opacity-90"
+                      @click="saveEditComment(comment.id)"
+                    >
+                      저장
+                    </button>
+                    <button
+                      class="text-xs px-2 py-0.5 border border-border rounded text-muted-foreground hover:text-foreground"
+                      @click="editingCommentId = null"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 읽기 모드 -->
+                <div v-else>
+                  <p class="text-xs text-foreground whitespace-pre-wrap break-words">
+                    {{ comment.content }}
+                  </p>
+                  <div
+                    v-if="comment.author.id === currentUserId"
+                    class="flex gap-2 mt-0.5"
+                  >
+                    <button
+                      class="text-xs text-muted-foreground hover:text-foreground"
+                      @click="startEditComment(comment)"
+                    >
+                      수정
+                    </button>
+                    <button
+                      class="text-xs text-muted-foreground hover:text-red-500"
+                      @click="removeComment(comment.id)"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p
+            v-else
+            class="text-xs text-muted-foreground"
+          >
+            아직 코멘트가 없습니다.
+          </p>
+
+          <!-- 코멘트 작성 -->
+          <div class="flex gap-2 items-start">
+            <div class="h-7 w-7 rounded-full bg-muted flex-shrink-0 flex items-center justify-center text-xs font-medium overflow-hidden mt-0.5">
+              <img
+                v-if="(authStore.currentUser as any)?.avatarUrl"
+                :src="(authStore.currentUser as any).avatarUrl"
+                class="h-full w-full object-cover"
+              >
+              <span v-else>{{ ((authStore.currentUser as any)?.nickname ?? (authStore.currentUser as any)?.name ?? '?').slice(0, 1) }}</span>
+            </div>
+            <div class="flex-1 space-y-1.5">
+              <textarea
+                v-model="newComment"
+                placeholder="코멘트 작성... (Ctrl+Enter로 제출)"
+                rows="2"
+                class="w-full px-2.5 py-1.5 text-xs border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                @keydown.enter.ctrl="submitComment"
+              />
+              <div class="flex justify-end">
+                <button
+                  :disabled="!newComment.trim() || isSubmittingComment"
+                  class="text-xs px-3 py-1 bg-primary text-primary-foreground rounded hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+                  @click="submitComment"
+                >
+                  <Icon v-if="isSubmittingComment" icon="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
+                  작성
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

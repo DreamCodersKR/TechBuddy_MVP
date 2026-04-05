@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TaskService } from './task.service';
-import { CreateTaskDto, UpdateTaskDto } from './dto';
+import { CreateTaskDto, UpdateTaskDto, CreateCommentDto, UpdateCommentDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators';
 
@@ -67,5 +67,51 @@ export class TaskController {
     @CurrentUser() user: any,
   ) {
     return this.taskService.remove(workspaceId, taskId, user.id);
+  }
+
+  // ─── 태스크 코멘트 ──────────────────────────────────────────
+
+  @Post(':taskId/comments')
+  @ApiOperation({ summary: '코멘트 작성' })
+  createComment(
+    @Param('workspaceId') workspaceId: string,
+    @Param('taskId') taskId: string,
+    @CurrentUser() user: any,
+    @Body() dto: CreateCommentDto,
+  ) {
+    return this.taskService.createComment(workspaceId, taskId, user.id, dto);
+  }
+
+  @Get(':taskId/comments')
+  @ApiOperation({ summary: '코멘트 목록 조회' })
+  findComments(
+    @Param('workspaceId') workspaceId: string,
+    @Param('taskId') taskId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.taskService.findComments(workspaceId, taskId, user.id);
+  }
+
+  @Patch(':taskId/comments/:commentId')
+  @ApiOperation({ summary: '코멘트 수정 (본인만)' })
+  updateComment(
+    @Param('workspaceId') workspaceId: string,
+    @Param('taskId') taskId: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser() user: any,
+    @Body() dto: UpdateCommentDto,
+  ) {
+    return this.taskService.updateComment(workspaceId, taskId, commentId, user.id, dto);
+  }
+
+  @Delete(':taskId/comments/:commentId')
+  @ApiOperation({ summary: '코멘트 삭제 (본인 또는 관리자)' })
+  deleteComment(
+    @Param('workspaceId') workspaceId: string,
+    @Param('taskId') taskId: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.taskService.deleteComment(workspaceId, taskId, commentId, user.id);
   }
 }
