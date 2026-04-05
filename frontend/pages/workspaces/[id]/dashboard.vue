@@ -60,6 +60,34 @@ const stats = computed(() => {
 
 const helpTasks = computed(() => tasks.value.filter(t => t.status === 'HELP'))
 
+// ─── 멤버별 태스크 배분 ─────────────────────────────────────
+const memberStats = computed(() =>
+  members.value.map((m) => {
+    const myTasks = tasks.value.filter(t => t.assignee?.id === m.user.id)
+    const done = myTasks.filter(t => t.status === 'DONE').length
+    return { member: m, total: myTasks.length, done }
+  }),
+)
+
+// ─── 마감 임박 태스크 (7일 이내) ──────────────────────────
+const dueSoonTasks = computed(() => {
+  const now = Date.now()
+  const limit = 7 * 24 * 60 * 60 * 1000
+  return tasks.value
+    .filter((t) => {
+      if (!t.dueDate || t.status === 'DONE') return false
+      const diff = new Date(t.dueDate).getTime() - now
+      return diff >= 0 && diff <= limit
+    })
+    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+})
+
+function dueDaysLabel(dueDate: string) {
+  const diff = Math.ceil((new Date(dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  if (diff === 0) return 'D-Day'
+  return `D-${diff}`
+}
+
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
   URGENT: 'text-red-500',
   HIGH: 'text-orange-500',
@@ -240,6 +268,95 @@ onMounted(() => { loadData() })
                 {{ m.role === 'ADMIN' ? '관리자' : m.role === 'MENTOR' ? '멘토' : '멤버' }}
               </span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 멤버별 태스크 배분 -->
+      <div class="border border-border rounded-xl p-5 bg-card">
+        <div class="flex items-center gap-2 mb-4">
+          <Icon icon="heroicons:user-group" class="w-4 h-4 text-muted-foreground" />
+          <p class="text-sm font-semibold text-foreground">
+            멤버별 태스크 배분
+          </p>
+        </div>
+        <div v-if="memberStats.length === 0" class="text-xs text-muted-foreground py-4 text-center">
+          멤버가 없습니다
+        </div>
+        <div v-else class="space-y-3">
+          <div
+            v-for="ms in memberStats"
+            :key="ms.member.user.id"
+            class="flex items-center gap-3"
+          >
+            <div class="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium overflow-hidden flex-shrink-0">
+              <img
+                v-if="ms.member.user.avatarUrl"
+                :src="ms.member.user.avatarUrl"
+                class="h-full w-full object-cover"
+              >
+              <span v-else>{{ (ms.member.user.nickname ?? ms.member.user.name).slice(0, 1) }}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <p class="text-xs font-medium text-foreground truncate">
+                  {{ ms.member.user.nickname ?? ms.member.user.name }}
+                </p>
+                <span class="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                  {{ ms.done }}/{{ ms.total }}
+                </span>
+              </div>
+              <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-primary rounded-full transition-all duration-500"
+                  :style="{ width: ms.total > 0 ? `${Math.round(ms.done / ms.total * 100)}%` : '0%' }"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 마감 임박 태스크 -->
+      <div class="border border-border rounded-xl p-5 bg-card">
+        <div class="flex items-center gap-2 mb-4">
+          <Icon icon="heroicons:clock" class="w-4 h-4 text-amber-500" />
+          <p class="text-sm font-semibold text-foreground">
+            마감 임박 태스크
+          </p>
+          <span class="text-xs text-muted-foreground">(7일 이내)</span>
+        </div>
+        <div v-if="dueSoonTasks.length === 0" class="text-xs text-muted-foreground py-4 text-center">
+          마감 임박 태스크가 없습니다 ✅
+        </div>
+        <div v-else class="space-y-2">
+          <div
+            v-for="task in dueSoonTasks"
+            :key="task.id"
+            class="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/30 transition-colors cursor-pointer"
+            @click="navigateTo(`/workspaces/${workspaceId}`)"
+          >
+            <span
+              class="text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0"
+              :class="dueDaysLabel(task.dueDate!) === 'D-Day'
+                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'"
+            >
+              {{ dueDaysLabel(task.dueDate!) }}
+            </span>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-foreground line-clamp-1">
+                {{ task.title }}
+              </p>
+              <p v-if="task.assignee" class="text-xs text-muted-foreground">
+                {{ task.assignee.nickname ?? task.assignee.name }}
+              </p>
+            </div>
+            <Icon
+              icon="heroicons:flag"
+              class="w-3.5 h-3.5 flex-shrink-0"
+              :class="PRIORITY_COLOR[task.priority]"
+            />
           </div>
         </div>
       </div>
