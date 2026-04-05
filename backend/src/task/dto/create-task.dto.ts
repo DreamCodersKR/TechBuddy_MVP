@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsUUID, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus, TaskPriority, TaskType } from '@prisma/client';
 
@@ -47,4 +47,10 @@ export class CreateTaskDto {
   @IsString()
   @IsOptional()
   helpReason?: string;
+
+  @ApiPropertyOptional({ example: ['frontend', 'bug'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tags?: string[];
 }

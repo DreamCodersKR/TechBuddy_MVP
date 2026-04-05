@@ -407,6 +407,7 @@ model Task {
   taskType    TaskType?    // AI멘토링 유형 분류
   helpReason  String?
   dueDate     DateTime?
+  tags        String[]  @default([])
   createdById String
 
   createdAt DateTime @default(now())

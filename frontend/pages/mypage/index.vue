@@ -115,7 +115,7 @@ const BADGE_META: Record<string, { label: string; icon: string; color: string }>
     <!-- 크레딧 + 링크 카드 -->
     <div class="grid grid-cols-2 gap-3 mb-6">
       <NuxtLink
-        to="/credits"
+        to="/mypage/credits"
         class="bg-card border border-border rounded-xl p-4 hover:bg-accent/50 transition-colors"
       >
         <div class="flex items-center gap-2 text-muted-foreground mb-1">

@@ -26,6 +26,7 @@ interface Task {
   assignee: { id: string, name: string, nickname: string | null, avatarUrl: string | null } | null
   createdBy: { id: string, name: string, nickname: string | null }
   sprint: { id: string, name: string } | null
+  tags: string[]
 }
 
 interface Member {
@@ -151,7 +152,9 @@ const createForm = reactive({
   assigneeId: '',
   dueDate: '',
   sprintId: '',
+  tags: [] as string[],
 })
+const createTagInput = ref('')
 const isCreating = ref(false)
 
 function openCreateModal(status: TaskStatus = 'TODO') {
@@ -162,6 +165,8 @@ function openCreateModal(status: TaskStatus = 'TODO') {
   createForm.assigneeId = ''
   createForm.dueDate = ''
   createForm.sprintId = ''
+  createForm.tags = []
+  createTagInput.value = ''
   showCreateModal.value = true
 }
 
@@ -178,6 +183,7 @@ async function handleCreate() {
     if (createForm.assigneeId) body.assigneeId = createForm.assigneeId
     if (createForm.dueDate) body.dueDate = createForm.dueDate
     if (createForm.sprintId) body.sprintId = createForm.sprintId
+    if (createForm.tags.length > 0) body.tags = createForm.tags
 
     const created = await authPost<Task>(`/workspaces/${workspaceId}/tasks`, body)
     tasks.value.push(created)
@@ -196,10 +202,34 @@ const helpModalTask = ref<Task | null>(null)
 // ─── 태스크 상세 모달 ────────────────────────────────────
 const selectedTask = ref<Task | null>(null)
 const editSprintId = ref('')
+const editTags = ref<string[]>([])
+const editTagInput = ref('')
 
 function openTaskDetail(task: Task) {
   selectedTask.value = { ...task }
   editSprintId.value = task.sprint?.id ?? ''
+  editTags.value = [...(task.tags ?? [])]
+  editTagInput.value = ''
+}
+
+function addCreateTag() {
+  const val = createTagInput.value.trim().replace(/,/g, '')
+  if (val && !createForm.tags.includes(val)) createForm.tags.push(val)
+  createTagInput.value = ''
+}
+
+function removeCreateTag(tag: string) {
+  createForm.tags = createForm.tags.filter(t => t !== tag)
+}
+
+function addEditTag() {
+  const val = editTagInput.value.trim().replace(/,/g, '')
+  if (val && !editTags.value.includes(val)) editTags.value.push(val)
+  editTagInput.value = ''
+}
+
+function removeEditTag(tag: string) {
+  editTags.value = editTags.value.filter(t => t !== tag)
 }
 
 // ─── 태스크 코멘트 ────────────────────────────────────────
@@ -294,6 +324,7 @@ async function handleTaskUpdate() {
         dueDate: selectedTask.value.dueDate,
         helpReason: selectedTask.value.helpReason,
         sprintId: editSprintId.value || null,
+        tags: editTags.value,
       },
     )
     const idx = tasks.value.findIndex(t => t.id === updated.id)
@@ -456,6 +487,24 @@ onMounted(() => { loadData() })
                 {{ task.sprint.name }}
               </span>
 
+              <!-- 태그 칩 -->
+              <div
+                v-if="task.tags?.length"
+                class="flex flex-wrap gap-1 mb-1.5"
+              >
+                <span
+                  v-for="tag in task.tags.slice(0, 2)"
+                  :key="tag"
+                  class="inline-block text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
+                >
+                  #{{ tag }}
+                </span>
+                <span
+                  v-if="task.tags.length > 2"
+                  class="text-xs text-muted-foreground"
+                >+{{ task.tags.length - 2 }}</span>
+              </div>
+
               <!-- HELP 이유 -->
               <p
                 v-if="task.helpReason"
@@ -611,6 +660,28 @@ onMounted(() => { loadData() })
               </option>
             </select>
           </div>
+          <div>
+            <label class="text-xs text-muted-foreground mb-1 block">태그</label>
+            <div class="flex flex-wrap gap-1 mb-1.5">
+              <span
+                v-for="tag in createForm.tags"
+                :key="tag"
+                class="inline-flex items-center gap-1 text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
+              >
+                #{{ tag }}
+                <button class="hover:text-foreground" @click="removeCreateTag(tag)">
+                  <Icon icon="heroicons:x-mark" class="w-3 h-3" />
+                </button>
+              </span>
+            </div>
+            <input
+              v-model="createTagInput"
+              placeholder="태그 입력 후 Enter"
+              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+              @keydown.enter.prevent="addCreateTag"
+              @keydown.comma.prevent="addCreateTag"
+            >
+          </div>
         </div>
 
         <div class="flex justify-end gap-2">
@@ -734,6 +805,28 @@ onMounted(() => { loadData() })
                 {{ s.name }}
               </option>
             </select>
+          </div>
+          <div>
+            <label class="text-xs text-muted-foreground mb-1 block">태그</label>
+            <div class="flex flex-wrap gap-1 mb-1.5">
+              <span
+                v-for="tag in editTags"
+                :key="tag"
+                class="inline-flex items-center gap-1 text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
+              >
+                #{{ tag }}
+                <button class="hover:text-foreground" @click="removeEditTag(tag)">
+                  <Icon icon="heroicons:x-mark" class="w-3 h-3" />
+                </button>
+              </span>
+            </div>
+            <input
+              v-model="editTagInput"
+              placeholder="태그 입력 후 Enter"
+              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+              @keydown.enter.prevent="addEditTag"
+              @keydown.comma.prevent="addEditTag"
+            >
           </div>
           <div
             v-if="selectedTask.status === 'HELP'"
