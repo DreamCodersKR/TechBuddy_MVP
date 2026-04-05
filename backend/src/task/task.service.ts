@@ -21,6 +21,21 @@ export class TaskService {
     return member;
   }
 
+  async findMyTasks(userId: string, status?: string) {
+    return this.prisma.task.findMany({
+      where: {
+        assigneeId: userId,
+        project: { deletedAt: null },
+        ...(status && { status: status as TaskStatus }),
+      },
+      include: {
+        ...TASK_INCLUDE,
+        project: { select: { id: true, name: true, type: true } },
+      },
+      orderBy: [{ status: 'asc' }, { dueDate: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
+
   async create(workspaceId: string, userId: string, dto: CreateTaskDto) {
     await this.checkMember(workspaceId, userId);
 

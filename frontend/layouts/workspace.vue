@@ -62,6 +62,8 @@ const sidebarItems = computed(() => [
   },
 ])
 
+const myTasksItem = { label: '내 Task', icon: 'heroicons:clipboard-document-check', to: '/workspaces/my-tasks' }
+
 const aiMentorItem = { label: 'AI 멘토', icon: 'heroicons:sparkles', to: '/ai-mentor' }
 
 function isActive(item: (typeof sidebarItems.value)[0]) {
@@ -150,8 +152,19 @@ async function handleLogout() {
         </NuxtLink>
       </nav>
 
-      <!-- Bottom: AI 멘토 + User Profile -->
+      <!-- Bottom: 내 Task + AI 멘토 + User Profile -->
       <div class="absolute bottom-0 left-0 right-0 border-t border-border">
+        <!-- 내 Task -->
+        <div class="px-3 pt-3">
+          <NuxtLink
+            :to="myTasksItem.to"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full"
+            :class="$route.path === myTasksItem.to ? 'bg-accent text-accent-foreground font-medium' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'"
+          >
+            <Icon :icon="myTasksItem.icon" class="h-4 w-4 flex-shrink-0" />
+            <span v-if="!isSidebarCollapsed">{{ myTasksItem.label }}</span>
+          </NuxtLink>
+        </div>
         <!-- AI 멘토 -->
         <div class="p-3 border-b border-border">
           <NuxtLink

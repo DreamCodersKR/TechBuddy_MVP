@@ -5,6 +5,7 @@ import {
   Patch,
   Body,
   Param,
+  Query,
   UseGuards,
   UseInterceptors,
   ClassSerializerInterceptor,
@@ -15,6 +16,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import {
@@ -25,12 +27,16 @@ import {
 } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators';
+import { TaskService } from '../task/task.service';
 
 @ApiTags('사용자')
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly taskService: TaskService,
+  ) {}
 
   /**
    * 사용자 생성 (회원가입) - /auth/signup 사용 권장
@@ -72,6 +78,15 @@ export class UserController {
   })
   async getMe(@CurrentUser() user: any): Promise<UserResponseDto> {
     return this.userService.findById(user.id);
+  }
+
+  @Get('me/tasks')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '내 Task 목록 (전체 워크스페이스)' })
+  @ApiQuery({ name: 'status', required: false })
+  getMyTasks(@CurrentUser() user: any, @Query('status') status?: string) {
+    return this.taskService.findMyTasks(user.id, status);
   }
 
   /**

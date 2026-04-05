@@ -33,6 +33,12 @@ interface Member {
   user: { id: string, name: string, nickname: string | null, avatarUrl: string | null }
 }
 
+interface Sprint {
+  id: string
+  name: string
+  status: 'PLANNED' | 'ACTIVE' | 'COMPLETED'
+}
+
 interface TaskComment {
   id: string
   content: string
@@ -44,6 +50,7 @@ interface TaskComment {
 // ─── 상태 ────────────────────────────────────────────────
 const tasks = ref<Task[]>([])
 const members = ref<Member[]>([])
+const sprints = ref<Sprint[]>([])
 const loading = ref(true)
 
 const COLUMNS: { status: TaskStatus, label: string, color: string }[] = [
@@ -100,12 +107,14 @@ function clearFilters() {
 async function loadData() {
   loading.value = true
   try {
-    const [taskRes, memberRes] = await Promise.all([
+    const [taskRes, memberRes, sprintRes] = await Promise.all([
       authGet<Task[]>(`/workspaces/${workspaceId}/tasks`),
       authGet<Member[]>(`/workspaces/${workspaceId}/members`),
+      authGet<Sprint[]>(`/workspaces/${workspaceId}/sprints`),
     ])
     tasks.value = taskRes
     members.value = memberRes
+    sprints.value = sprintRes
   }
   catch { tasks.value = [] }
   finally { loading.value = false }
@@ -141,6 +150,7 @@ const createForm = reactive({
   priority: 'MEDIUM' as TaskPriority,
   assigneeId: '',
   dueDate: '',
+  sprintId: '',
 })
 const isCreating = ref(false)
 
@@ -151,6 +161,7 @@ function openCreateModal(status: TaskStatus = 'TODO') {
   createForm.priority = 'MEDIUM'
   createForm.assigneeId = ''
   createForm.dueDate = ''
+  createForm.sprintId = ''
   showCreateModal.value = true
 }
 
@@ -166,6 +177,7 @@ async function handleCreate() {
     if (createForm.description.trim()) body.description = createForm.description.trim()
     if (createForm.assigneeId) body.assigneeId = createForm.assigneeId
     if (createForm.dueDate) body.dueDate = createForm.dueDate
+    if (createForm.sprintId) body.sprintId = createForm.sprintId
 
     const created = await authPost<Task>(`/workspaces/${workspaceId}/tasks`, body)
     tasks.value.push(created)
@@ -183,9 +195,11 @@ const helpModalTask = ref<Task | null>(null)
 
 // ─── 태스크 상세 모달 ────────────────────────────────────
 const selectedTask = ref<Task | null>(null)
+const editSprintId = ref('')
 
 function openTaskDetail(task: Task) {
   selectedTask.value = { ...task }
+  editSprintId.value = task.sprint?.id ?? ''
 }
 
 // ─── 태스크 코멘트 ────────────────────────────────────────
@@ -279,6 +293,7 @@ async function handleTaskUpdate() {
         assigneeId: selectedTask.value.assignee?.id || null,
         dueDate: selectedTask.value.dueDate,
         helpReason: selectedTask.value.helpReason,
+        sprintId: editSprintId.value || null,
       },
     )
     const idx = tasks.value.findIndex(t => t.id === updated.id)
@@ -433,6 +448,14 @@ onMounted(() => { loadData() })
                 </p>
               </div>
 
+              <!-- 스프린트 뱃지 -->
+              <span
+                v-if="task.sprint"
+                class="inline-block text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 rounded px-1.5 py-0.5 mb-1.5"
+              >
+                {{ task.sprint.name }}
+              </span>
+
               <!-- HELP 이유 -->
               <p
                 v-if="task.helpReason"
@@ -570,6 +593,24 @@ onMounted(() => { loadData() })
               >
             </div>
           </div>
+          <div>
+            <label class="text-xs text-muted-foreground mb-1 block">스프린트</label>
+            <select
+              v-model="createForm.sprintId"
+              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+            >
+              <option value="">
+                미배정
+              </option>
+              <option
+                v-for="s in sprints"
+                :key="s.id"
+                :value="s.id"
+              >
+                {{ s.name }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <div class="flex justify-end gap-2">
@@ -675,6 +716,24 @@ onMounted(() => { loadData() })
                 @change="selectedTask!.dueDate = ($event.target as HTMLInputElement).value || null"
               >
             </div>
+          </div>
+          <div>
+            <label class="text-xs text-muted-foreground mb-1 block">스프린트</label>
+            <select
+              v-model="editSprintId"
+              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+            >
+              <option value="">
+                미배정
+              </option>
+              <option
+                v-for="s in sprints"
+                :key="s.id"
+                :value="s.id"
+              >
+                {{ s.name }}
+              </option>
+            </select>
           </div>
           <div
             v-if="selectedTask.status === 'HELP'"
