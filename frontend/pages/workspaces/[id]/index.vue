@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
+import { VueDraggableNext as Draggable } from 'vue-draggable-next'
 
 definePageMeta({ layout: 'workspace', middleware: 'auth' })
 useHead({ title: '칸반 보드 - FLOWIT' })
@@ -8,6 +9,7 @@ useHead({ title: '칸반 보드 - FLOWIT' })
 const route = useRoute()
 const workspaceId = route.params.id as string
 const { get: authGet, post: authPost, patch: authPatch } = useAuthFetch()
+const authStore = useAuthStore()
 
 // ─── 타입 ────────────────────────────────────────────────
 type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'HELP' | 'DONE'
@@ -58,8 +60,32 @@ const PRIORITY_LABEL: Record<TaskPriority, string> = {
   LOW: '낮음',
 }
 
+// ─── 필터 ────────────────────────────────────────────────
+const searchQuery = ref('')
+const myTasksOnly = ref(false)
+const filterPriority = ref<TaskPriority | ''>('')
+
+const currentUserId = computed(() => (authStore.currentUser as any)?.id ?? '')
+
 function columnTasks(status: TaskStatus) {
-  return tasks.value.filter(t => t.status === status)
+  return tasks.value.filter((t) => {
+    if (t.status !== status) return false
+    if (searchQuery.value.trim()) {
+      const q = searchQuery.value.toLowerCase()
+      if (!t.title.toLowerCase().includes(q)) return false
+    }
+    if (myTasksOnly.value && t.assignee?.id !== currentUserId.value) return false
+    if (filterPriority.value && t.priority !== filterPriority.value) return false
+    return true
+  })
+}
+
+const hasFilter = computed(() => searchQuery.value.trim() || myTasksOnly.value || filterPriority.value)
+
+function clearFilters() {
+  searchQuery.value = ''
+  myTasksOnly.value = false
+  filterPriority.value = ''
 }
 
 // ─── 데이터 로드 ─────────────────────────────────────────
@@ -75,6 +101,27 @@ async function loadData() {
   }
   catch { tasks.value = [] }
   finally { loading.value = false }
+}
+
+// ─── 드래그앤드롭 ────────────────────────────────────────
+async function onColumnChange(colStatus: TaskStatus, evt: any) {
+  if (!evt.added) return
+  const task: Task = evt.added.element
+  const prevStatus = task.status
+  const idx = tasks.value.findIndex(t => t.id === task.id)
+  if (idx === -1) return
+
+  // optimistic update
+  tasks.value[idx].status = colStatus
+
+  try {
+    await authPatch(`/workspaces/${workspaceId}/tasks/${task.id}`, { status: colStatus })
+    if (colStatus === 'HELP') helpModalTask.value = tasks.value[idx]
+  }
+  catch {
+    // rollback
+    tasks.value[idx].status = prevStatus
+  }
 }
 
 // ─── 태스크 생성 모달 ────────────────────────────────────
@@ -126,17 +173,6 @@ async function handleCreate() {
 // ─── HELP 액션 모달 ──────────────────────────────────────
 const helpModalTask = ref<Task | null>(null)
 
-// ─── 태스크 상태 변경 ────────────────────────────────────
-async function moveTask(task: Task, newStatus: TaskStatus) {
-  const prev = task.status
-  task.status = newStatus
-  try {
-    await authPatch(`/workspaces/${workspaceId}/tasks/${task.id}`, { status: newStatus })
-    if (newStatus === 'HELP') helpModalTask.value = task
-  }
-  catch { task.status = prev }
-}
-
 // ─── 태스크 상세 모달 ────────────────────────────────────
 const selectedTask = ref<Task | null>(null)
 
@@ -156,6 +192,7 @@ async function handleTaskUpdate() {
         priority: selectedTask.value.priority,
         assigneeId: selectedTask.value.assignee?.id || null,
         dueDate: selectedTask.value.dueDate,
+        helpReason: selectedTask.value.helpReason,
       },
     )
     const idx = tasks.value.findIndex(t => t.id === updated.id)
@@ -175,7 +212,7 @@ onMounted(() => { loadData() })
 <template>
   <div>
     <!-- 헤더 -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-4">
       <div>
         <h2 class="text-xl font-bold text-foreground">
           칸반 보드
@@ -185,12 +222,50 @@ onMounted(() => { loadData() })
         </p>
       </div>
       <Button @click="openCreateModal()">
-        <Icon
-          icon="heroicons:plus"
-          class="w-4 h-4 mr-2"
-        />
+        <Icon icon="heroicons:plus" class="w-4 h-4 mr-2" />
         태스크 추가
       </Button>
+    </div>
+
+    <!-- 필터 바 -->
+    <div class="flex items-center gap-2 mb-5 flex-wrap">
+      <input
+        v-model="searchQuery"
+        placeholder="태스크 검색..."
+        class="h-8 px-3 text-sm border border-border rounded-md bg-background w-44 focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+      <button
+        class="h-8 px-3 text-xs rounded-md border transition-colors"
+        :class="myTasksOnly
+          ? 'bg-primary text-primary-foreground border-primary'
+          : 'border-border text-muted-foreground hover:bg-accent hover:text-foreground'"
+        @click="myTasksOnly = !myTasksOnly"
+      >
+        나만 보기
+      </button>
+      <select
+        v-model="filterPriority"
+        class="h-8 px-2 text-xs border border-border rounded-md bg-background focus:outline-none"
+      >
+        <option value="">
+          모든 우선순위
+        </option>
+        <option
+          v-for="(label, val) in PRIORITY_LABEL"
+          :key="val"
+          :value="val"
+        >
+          {{ label }}
+        </option>
+      </select>
+      <button
+        v-if="hasFilter"
+        class="h-8 px-3 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+        @click="clearFilters"
+      >
+        <Icon icon="heroicons:x-mark" class="w-3.5 h-3.5" />
+        필터 초기화
+      </button>
     </div>
 
     <!-- 로딩 -->
@@ -241,19 +316,23 @@ onMounted(() => { loadData() })
               class="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
               @click="openCreateModal(col.status)"
             >
-              <Icon
-                icon="heroicons:plus"
-                class="w-4 h-4"
-              />
+              <Icon icon="heroicons:plus" class="w-4 h-4" />
             </button>
           </div>
 
-          <!-- 태스크 카드들 -->
-          <div class="p-2 space-y-2 min-h-[8rem] bg-muted/10">
+          <!-- 태스크 카드들 (드래그앤드롭) -->
+          <Draggable
+            :list="columnTasks(col.status)"
+            :group="{ name: 'tasks' }"
+            ghost-class="opacity-40"
+            drag-class="rotate-1 shadow-xl"
+            class="p-2 space-y-2 min-h-[8rem] bg-muted/10 block"
+            @change="onColumnChange(col.status, $event)"
+          >
             <div
               v-for="task in columnTasks(col.status)"
               :key="task.id"
-              class="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-all hover:border-primary/30"
+              class="bg-card border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:shadow-sm transition-all hover:border-primary/30"
               @click="openTaskDetail(task)"
             >
               <!-- 우선순위 + 제목 -->
@@ -282,10 +361,7 @@ onMounted(() => { loadData() })
                   v-if="task.dueDate"
                   class="text-xs text-muted-foreground flex items-center gap-1"
                 >
-                  <Icon
-                    icon="heroicons:calendar"
-                    class="w-3 h-3"
-                  />
+                  <Icon icon="heroicons:calendar" class="w-3 h-3" />
                   {{ useRelativeTime(task.dueDate) }}
                 </span>
                 <span v-else />
@@ -311,7 +387,7 @@ onMounted(() => { loadData() })
             >
               태스크 없음
             </div>
-          </div>
+          </Draggable>
         </div>
       </div>
     </div>
@@ -331,32 +407,23 @@ onMounted(() => { loadData() })
             class="text-muted-foreground hover:text-foreground"
             @click="showCreateModal = false"
           >
-            <Icon
-              icon="heroicons:x-mark"
-              class="w-5 h-5"
-            />
+            <Icon icon="heroicons:x-mark" class="w-5 h-5" />
           </button>
         </div>
 
         <div class="space-y-3">
-          <div>
-            <input
-              v-model="createForm.title"
-              placeholder="태스크 제목 *"
-              class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-              @keydown.enter="handleCreate"
-            >
-          </div>
-
-          <div>
-            <textarea
-              v-model="createForm.description"
-              placeholder="설명 (선택)"
-              rows="3"
-              class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
+          <input
+            v-model="createForm.title"
+            placeholder="태스크 제목 *"
+            class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            @keydown.enter="handleCreate"
+          >
+          <textarea
+            v-model="createForm.description"
+            placeholder="설명 (선택)"
+            rows="3"
+            class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+          />
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-muted-foreground mb-1 block">상태</label>
@@ -389,7 +456,6 @@ onMounted(() => { loadData() })
               </select>
             </div>
           </div>
-
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-muted-foreground mb-1 block">담당자</label>
@@ -421,21 +487,11 @@ onMounted(() => { loadData() })
         </div>
 
         <div class="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            @click="showCreateModal = false"
-          >
+          <Button variant="outline" @click="showCreateModal = false">
             취소
           </Button>
-          <Button
-            :disabled="!createForm.title.trim() || isCreating"
-            @click="handleCreate"
-          >
-            <Icon
-              v-if="isCreating"
-              icon="heroicons:arrow-path"
-              class="w-4 h-4 mr-1 animate-spin"
-            />
+          <Button :disabled="!createForm.title.trim() || isCreating" @click="handleCreate">
+            <Icon v-if="isCreating" icon="heroicons:arrow-path" class="w-4 h-4 mr-1 animate-spin" />
             생성
           </Button>
         </div>
@@ -457,10 +513,7 @@ onMounted(() => { loadData() })
             class="text-muted-foreground hover:text-foreground"
             @click="selectedTask = null"
           >
-            <Icon
-              icon="heroicons:x-mark"
-              class="w-5 h-5"
-            />
+            <Icon icon="heroicons:x-mark" class="w-5 h-5" />
           </button>
         </div>
 
@@ -475,7 +528,6 @@ onMounted(() => { loadData() })
             rows="4"
             class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
           />
-
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-muted-foreground mb-1 block">상태</label>
@@ -508,7 +560,6 @@ onMounted(() => { loadData() })
               </select>
             </div>
           </div>
-
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-muted-foreground mb-1 block">담당자</label>
@@ -539,7 +590,6 @@ onMounted(() => { loadData() })
               >
             </div>
           </div>
-
           <div
             v-if="selectedTask.status === 'HELP'"
             class="space-y-1"
@@ -554,10 +604,7 @@ onMounted(() => { loadData() })
         </div>
 
         <div class="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            @click="selectedTask = null"
-          >
+          <Button variant="outline" @click="selectedTask = null">
             취소
           </Button>
           <Button @click="handleTaskUpdate">
