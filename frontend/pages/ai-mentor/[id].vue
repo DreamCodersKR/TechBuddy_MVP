@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
+import MarkdownViewer from '@/components/post/MarkdownViewer.client.vue'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: 'AI 멘토 대화 - FLOWIT' })
@@ -130,7 +131,10 @@ onMounted(() => { loadConversation() })
           class="max-w-[80%] rounded-xl px-4 py-3 text-sm"
           :class="msg.role === 'USER' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'"
         >
-          <p class="whitespace-pre-wrap">{{ msg.content }}</p>
+          <ClientOnly>
+            <MarkdownViewer v-if="msg.role === 'ASSISTANT'" :content="msg.content" class="prose prose-sm dark:prose-invert max-w-none" />
+            <p v-else class="whitespace-pre-wrap">{{ msg.content }}</p>
+          </ClientOnly>
           <p v-if="msg.modelUsed && msg.role === 'ASSISTANT'" class="text-xs opacity-60 mt-1">
             {{ msg.modelUsed }} · {{ msg.creditsUsed }}cr
           </p>

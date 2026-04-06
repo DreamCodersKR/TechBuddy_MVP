@@ -1,18 +1,26 @@
 import {
   Injectable, NotFoundException, ForbiddenException, BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto, TIER_COST, MentoringTier } from './dto/create-message.dto';
 import { AIMessageRole, CreditTransactionType, UserPlan } from '@prisma/client';
+import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// 모델 라우팅 매트릭스 (기능정의서 기준)
-const MODEL_MATRIX = {
-  CODE:     { 1: 'claude-haiku-4-5',          2: 'gpt-5.4-mini',        3: 'claude-opus-4-6' },
-  DOCUMENT: { 1: 'gemini-2.5-flash-lite',      2: 'gpt-5.4-mini',        3: 'claude-opus-4-6' },
-  DESIGN:   { 1: 'gemini-2.5-flash-lite',      2: 'gemini-3-flash',       3: 'gemini-3.1-pro' },
-  PLANNING: { 1: 'claude-haiku-4-5',          2: 'claude-sonnet-4-6',   3: 'claude-opus-4-6' },
-  RESEARCH: { 1: 'grok-4-1-fast',             2: 'grok-4-1-fast',       3: 'grok-4.20' },
-  OTHER:    { 1: 'gemini-2.5-flash-lite',      2: 'gemini-3-flash',       3: 'gemini-3.1-pro' },
+const SYSTEM_PROMPT = `당신은 IT 프로젝트 팀의 AI 멘토입니다. 팀원들의 코드, 설계, 문서, 기획 관련 질문에 전문적이고 친절하게 답변해주세요.
+한국어로 답변하되, 코드는 반드시 마크다운 코드블록(\`\`\`)을 사용해 작성해주세요.`;
+
+// 모델 라우팅 매트릭스 (실제 모델 ID)
+const MODEL_MATRIX: Record<string, Record<number, string>> = {
+  CODE:     { 1: 'claude-haiku-4-5-20251001', 2: 'gpt-4o-mini',       3: 'claude-opus-4-6' },
+  DOCUMENT: { 1: 'gemini-2.5-flash-lite',    2: 'gpt-4o-mini',       3: 'claude-opus-4-6' },
+  DESIGN:   { 1: 'gemini-2.5-flash-lite',    2: 'gemini-2.5-flash',  3: 'gemini-2.5-pro' },
+  PLANNING: { 1: 'claude-haiku-4-5-20251001', 2: 'claude-sonnet-4-6', 3: 'claude-opus-4-6' },
+  RESEARCH: { 1: 'grok-3-mini',              2: 'grok-3',             3: 'grok-4-0709' },
+  OTHER:    { 1: 'gemini-2.5-flash-lite',    2: 'gemini-2.5-flash',  3: 'gemini-2.5-pro' },
 };
 
 // 플랜별 허용 등급
@@ -22,10 +30,81 @@ const PLAN_MAX_TIER = {
   [UserPlan.PREMIUM]: MentoringTier.EXPERT,
 };
 
+type HistoryMessage = { role: AIMessageRole; content: string };
+
 @Injectable()
 export class AiMentorService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {}
 
+  // ─── AI 호출 (provider 자동 분기) ─────────────────────────────
+  private async callAI(modelId: string, history: HistoryMessage[]): Promise<string> {
+    if (modelId.startsWith('claude-')) {
+      const client = new Anthropic({ apiKey: this.config.get<string>('ANTHROPIC_API_KEY')! });
+      const response = await client.messages.create({
+        model: modelId,
+        max_tokens: 2048,
+        system: SYSTEM_PROMPT,
+        messages: history.map(m => ({
+          role: m.role === AIMessageRole.USER ? 'user' : 'assistant',
+          content: m.content,
+        })),
+      });
+      const block = response.content[0];
+      return block.type === 'text' ? block.text : '';
+    }
+
+    if (modelId.startsWith('gpt-')) {
+      const client = new OpenAI({ apiKey: this.config.get<string>('OPENAI_API_KEY')! });
+      const response = await client.chat.completions.create({
+        model: modelId,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...history.map(m => ({
+            role: (m.role === AIMessageRole.USER ? 'user' : 'assistant') as 'user' | 'assistant',
+            content: m.content,
+          })),
+        ],
+      });
+      return response.choices[0]?.message?.content ?? '';
+    }
+
+    if (modelId.startsWith('gemini-')) {
+      const genAI = new GoogleGenerativeAI(this.config.get<string>('GEMINI_API_KEY')!);
+      const model = genAI.getGenerativeModel({ model: modelId, systemInstruction: SYSTEM_PROMPT });
+      const chatHistory = history.slice(0, -1).map(m => ({
+        role: m.role === AIMessageRole.USER ? 'user' : 'model',
+        parts: [{ text: m.content }],
+      }));
+      const chat = model.startChat({ history: chatHistory });
+      const result = await chat.sendMessage(history[history.length - 1].content);
+      return result.response.text();
+    }
+
+    if (modelId.startsWith('grok-')) {
+      const client = new OpenAI({
+        apiKey: this.config.get<string>('XAI_API_KEY')!,
+        baseURL: 'https://api.x.ai/v1',
+      });
+      const response = await client.chat.completions.create({
+        model: modelId,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...history.map(m => ({
+            role: (m.role === AIMessageRole.USER ? 'user' : 'assistant') as 'user' | 'assistant',
+            content: m.content,
+          })),
+        ],
+      });
+      return response.choices[0]?.message?.content ?? '';
+    }
+
+    throw new InternalServerErrorException(`지원하지 않는 모델: ${modelId}`);
+  }
+
+  // ─── 대화 목록 ────────────────────────────────────────────────
   async getConversations(userId: string) {
     return this.prisma.aIConversation.findMany({
       where: { userId },
@@ -34,6 +113,7 @@ export class AiMentorService {
     });
   }
 
+  // ─── 대화 상세 ────────────────────────────────────────────────
   async getConversation(conversationId: string, userId: string) {
     const conv = await this.prisma.aIConversation.findUnique({
       where: { id: conversationId },
@@ -44,6 +124,7 @@ export class AiMentorService {
     return conv;
   }
 
+  // ─── 대화 삭제 ────────────────────────────────────────────────
   async deleteConversation(conversationId: string, userId: string) {
     const conv = await this.prisma.aIConversation.findUnique({ where: { id: conversationId } });
     if (!conv) throw new NotFoundException('대화를 찾을 수 없습니다');
@@ -52,6 +133,7 @@ export class AiMentorService {
     return { message: '대화가 삭제되었습니다' };
   }
 
+  // ─── 메시지 전송 (핵심) ───────────────────────────────────────
   async sendMessage(
     conversationId: string | null,
     userId: string,
@@ -69,17 +151,13 @@ export class AiMentorService {
     if (user.credit < cost)
       throw new BadRequestException(`크레딧이 부족합니다 (필요: ${cost}cr, 보유: ${user.credit}cr)`);
 
-    const modelUsed = MODEL_MATRIX[dto.taskType]?.[dto.tier] ?? 'claude-haiku-4-5';
+    const modelUsed = MODEL_MATRIX[dto.taskType]?.[dto.tier] ?? 'claude-haiku-4-5-20251001';
 
     // 대화 세션 생성 or 기존 사용
     let convId = conversationId;
     if (!convId) {
       const conv = await this.prisma.aIConversation.create({
-        data: {
-          userId,
-          title: dto.content.slice(0, 50),
-          taskId: dto.taskId,
-        },
+        data: { userId, title: dto.content.slice(0, 50), taskId: dto.taskId },
       });
       convId = conv.id;
     } else {
@@ -88,21 +166,46 @@ export class AiMentorService {
         throw new NotFoundException('대화를 찾을 수 없습니다');
     }
 
-    // 트랜잭션: 유저 메시지 저장 + 크레딧 차감 + AI 응답 저장 (stub)
+    // 유저 메시지 저장
+    await this.prisma.aIMessage.create({
+      data: {
+        conversationId: convId,
+        role: AIMessageRole.USER,
+        content: dto.content,
+        taskType: dto.taskType,
+        modelUsed,
+        creditsUsed: 0,
+      },
+    });
+
+    // 대화 히스토리 로드 (최근 20개)
+    const historyRows = await this.prisma.aIMessage.findMany({
+      where: { conversationId: convId },
+      orderBy: { createdAt: 'asc' },
+      take: 20,
+      select: { role: true, content: true },
+    });
+
+    // 실제 AI 호출 (트랜잭션 외부 - 외부 API 호출)
+    let aiResponse: string;
+    try {
+      aiResponse = await this.callAI(modelUsed, historyRows);
+    } catch (err) {
+      throw new InternalServerErrorException(`AI 응답 실패: ${(err as Error).message}`);
+    }
+
+    // 트랜잭션: AI 메시지 저장 + 크레딧 차감 + updatedAt 갱신
     await this.prisma.$transaction(async (tx) => {
-      // 유저 메시지 저장
       await tx.aIMessage.create({
         data: {
           conversationId: convId!,
-          role: AIMessageRole.USER,
-          content: dto.content,
+          role: AIMessageRole.ASSISTANT,
+          content: aiResponse,
           taskType: dto.taskType,
           modelUsed,
-          creditsUsed: 0,
+          creditsUsed: cost,
         },
       });
-
-      // 크레딧 차감
       await tx.user.update({ where: { id: userId }, data: { credit: { decrement: cost } } });
       await tx.creditTransaction.create({
         data: {
@@ -113,21 +216,6 @@ export class AiMentorService {
           relatedId: convId,
         },
       });
-
-      // TODO: 실제 AI 연동 (SSE 스트리밍)
-      // 현재는 stub 응답 저장
-      await tx.aIMessage.create({
-        data: {
-          conversationId: convId!,
-          role: AIMessageRole.ASSISTANT,
-          content: `[${modelUsed}] AI 응답 준비 중입니다. (실제 AI 연동은 별도 구현 예정)`,
-          taskType: dto.taskType,
-          modelUsed,
-          creditsUsed: cost,
-        },
-      });
-
-      // 대화 updatedAt 갱신
       await tx.aIConversation.update({ where: { id: convId! }, data: { updatedAt: new Date() } });
     });
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
+import MarkdownViewer from '@/components/post/MarkdownViewer.client.vue'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: 'AI 멘토 질문 - FLOWIT' })
@@ -207,7 +208,10 @@ function handleKeydown(e: KeyboardEvent) {
             ? 'bg-primary text-primary-foreground'
             : 'bg-muted text-foreground'"
         >
-          <p class="whitespace-pre-wrap">{{ msg.content }}</p>
+          <ClientOnly>
+            <MarkdownViewer v-if="msg.role === 'ASSISTANT'" :content="msg.content" class="prose prose-sm dark:prose-invert max-w-none" />
+            <p v-else class="whitespace-pre-wrap">{{ msg.content }}</p>
+          </ClientOnly>
           <p v-if="msg.modelUsed && msg.role === 'ASSISTANT'" class="text-xs opacity-60 mt-1">
             {{ msg.modelUsed }}
           </p>
