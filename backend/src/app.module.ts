@@ -18,6 +18,7 @@ import { AiMentorModule } from './ai-mentor/ai-mentor.module';
 import { TaskModule } from './task/task.module';
 import { CreditModule } from './credit/credit.module';
 import { BadgeModule } from './badge/badge.module';
+import { DocumentModule } from './document/document.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { BadgeModule } from './badge/badge.module';
     TaskModule,
     CreditModule,
     BadgeModule,
+    DocumentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

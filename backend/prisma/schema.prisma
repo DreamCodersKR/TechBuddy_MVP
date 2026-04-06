@@ -117,6 +117,13 @@ enum AIMessageRole {
   ASSISTANT
 }
 
+enum DocumentCategory {
+  PLANNING      // 기획서
+  DESIGN        // 설계서
+  PRESENTATION  // 발표자료
+  OTHER         // 기타
+}
+
 // ============================================
 // Phase 1: 커뮤니티 기능
 // ============================================
@@ -173,6 +180,9 @@ model User {
 
   // Relations - AI멘토링
   aiConversations AIConversation[]
+
+  // Relations - 산출문서
+  uploadedDocuments Document[]
 
   // Relations - 알림/인증
   notifications     Notification[] @relation("NotificationRecipient")
@@ -345,6 +355,7 @@ model Project {
   tasks     Task[]
   sprints   Sprint[]
   recruits  Recruit[]
+  documents Document[]
 
   @@index([createdById])
   @@index([status])
@@ -678,4 +689,33 @@ model RefreshToken {
   @@index([tokenHash])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+// ============================================
+// 산출문서 보관함
+// ============================================
+
+model Document {
+  id           String           @id @default(uuid())
+  projectId    String
+  fileName     String
+  fileUrl      String           // R2 Public URL
+  r2Key        String           // R2 object key (삭제 시 사용)
+  fileSize     Int              // bytes
+  fileType     String           // MIME type
+  category     DocumentCategory @default(OTHER)
+  uploadedById String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([projectId])
+  @@index([uploadedById])
+  @@index([category])
+  @@map("documents")
 }
