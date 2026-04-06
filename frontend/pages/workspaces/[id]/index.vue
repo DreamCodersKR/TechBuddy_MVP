@@ -23,9 +23,12 @@ interface Task {
   priority: TaskPriority
   dueDate: string | null
   helpReason: string | null
+  issueNumber: number | null
+  position: number
   assignee: { id: string, name: string, nickname: string | null, avatarUrl: string | null } | null
   createdBy: { id: string, name: string, nickname: string | null }
   sprint: { id: string, name: string } | null
+  project: { id: string, issuePrefix: string | null }
   tags: string[]
 }
 
@@ -123,22 +126,58 @@ async function loadData() {
 
 // ─── 드래그앤드롭 ────────────────────────────────────────
 async function onColumnChange(colStatus: TaskStatus, evt: any) {
-  if (!evt.added) return
-  const task: Task = evt.added.element
-  const prevStatus = task.status
-  const idx = tasks.value.findIndex(t => t.id === task.id)
-  if (idx === -1) return
+  // 다른 컬럼으로 이동
+  if (evt.added) {
+    const task: Task = evt.added.element
+    const newIndex: number = evt.added.newIndex
+    const prevStatus = task.status
+    const idx = tasks.value.findIndex(t => t.id === task.id)
+    if (idx === -1) return
 
-  // optimistic update
-  tasks.value[idx].status = colStatus
+    tasks.value[idx].status = colStatus
 
-  try {
-    await authPatch(`/workspaces/${workspaceId}/tasks/${task.id}`, { status: colStatus })
-    if (colStatus === 'HELP') helpModalTask.value = tasks.value[idx]
+    try {
+      const colTasks = tasks.value
+        .filter(t => t.status === colStatus)
+        .sort((a, b) => a.position - b.position)
+      const withoutTask = colTasks.filter(t => t.id !== task.id)
+      withoutTask.splice(newIndex, 0, colTasks.find(t => t.id === task.id)!)
+      const updates = withoutTask.map((t, i) => ({ id: t.id, position: (i + 1) * 10, status: colStatus }))
+      updates.forEach((u) => {
+        const ti = tasks.value.findIndex(t => t.id === u.id)
+        if (ti !== -1) tasks.value[ti].position = u.position
+      })
+      await authPatch(`/workspaces/${workspaceId}/tasks/reorder`, { updates })
+      if (colStatus === 'HELP') helpModalTask.value = tasks.value[idx]
+    }
+    catch {
+      tasks.value[idx].status = prevStatus
+    }
   }
-  catch {
-    // rollback
-    tasks.value[idx].status = prevStatus
+
+  // 같은 컬럼 내 순서 변경
+  if (evt.moved) {
+    const { oldIndex, newIndex } = evt.moved
+    if (oldIndex === newIndex) return
+
+    const colTasks = tasks.value
+      .filter(t => t.status === colStatus)
+      .sort((a, b) => a.position - b.position)
+    const [moved] = colTasks.splice(oldIndex, 1)
+    colTasks.splice(newIndex, 0, moved)
+
+    const updates = colTasks.map((t, i) => ({ id: t.id, position: (i + 1) * 10, status: colStatus }))
+    updates.forEach((u) => {
+      const ti = tasks.value.findIndex(t => t.id === u.id)
+      if (ti !== -1) tasks.value[ti].position = u.position
+    })
+
+    try {
+      await authPatch(`/workspaces/${workspaceId}/tasks/reorder`, { updates })
+    }
+    catch {
+      await loadData()
+    }
   }
 }
 
@@ -338,7 +377,21 @@ async function handleTaskUpdate() {
   }
 }
 
-onMounted(() => { loadData() })
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    if (selectedTask.value) selectedTask.value = null
+    else if (showCreateModal.value) showCreateModal.value = false
+  }
+}
+
+onMounted(() => {
+  loadData()
+  document.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeydown)
+})
 </script>
 
 <template>
@@ -467,6 +520,14 @@ onMounted(() => { loadData() })
               class="bg-card border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:shadow-sm transition-all hover:border-primary/30"
               @click="openTaskDetail(task)"
             >
+              <!-- 이슈 번호 -->
+              <span
+                v-if="task.project?.issuePrefix && task.issueNumber"
+                class="block text-xs text-muted-foreground font-mono mb-1"
+              >
+                {{ task.project.issuePrefix }}-{{ String(task.issueNumber).padStart(3, '0') }}
+              </span>
+
               <!-- 우선순위 + 제목 -->
               <div class="flex items-start gap-1.5 mb-2">
                 <Icon
@@ -696,149 +757,154 @@ onMounted(() => { loadData() })
       </div>
     </div>
 
-    <!-- 태스크 상세/수정 모달 -->
+    <!-- 태스크 상세 슬라이드 패널 -->
     <div
       v-if="selectedTask"
-      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      @click.self="selectedTask = null"
+      class="fixed right-0 top-14 h-[calc(100vh-56px)] w-[520px] bg-card border-l border-border z-50 flex flex-col shadow-2xl"
     >
-      <div class="bg-card border border-border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="font-semibold text-foreground">
-            태스크 상세
-          </h3>
-          <button
-            class="text-muted-foreground hover:text-foreground"
-            @click="selectedTask = null"
+      <!-- 패널 헤더 -->
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-border flex-shrink-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <span
+            v-if="selectedTask.project?.issuePrefix && selectedTask.issueNumber"
+            class="text-xs text-muted-foreground font-mono flex-shrink-0 bg-muted px-1.5 py-0.5 rounded"
           >
-            <Icon icon="heroicons:x-mark" class="w-5 h-5" />
-          </button>
+            {{ selectedTask.project.issuePrefix }}-{{ String(selectedTask.issueNumber).padStart(3, '0') }}
+          </span>
+          <span class="text-sm font-semibold text-foreground truncate">태스크 상세</span>
         </div>
+        <button
+          class="text-muted-foreground hover:text-foreground flex-shrink-0 ml-2"
+          @click="selectedTask = null"
+        >
+          <Icon icon="heroicons:x-mark" class="w-5 h-5" />
+        </button>
+      </div>
 
-        <div class="space-y-3">
-          <input
-            v-model="selectedTask.title"
-            class="w-full px-3 py-2 text-sm font-medium border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-          <textarea
-            v-model="selectedTask.description"
-            placeholder="설명 추가..."
-            rows="4"
-            class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs text-muted-foreground mb-1 block">상태</label>
-              <select
-                v-model="selectedTask.status"
-                class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+      <!-- 패널 본문 (스크롤) -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-4">
+        <input
+          v-model="selectedTask.title"
+          class="w-full px-3 py-2 text-sm font-medium border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+        <textarea
+          v-model="selectedTask.description"
+          placeholder="설명 추가..."
+          rows="4"
+          class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-muted-foreground mb-1 block">상태</label>
+            <select
+              v-model="selectedTask.status"
+              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+            >
+              <option
+                v-for="col in COLUMNS"
+                :key="col.status"
+                :value="col.status"
               >
-                <option
-                  v-for="col in COLUMNS"
-                  :key="col.status"
-                  :value="col.status"
-                >
-                  {{ col.label }}
-                </option>
-              </select>
-            </div>
-            <div>
-              <label class="text-xs text-muted-foreground mb-1 block">우선순위</label>
-              <select
-                v-model="selectedTask.priority"
-                class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
-              >
-                <option
-                  v-for="(label, val) in PRIORITY_LABEL"
-                  :key="val"
-                  :value="val"
-                >
-                  {{ label }}
-                </option>
-              </select>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs text-muted-foreground mb-1 block">담당자</label>
-              <select
-                :value="selectedTask.assignee?.id ?? ''"
-                class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
-                @change="selectedTask!.assignee = members.find(m => m.user.id === ($event.target as HTMLSelectElement).value)?.user as Task['assignee'] ?? null"
-              >
-                <option value="">
-                  미배정
-                </option>
-                <option
-                  v-for="m in members"
-                  :key="m.user.id"
-                  :value="m.user.id"
-                >
-                  {{ m.user.nickname ?? m.user.name }}
-                </option>
-              </select>
-            </div>
-            <div>
-              <label class="text-xs text-muted-foreground mb-1 block">마감일</label>
-              <input
-                :value="selectedTask.dueDate ? selectedTask.dueDate.slice(0, 10) : ''"
-                type="date"
-                class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
-                @change="selectedTask!.dueDate = ($event.target as HTMLInputElement).value || null"
-              >
-            </div>
+                {{ col.label }}
+              </option>
+            </select>
           </div>
           <div>
-            <label class="text-xs text-muted-foreground mb-1 block">스프린트</label>
+            <label class="text-xs text-muted-foreground mb-1 block">우선순위</label>
             <select
-              v-model="editSprintId"
+              v-model="selectedTask.priority"
               class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+            >
+              <option
+                v-for="(label, val) in PRIORITY_LABEL"
+                :key="val"
+                :value="val"
+              >
+                {{ label }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-muted-foreground mb-1 block">담당자</label>
+            <select
+              :value="selectedTask.assignee?.id ?? ''"
+              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+              @change="selectedTask!.assignee = members.find(m => m.user.id === ($event.target as HTMLSelectElement).value)?.user as Task['assignee'] ?? null"
             >
               <option value="">
                 미배정
               </option>
               <option
-                v-for="s in sprints"
-                :key="s.id"
-                :value="s.id"
+                v-for="m in members"
+                :key="m.user.id"
+                :value="m.user.id"
               >
-                {{ s.name }}
+                {{ m.user.nickname ?? m.user.name }}
               </option>
             </select>
           </div>
           <div>
-            <label class="text-xs text-muted-foreground mb-1 block">태그</label>
-            <div class="flex flex-wrap gap-1 mb-1.5">
-              <span
-                v-for="tag in editTags"
-                :key="tag"
-                class="inline-flex items-center gap-1 text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
-              >
-                #{{ tag }}
-                <button class="hover:text-foreground" @click="removeEditTag(tag)">
-                  <Icon icon="heroicons:x-mark" class="w-3 h-3" />
-                </button>
-              </span>
-            </div>
+            <label class="text-xs text-muted-foreground mb-1 block">마감일</label>
             <input
-              v-model="editTagInput"
-              placeholder="태그 입력 후 Enter"
+              :value="selectedTask.dueDate ? selectedTask.dueDate.slice(0, 10) : ''"
+              type="date"
               class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
-              @keydown.enter.prevent="addEditTag"
-              @keydown.comma.prevent="addEditTag"
+              @change="selectedTask!.dueDate = ($event.target as HTMLInputElement).value || null"
             >
           </div>
-          <div
-            v-if="selectedTask.status === 'HELP'"
-            class="space-y-1"
+        </div>
+        <div>
+          <label class="text-xs text-muted-foreground mb-1 block">스프린트</label>
+          <select
+            v-model="editSprintId"
+            class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
           >
-            <label class="text-xs text-muted-foreground block">도움 요청 사유</label>
-            <input
-              v-model="selectedTask.helpReason"
-              placeholder="어떤 부분이 막히나요?"
-              class="w-full px-3 py-2 text-sm border border-red-300 rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-red-400"
+            <option value="">
+              미배정
+            </option>
+            <option
+              v-for="s in sprints"
+              :key="s.id"
+              :value="s.id"
             >
+              {{ s.name }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-muted-foreground mb-1 block">태그</label>
+          <div class="flex flex-wrap gap-1 mb-1.5">
+            <span
+              v-for="tag in editTags"
+              :key="tag"
+              class="inline-flex items-center gap-1 text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
+            >
+              #{{ tag }}
+              <button class="hover:text-foreground" @click="removeEditTag(tag)">
+                <Icon icon="heroicons:x-mark" class="w-3 h-3" />
+              </button>
+            </span>
           </div>
+          <input
+            v-model="editTagInput"
+            placeholder="태그 입력 후 Enter"
+            class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+            @keydown.enter.prevent="addEditTag"
+            @keydown.comma.prevent="addEditTag"
+          >
+        </div>
+        <div
+          v-if="selectedTask.status === 'HELP'"
+          class="space-y-1"
+        >
+          <label class="text-xs text-muted-foreground block">도움 요청 사유</label>
+          <input
+            v-model="selectedTask.helpReason"
+            placeholder="어떤 부분이 막히나요?"
+            class="w-full px-3 py-2 text-sm border border-red-300 rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-red-400"
+          >
         </div>
 
         <div class="flex justify-end gap-2">
@@ -868,7 +934,6 @@ onMounted(() => { loadData() })
               :key="comment.id"
               class="flex gap-2.5"
             >
-              <!-- 아바타 -->
               <div class="h-7 w-7 rounded-full bg-muted flex-shrink-0 flex items-center justify-center text-xs font-medium overflow-hidden mt-0.5">
                 <img
                   v-if="comment.author.avatarUrl"
@@ -878,14 +943,12 @@ onMounted(() => { loadData() })
                 <span v-else>{{ (comment.author.nickname ?? comment.author.name).slice(0, 1) }}</span>
               </div>
 
-              <!-- 내용 -->
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-0.5">
                   <span class="text-xs font-medium text-foreground">{{ comment.author.nickname ?? comment.author.name }}</span>
                   <span class="text-xs text-muted-foreground">{{ useRelativeTime(comment.createdAt) }}</span>
                 </div>
 
-                <!-- 수정 모드 -->
                 <div
                   v-if="editingCommentId === comment.id"
                   class="space-y-1.5"
@@ -913,7 +976,6 @@ onMounted(() => { loadData() })
                   </div>
                 </div>
 
-                <!-- 읽기 모드 -->
                 <div v-else>
                   <p class="text-xs text-foreground whitespace-pre-wrap break-words">
                     {{ comment.content }}

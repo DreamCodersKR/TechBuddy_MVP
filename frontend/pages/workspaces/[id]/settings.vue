@@ -23,6 +23,7 @@ interface WorkspaceDetail {
   techStack: string[]
   githubUrl: string | null
   isPublic: boolean
+  issuePrefix: string | null
   status: string
   members: { role: string, user: { id: string } }[]
 }
@@ -37,6 +38,7 @@ const form = reactive({
   techStack: [] as string[],
   githubUrl: '',
   isPublic: false,
+  issuePrefix: '',
 })
 
 async function loadWorkspace() {
@@ -49,6 +51,7 @@ async function loadWorkspace() {
     form.techStack = [...res.techStack]
     form.githubUrl = res.githubUrl ?? ''
     form.isPublic = res.isPublic
+    form.issuePrefix = res.issuePrefix ?? ''
     const me = res.members.find(m => m.user.id === authStore.currentUser?.id)
     if (me) myRole.value = me.role as typeof myRole.value
   }
@@ -71,6 +74,7 @@ async function handleSave() {
   isSaving.value = true
   saveSuccess.value = false
   try {
+    const prefix = form.issuePrefix.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5)
     const body: Record<string, unknown> = {
       name: form.name.trim(),
       description: form.description.trim() || null,
@@ -78,6 +82,7 @@ async function handleSave() {
       isPublic: form.isPublic,
     }
     if (form.githubUrl.trim()) body.githubUrl = form.githubUrl.trim()
+    if (prefix.length >= 2) body.issuePrefix = prefix
 
     const updated = await authPatch<WorkspaceDetail>(`/workspaces/${workspaceId}`, body)
     workspace.value = updated
@@ -189,6 +194,25 @@ onMounted(() => { loadWorkspace() })
               {{ tech }}
             </button>
           </div>
+        </div>
+
+        <!-- 이슈 접두어 (PREFIX) -->
+        <div class="space-y-2">
+          <Label>이슈 번호 접두어 <span class="text-xs text-muted-foreground">(영문 대문자 2~5자, 예: FLOW)</span></Label>
+          <div class="flex items-center gap-2">
+            <Input
+              v-model="form.issuePrefix"
+              placeholder="FLOW"
+              maxlength="5"
+              :disabled="myRole !== 'ADMIN'"
+              class="w-32 uppercase"
+              @input="form.issuePrefix = form.issuePrefix.toUpperCase().replace(/[^A-Z]/g, '')"
+            />
+            <span v-if="form.issuePrefix.length >= 2" class="text-sm text-muted-foreground">
+              → {{ form.issuePrefix }}-001, {{ form.issuePrefix }}-002, ...
+            </span>
+          </div>
+          <p class="text-xs text-muted-foreground">이슈 번호 형식을 설정합니다. 설정 후 생성되는 태스크부터 번호가 부여됩니다.</p>
         </div>
 
         <!-- GitHub (PROJECT만) -->

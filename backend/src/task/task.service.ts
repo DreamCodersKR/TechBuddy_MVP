@@ -7,6 +7,7 @@ const TASK_INCLUDE = {
   assignee: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
   createdBy: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
   sprint: { select: { id: true, name: true } },
+  project: { select: { id: true, issuePrefix: true } },
 };
 
 @Injectable()
@@ -43,6 +44,20 @@ export class TaskService {
     if (!workspace || workspace.deletedAt)
       throw new NotFoundException('워크스페이스를 찾을 수 없습니다');
 
+    // issueNumber: 프로젝트 내 max + 1
+    const maxResult = await this.prisma.task.aggregate({
+      where: { projectId: workspaceId },
+      _max: { issueNumber: true },
+    });
+    const issueNumber = (maxResult._max.issueNumber ?? 0) + 1;
+
+    // position: 해당 status 컬럼 내 max + 1
+    const posResult = await this.prisma.task.aggregate({
+      where: { projectId: workspaceId, status: dto.status ?? 'TODO' },
+      _max: { position: true },
+    });
+    const position = (posResult._max.position ?? 0) + 1;
+
     const { dueDate, ...rest } = dto;
     return this.prisma.task.create({
       data: {
@@ -50,6 +65,8 @@ export class TaskService {
         projectId: workspaceId,
         createdById: userId,
         dueDate: dueDate ? new Date(dueDate) : null,
+        issueNumber,
+        position,
       },
       include: TASK_INCLUDE,
     });
@@ -71,7 +88,7 @@ export class TaskService {
         ...(assigneeId && { assigneeId }),
       },
       include: TASK_INCLUDE,
-      orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ status: 'asc' }, { position: 'asc' }, { createdAt: 'asc' }],
     });
   }
 
@@ -107,6 +124,20 @@ export class TaskService {
       },
       include: TASK_INCLUDE,
     });
+  }
+
+  async reorder(workspaceId: string, userId: string, updates: { id: string; position: number; status: string }[]) {
+    await this.checkMember(workspaceId, userId);
+
+    await this.prisma.$transaction(
+      updates.map(u =>
+        this.prisma.task.update({
+          where: { id: u.id },
+          data: { position: u.position, status: u.status as TaskStatus },
+        }),
+      ),
+    );
+    return { message: 'ok' };
   }
 
   async remove(workspaceId: string, taskId: string, userId: string) {

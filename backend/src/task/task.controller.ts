@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TaskService } from './task.service';
-import { CreateTaskDto, UpdateTaskDto, CreateCommentDto, UpdateCommentDto } from './dto';
+import { CreateTaskDto, UpdateTaskDto, CreateCommentDto, UpdateCommentDto, ReorderTaskDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators';
 
@@ -46,6 +46,16 @@ export class TaskController {
     @CurrentUser() user: any,
   ) {
     return this.taskService.findOne(workspaceId, taskId, user.id);
+  }
+
+  @Patch('reorder')
+  @ApiOperation({ summary: '태스크 순서 변경 (드래그앤드롭)' })
+  reorder(
+    @Param('workspaceId') workspaceId: string,
+    @CurrentUser() user: any,
+    @Body() dto: ReorderTaskDto,
+  ) {
+    return this.taskService.reorder(workspaceId, user.id, dto.updates);
   }
 
   @Patch(':taskId')

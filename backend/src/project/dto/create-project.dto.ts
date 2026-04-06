@@ -7,6 +7,8 @@ import {
   IsEnum,
   IsArray,
   IsUrl,
+  Matches,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { WorkspaceType } from '@prisma/client';
@@ -94,4 +96,14 @@ export class CreateProjectDto {
   @IsBoolean()
   @IsOptional()
   isPublic?: boolean;
+
+  @ApiPropertyOptional({
+    description: '이슈 번호 접두어 (영문 대문자 2~5자, 예: FLOW)',
+    example: 'FLOW',
+  })
+  @IsString()
+  @MaxLength(5)
+  @Matches(/^[A-Z]{2,5}$/, { message: '이슈 접두어는 영문 대문자 2~5자여야 합니다' })
+  @IsOptional()
+  issuePrefix?: string;
 }

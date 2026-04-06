@@ -341,6 +341,7 @@ model Project {
   githubUrl     String?
   startDate     DateTime?
   endDate       DateTime?
+  issuePrefix   String?       // 이슈 번호 접두어 (예: FLOW, PRJ)
   status        ProjectStatus @default(ACTIVE)
   isPublic      Boolean       @default(false)
   createdById   String
@@ -416,10 +417,12 @@ model Task {
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
   taskType    TaskType?    // AI멘토링 유형 분류
-  helpReason  String?
-  dueDate     DateTime?
-  tags        String[]  @default([])
-  createdById String
+  helpReason   String?
+  dueDate      DateTime?
+  tags         String[]  @default([])
+  issueNumber  Int?      // 프로젝트 내 이슈 순번 (자동 생성)
+  position     Int       @default(0) // 칸반 컬럼 내 순서
+  createdById  String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
