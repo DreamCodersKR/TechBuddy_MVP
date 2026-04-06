@@ -82,7 +82,10 @@ async function sendMessage() {
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) sendMessage()
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault()
+    sendMessage()
+  }
 }
 
 onMounted(() => { loadConversation() })
@@ -135,9 +138,6 @@ onMounted(() => { loadConversation() })
             <MarkdownViewer v-if="msg.role === 'ASSISTANT'" :content="msg.content" class="prose prose-sm dark:prose-invert max-w-none" />
             <p v-else class="whitespace-pre-wrap">{{ msg.content }}</p>
           </ClientOnly>
-          <p v-if="msg.modelUsed && msg.role === 'ASSISTANT'" class="text-xs opacity-60 mt-1">
-            {{ msg.modelUsed }} · {{ msg.creditsUsed }}cr
-          </p>
         </div>
       </div>
 
@@ -166,7 +166,7 @@ onMounted(() => { loadConversation() })
           @keydown="handleKeydown"
         />
         <div class="flex items-center justify-between px-4 py-2 border-t border-border bg-muted/30">
-          <span class="text-xs text-muted-foreground">Cmd+Enter로 전송</span>
+          <span class="text-xs text-muted-foreground">Enter 전송 · Shift+Enter 줄바꿈</span>
           <Button size="sm" :disabled="!inputContent.trim() || isSending" @click="sendMessage">
             <Icon v-if="isSending" icon="heroicons:arrow-path" class="w-4 h-4 mr-1.5 animate-spin" />
             <Icon v-else icon="heroicons:paper-airplane" class="w-4 h-4 mr-1.5" />

@@ -28,6 +28,7 @@ interface RecruitListItem {
 
 // ─── 상태 ────────────────────────────────────────────────
 const tab = ref<'all' | 'PROJECT' | 'STUDY'>((route.query.tab as 'all' | 'PROJECT' | 'STUDY') || 'all')
+const selectedPosition = ref((route.query.position as string) || '')
 const items = ref<RecruitListItem[]>([])
 const total = ref(0)
 const page = ref(1)
@@ -36,6 +37,8 @@ const loading = ref(false)
 
 const totalPages = computed(() => Math.ceil(total.value / limit))
 
+const POSITIONS = ['프론트엔드', '백엔드', '풀스택', '디자이너', '기획자', 'DevOps', 'iOS', 'Android']
+
 // ─── 데이터 패칭 ─────────────────────────────────────────
 async function fetchList(p = 1) {
   loading.value = true
@@ -43,6 +46,7 @@ async function fetchList(p = 1) {
   try {
     const params = new URLSearchParams({ page: String(p), limit: String(limit) })
     if (tab.value !== 'all') params.set('type', tab.value)
+    if (selectedPosition.value) params.set('position', selectedPosition.value)
     const res = await $fetch<{
       data: RecruitListItem[]
       meta: { total: number; page: number; limit: number; totalPages: number }
@@ -57,6 +61,11 @@ async function fetchList(p = 1) {
   finally {
     loading.value = false
   }
+}
+
+function selectPosition(pos: string) {
+  selectedPosition.value = selectedPosition.value === pos ? '' : pos
+  fetchList(1)
 }
 
 watch(tab, () => {
@@ -82,7 +91,7 @@ await fetchList(1)
     </div>
 
     <!-- 탭 -->
-    <nav class="flex gap-1 mb-4">
+    <nav class="flex gap-1 mb-3">
       <button
         v-for="t in [{ label: '전체', value: 'all' }, { label: '프로젝트', value: 'PROJECT' }, { label: '스터디', value: 'STUDY' }]"
         :key="t.value"
@@ -93,6 +102,21 @@ await fetchList(1)
         {{ t.label }}
       </button>
     </nav>
+
+    <!-- 포지션 필터 -->
+    <div class="flex flex-wrap gap-1.5 mb-4">
+      <button
+        v-for="pos in POSITIONS"
+        :key="pos"
+        class="px-3 py-1 text-xs font-medium rounded-full border transition-colors"
+        :class="selectedPosition === pos
+          ? 'border-primary bg-primary text-primary-foreground'
+          : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'"
+        @click="selectPosition(pos)"
+      >
+        {{ pos }}
+      </button>
+    </div>
 
     <!-- 로딩 -->
     <template v-if="loading">
@@ -130,7 +154,7 @@ await fetchList(1)
               </span>
             </div>
             <span
-              v-if="item.isClosed"
+              v-if="item.isClosed || (item.deadline && new Date(item.deadline) < new Date())"
               class="flex-shrink-0 text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded"
             >마감</span>
           </div>

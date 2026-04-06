@@ -46,6 +46,11 @@ const isAuthor = computed(() =>
   authStore.isAuthenticated && recruit.value?.authorId === authStore.currentUser?.id,
 )
 
+const isExpired = computed(() => {
+  if (!recruit.value?.deadline) return false
+  return new Date(recruit.value.deadline) < new Date()
+})
+
 // ─── 데이터 로드 ─────────────────────────────────────────
 async function loadData() {
   try {
@@ -201,7 +206,7 @@ const statusLabel: Record<string, { label: string; class: string }> = {
           {{ recruit.project.name }}
         </span>
         <span
-          v-if="recruit.isClosed"
+          v-if="recruit.isClosed || isExpired"
           class="ml-auto text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded"
         >마감</span>
       </div>
@@ -241,7 +246,7 @@ const statusLabel: Record<string, { label: string; class: string }> = {
     </div>
 
     <!-- 작성자: 마감 버튼 -->
-    <div v-if="isAuthor && !recruit.isClosed" class="flex justify-end mb-6">
+    <div v-if="isAuthor && !recruit.isClosed && !isExpired" class="flex justify-end mb-6">
       <Button variant="outline" size="sm" :disabled="isClosing" @click="handleClose">
         <Icon v-if="isClosing" icon="heroicons:arrow-path" class="w-4 h-4 mr-1.5 animate-spin" />
         <Icon v-else icon="heroicons:x-circle" class="w-4 h-4 mr-1.5" />
@@ -328,7 +333,7 @@ const statusLabel: Record<string, { label: string; class: string }> = {
     <template v-else>
       <!-- 마감된 경우 -->
       <div
-        v-if="recruit.isClosed"
+        v-if="recruit.isClosed || isExpired"
         class="border border-border rounded-lg bg-muted/30 px-6 py-4 text-center"
       >
         <Icon icon="heroicons:x-circle" class="w-5 h-5 mx-auto mb-2 text-muted-foreground" />

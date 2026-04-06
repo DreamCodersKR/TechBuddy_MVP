@@ -28,6 +28,15 @@ interface Author {
   name: string
   nickname: string | null
   avatarUrl: string | null
+  userBadges?: { badge: string }[]
+}
+
+const BADGE_CONFIG: Record<string, { icon: string; class: string }> = {
+  SUBSCRIBER: { icon: 'heroicons:sparkles', class: 'text-violet-500' },
+  LOYALTY: { icon: 'heroicons:trophy', class: 'text-amber-500' },
+  ORGANIZATION: { icon: 'heroicons:building-office', class: 'text-blue-500' },
+  ACTIVITY: { icon: 'heroicons:bolt', class: 'text-orange-400' },
+  NEW_MEMBER: { icon: 'heroicons:star', class: 'text-green-500' },
 }
 
 interface AgoraAnswer {
@@ -320,8 +329,15 @@ await fetchAgora()
 
             <!-- 메타 + 버튼 -->
             <div class="flex items-center justify-between mt-4 pt-3 border-t border-border">
-              <div class="flex items-center gap-3 text-xs text-muted-foreground">
+              <div class="flex items-center gap-2 text-xs text-muted-foreground">
                 <span class="font-medium text-foreground">{{ answer.author.nickname ?? answer.author.name }}</span>
+                <Icon
+                  v-for="ub in answer.author.userBadges?.slice(0, 2)"
+                  :key="ub.badge"
+                  :icon="BADGE_CONFIG[ub.badge]?.icon || 'heroicons:star'"
+                  class="w-3.5 h-3.5"
+                  :class="BADGE_CONFIG[ub.badge]?.class"
+                />
                 <span>{{ useRelativeTime(answer.createdAt) }}</span>
               </div>
               <div class="flex items-center gap-2">

@@ -68,12 +68,12 @@ export class CommentService {
       },
       include: {
         author: {
-          select: { id: true, name: true, nickname: true, avatarUrl: true },
+          select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } },
         },
         replies: {
           include: {
             author: {
-              select: { id: true, name: true, nickname: true, avatarUrl: true },
+              select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } },
             },
           },
           orderBy: { createdAt: 'asc' },

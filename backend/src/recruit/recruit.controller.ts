@@ -13,13 +13,15 @@ export class RecruitController {
   @Get()
   @ApiOperation({ summary: '팀원모집 목록' })
   @ApiQuery({ name: 'type', required: false, enum: ['PROJECT', 'STUDY'] })
+  @ApiQuery({ name: 'position', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
   findAll(
     @Query('type') type?: string,
+    @Query('position') position?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.recruitService.findAll({ type, page: page ? Number(page) : undefined, limit: limit ? Number(limit) : undefined });
+    return this.recruitService.findAll({ type, position, page: page ? Number(page) : undefined, limit: limit ? Number(limit) : undefined });
   }
 
   @Get(':id')

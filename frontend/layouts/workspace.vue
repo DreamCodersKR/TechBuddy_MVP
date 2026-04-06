@@ -267,7 +267,7 @@ async function handleLogout() {
         </div>
       </header>
 
-      <main class="p-6">
+      <main class="p-6 overflow-x-auto">
         <slot />
       </main>
     </div>

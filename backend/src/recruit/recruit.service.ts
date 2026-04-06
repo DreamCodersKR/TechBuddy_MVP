@@ -11,12 +11,13 @@ import { ApplicationStatus, ProjectRole } from '@prisma/client';
 export class RecruitService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(params: { type?: string; page?: number; limit?: number }) {
-    const { type, page = 1, limit = 20 } = params;
+  async findAll(params: { type?: string; position?: string; page?: number; limit?: number }) {
+    const { type, position, page = 1, limit = 20 } = params;
     const skip = (page - 1) * limit;
 
     const where = {
       ...(type && { type: type as any }),
+      ...(position && { positions: { hasSome: [position] } }),
     };
 
     const [items, total] = await Promise.all([
@@ -84,6 +85,7 @@ export class RecruitService {
     const recruit = await this.prisma.recruit.findUnique({ where: { id: recruitId } });
     if (!recruit) throw new NotFoundException('모집글을 찾을 수 없습니다');
     if (recruit.isClosed) throw new ForbiddenException('마감된 모집글에는 지원할 수 없습니다');
+    if (recruit.deadline && recruit.deadline < new Date()) throw new ForbiddenException('마감 기한이 지난 모집글에는 지원할 수 없습니다');
     if (recruit.authorId === userId) throw new ForbiddenException('본인 모집글에는 지원할 수 없습니다');
 
     const existing = await this.prisma.recruitApplication.findUnique({

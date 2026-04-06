@@ -49,10 +49,10 @@ export class AgoraService {
     const agora = await this.prisma.agora.findUnique({
       where: { id },
       include: {
-        author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+        author: { select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } } },
         answers: {
           include: {
-            author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+            author: { select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } } },
           },
           orderBy: [{ isAccepted: 'desc' }, { createdAt: 'asc' }],
         },
@@ -145,7 +145,7 @@ export class AgoraService {
     return this.prisma.agoraAnswer.create({
       data: { ...dto, agoraId, authorId: userId },
       include: {
-        author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+        author: { select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } } },
       },
     });
   }
