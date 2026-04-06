@@ -56,6 +56,11 @@ const sidebarItems = computed(() => [
     to: `/workspaces/${workspaceId.value}/members`,
   },
   {
+    label: '산출문서',
+    icon: 'heroicons:folder-open',
+    to: `/workspaces/${workspaceId.value}/documents`,
+  },
+  {
     label: '설정',
     icon: 'heroicons:cog-6-tooth',
     to: `/workspaces/${workspaceId.value}/settings`,
