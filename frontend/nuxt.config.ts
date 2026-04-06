@@ -18,10 +18,23 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        {
-          name: 'description',
-          content: 'IT 부트캠프 학생과 취준생을 위한 커뮤니티 플랫폼',
-        },
+        { name: 'description', content: 'IT 부트캠프 수료생과 취업 준비생을 위한 커뮤니티·협업 플랫폼. 팀 빌딩, 프로젝트 관리, AI 멘토링까지 한 곳에서.' },
+        // OG (Open Graph)
+        { property: 'og:type', content: 'website' },
+        { property: 'og:site_name', content: 'FLOWIT' },
+        { property: 'og:title', content: 'FLOWIT - IT 부트캠프 커뮤니티·협업 플랫폼' },
+        { property: 'og:description', content: 'IT 부트캠프 수료생과 취업 준비생을 위한 커뮤니티·협업 플랫폼. 팀 빌딩, 프로젝트 관리, AI 멘토링까지 한 곳에서.' },
+        { property: 'og:image', content: '/og-image.svg' },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        // Twitter Card
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'FLOWIT - IT 부트캠프 커뮤니티·협업 플랫폼' },
+        { name: 'twitter:description', content: 'IT 부트캠프 수료생과 취업 준비생을 위한 커뮤니티·협업 플랫폼.' },
+        { name: 'twitter:image', content: '/og-image.svg' },
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
       ],
     },
   },
