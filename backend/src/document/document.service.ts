@@ -2,8 +2,8 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { R2Service } from './r2.service';
 import { DocumentCategory } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
 import * as archiver from 'archiver';
+import { randomUUID } from 'crypto';
 import type { Response } from 'express';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class DocumentService {
     category: DocumentCategory = DocumentCategory.OTHER,
   ) {
     const ext = file.originalname.split('.').pop();
-    const r2Key = `${projectId}/${uuidv4()}-${file.originalname}`;
+    const r2Key = `${projectId}/${randomUUID()}-${file.originalname}`;
     const fileUrl = await this.r2.uploadFile(r2Key, file.buffer, file.mimetype);
 
     return this.prisma.document.create({
