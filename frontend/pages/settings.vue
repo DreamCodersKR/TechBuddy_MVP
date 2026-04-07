@@ -8,7 +8,7 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: '설정 - FLOWIT' })
 
 const authStore = useAuthStore()
-const { patch: authPatch } = useAuthFetch()
+const { patch: authPatch, post: authPost } = useAuthFetch()
 
 const user = computed(() => authStore.currentUser)
 
@@ -25,6 +25,49 @@ const techInput = ref('')
 const profileLoading = ref(false)
 const profileSuccess = ref(false)
 const profileError = ref('')
+
+// ─── 아바타 업로드 ────────────────────────────────────────
+const avatarFileInput = ref<HTMLInputElement | null>(null)
+const avatarPreview = ref<string>(user.value?.avatarUrl ?? '')
+const avatarFile = ref<File | null>(null)
+const avatarUploading = ref(false)
+const avatarError = ref('')
+
+function onAvatarFileChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    avatarError.value = '이미지 파일만 업로드할 수 있습니다.'
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    avatarError.value = '파일 크기는 5MB 이하여야 합니다.'
+    return
+  }
+  avatarError.value = ''
+  avatarFile.value = file
+  avatarPreview.value = URL.createObjectURL(file)
+}
+
+async function handleAvatarUpload() {
+  if (!avatarFile.value) return
+  avatarUploading.value = true
+  avatarError.value = ''
+  try {
+    const formData = new FormData()
+    formData.append('avatar', avatarFile.value)
+    const updated = await authPost<any>('/users/me/avatar', formData)
+    if (authStore.currentUser) {
+      authStore.currentUser.avatarUrl = updated.avatarUrl
+    }
+    profileForm.avatarUrl = updated.avatarUrl
+    avatarFile.value = null
+  }
+  catch (e: any) {
+    avatarError.value = e?.data?.message || '업로드에 실패했습니다.'
+  }
+  finally { avatarUploading.value = false }
+}
 
 function addTech() {
   const t = techInput.value.trim()
@@ -124,15 +167,47 @@ const userInitials = computed(() => {
     <div class="bg-card border border-border rounded-xl p-6 mb-6">
       <h2 class="text-sm font-semibold text-foreground mb-4">프로필 수정</h2>
 
-      <!-- 아바타 미리보기 -->
+      <!-- 아바타 업로드 -->
       <div class="flex items-center gap-4 mb-4">
-        <Avatar class="h-14 w-14">
-          <AvatarImage :src="profileForm.avatarUrl || undefined" />
-          <AvatarFallback>{{ userInitials }}</AvatarFallback>
-        </Avatar>
+        <div class="relative">
+          <Avatar class="h-16 w-16">
+            <AvatarImage :src="avatarPreview || undefined" />
+            <AvatarFallback>{{ userInitials }}</AvatarFallback>
+          </Avatar>
+          <button
+            class="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow"
+            @click="avatarFileInput?.click()"
+          >
+            <Icon icon="heroicons:camera" class="w-3.5 h-3.5" />
+          </button>
+        </div>
         <div class="flex-1">
-          <label class="text-xs text-muted-foreground mb-1 block">프로필 이미지 URL</label>
-          <Input v-model="profileForm.avatarUrl" placeholder="https://example.com/avatar.jpg" class="h-8 text-sm" />
+          <p class="text-xs text-muted-foreground mb-2">프로필 이미지 (jpeg, png, gif, webp · 최대 5MB)</p>
+          <input
+            ref="avatarFileInput"
+            type="file"
+            accept="image/*"
+            class="hidden"
+            @change="onAvatarFileChange"
+          />
+          <div class="flex gap-2">
+            <Button variant="outline" size="sm" class="text-xs" @click="avatarFileInput?.click()">
+              <Icon icon="heroicons:arrow-up-tray" class="w-3.5 h-3.5 mr-1" />
+              파일 선택
+            </Button>
+            <Button
+              v-if="avatarFile"
+              size="sm"
+              class="text-xs"
+              :disabled="avatarUploading"
+              @click="handleAvatarUpload"
+            >
+              <Icon v-if="avatarUploading" icon="heroicons:arrow-path" class="w-3.5 h-3.5 mr-1 animate-spin" />
+              {{ avatarUploading ? '업로드 중...' : '업로드' }}
+            </Button>
+          </div>
+          <p v-if="avatarError" class="text-xs text-destructive mt-1">{{ avatarError }}</p>
+          <p v-if="avatarFile && !avatarUploading" class="text-xs text-muted-foreground mt-1">{{ avatarFile.name }}</p>
         </div>
       </div>
 

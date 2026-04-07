@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -13,10 +14,14 @@ import {
 } from './dto';
 import * as bcrypt from 'bcrypt';
 import { BadgeType, CreditTransactionType } from '@prisma/client';
+import { R2Service } from '../document/r2.service';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly r2: R2Service,
+  ) {}
 
   /**
    * 사용자 생성 (회원가입)
@@ -128,6 +133,33 @@ export class UserService {
     }
 
     return new PublicUserResponseDto(user);
+  }
+
+  /**
+   * 프로필 이미지 업로드 (R2)
+   */
+  async uploadAvatar(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<UserResponseDto> {
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowed.includes(file.mimetype)) {
+      throw new BadRequestException('이미지 파일만 업로드할 수 있습니다 (jpeg, png, gif, webp)');
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      throw new BadRequestException('파일 크기는 5MB 이하여야 합니다');
+    }
+
+    const ext = file.mimetype.split('/')[1];
+    const key = `avatars/${userId}/${Date.now()}.${ext}`;
+    const avatarUrl = await this.r2.uploadFile(key, file.buffer, file.mimetype);
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    });
+
+    return new UserResponseDto(updatedUser);
   }
 
   /**

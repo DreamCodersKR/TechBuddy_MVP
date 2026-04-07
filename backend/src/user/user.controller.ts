@@ -9,7 +9,10 @@ import {
   UseGuards,
   UseInterceptors,
   ClassSerializerInterceptor,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import {
   ApiTags,
   ApiOperation,
@@ -17,6 +20,8 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiQuery,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import {
@@ -87,6 +92,24 @@ export class UserController {
   @ApiQuery({ name: 'status', required: false })
   getMyTasks(@CurrentUser() user: any, @Query('status') status?: string) {
     return this.taskService.findMyTasks(user.id, status);
+  }
+
+  /**
+   * 프로필 이미지 업로드
+   */
+  @Post('me/avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { avatar: { type: 'string', format: 'binary' } } } })
+  @ApiOperation({ summary: '프로필 이미지 업로드', description: 'R2에 이미지 업로드 후 avatarUrl 업데이트' })
+  @ApiResponse({ status: 200, description: '업로드 성공', type: UserResponseDto })
+  @UseInterceptors(FileInterceptor('avatar', { storage: memoryStorage() }))
+  async uploadAvatar(
+    @CurrentUser() user: any,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<UserResponseDto> {
+    return this.userService.uploadAvatar(user.id, file);
   }
 
   /**
