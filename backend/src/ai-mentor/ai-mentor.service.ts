@@ -3,6 +3,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto, TIER_COST, MentoringTier } from './dto/create-message.dto';
 import { AIMessageRole, CreditTransactionType, UserPlan } from '@prisma/client';
@@ -38,6 +39,71 @@ export class AiMentorService {
     private prisma: PrismaService,
     private config: ConfigService,
   ) {}
+
+  // ─── AI 스트리밍 호출 (AsyncGenerator) ───────────────────────
+  private async *callAIStream(modelId: string, history: HistoryMessage[]): AsyncGenerator<string> {
+    if (modelId.startsWith('claude-')) {
+      const client = new Anthropic({ apiKey: this.config.get<string>('ANTHROPIC_API_KEY')! });
+      const stream = await client.messages.stream({
+        model: modelId,
+        max_tokens: 2048,
+        system: SYSTEM_PROMPT,
+        messages: history.map(m => ({
+          role: m.role === AIMessageRole.USER ? 'user' : 'assistant',
+          content: m.content,
+        })),
+      });
+      for await (const event of stream) {
+        if (
+          event.type === 'content_block_delta' &&
+          event.delta.type === 'text_delta'
+        ) {
+          yield event.delta.text;
+        }
+      }
+      return;
+    }
+
+    if (modelId.startsWith('gpt-') || modelId.startsWith('grok-')) {
+      const client = modelId.startsWith('grok-')
+        ? new OpenAI({ apiKey: this.config.get<string>('XAI_API_KEY')!, baseURL: 'https://api.x.ai/v1' })
+        : new OpenAI({ apiKey: this.config.get<string>('OPENAI_API_KEY')! });
+      const stream = await client.chat.completions.create({
+        model: modelId,
+        stream: true,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...history.map(m => ({
+            role: (m.role === AIMessageRole.USER ? 'user' : 'assistant') as 'user' | 'assistant',
+            content: m.content,
+          })),
+        ],
+      });
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) yield delta;
+      }
+      return;
+    }
+
+    if (modelId.startsWith('gemini-')) {
+      const genAI = new GoogleGenerativeAI(this.config.get<string>('GEMINI_API_KEY')!);
+      const model = genAI.getGenerativeModel({ model: modelId, systemInstruction: SYSTEM_PROMPT });
+      const chatHistory = history.slice(0, -1).map(m => ({
+        role: m.role === AIMessageRole.USER ? 'user' : 'model',
+        parts: [{ text: m.content }],
+      }));
+      const chat = model.startChat({ history: chatHistory });
+      const result = await chat.sendMessageStream(history[history.length - 1].content);
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) yield text;
+      }
+      return;
+    }
+
+    throw new InternalServerErrorException(`지원하지 않는 모델: ${modelId}`);
+  }
 
   // ─── AI 호출 (provider 자동 분기) ─────────────────────────────
   private async callAI(modelId: string, history: HistoryMessage[]): Promise<string> {
@@ -220,5 +286,119 @@ export class AiMentorService {
     });
 
     return { conversationId: convId, model: modelUsed, creditsUsed: cost };
+  }
+
+  // ─── 메시지 전송 (SSE 스트리밍) ──────────────────────────────
+  async streamMessage(
+    conversationId: string | null,
+    userId: string,
+    dto: CreateMessageDto,
+    res: Response,
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ message: '사용자를 찾을 수 없습니다' });
+      return;
+    }
+
+    const maxTier = PLAN_MAX_TIER[user.plan];
+    if (dto.tier > maxTier) {
+      res.status(403).json({ message: `현재 플랜(${user.plan})에서는 ${dto.tier}등급을 사용할 수 없습니다` });
+      return;
+    }
+
+    const cost = TIER_COST[dto.tier];
+    if (user.credit < cost) {
+      res.status(400).json({ message: `크레딧이 부족합니다 (필요: ${cost}cr, 보유: ${user.credit}cr)` });
+      return;
+    }
+
+    const modelUsed = MODEL_MATRIX[dto.taskType]?.[dto.tier] ?? 'claude-haiku-4-5-20251001';
+
+    // 대화 세션 생성 or 기존 사용
+    let convId = conversationId;
+    if (!convId) {
+      const conv = await this.prisma.aIConversation.create({
+        data: { userId, title: dto.content.slice(0, 50), taskId: dto.taskId },
+      });
+      convId = conv.id;
+    } else {
+      const existing = await this.prisma.aIConversation.findUnique({ where: { id: convId } });
+      if (!existing || existing.userId !== userId) {
+        res.status(404).json({ message: '대화를 찾을 수 없습니다' });
+        return;
+      }
+    }
+
+    // 유저 메시지 저장
+    await this.prisma.aIMessage.create({
+      data: {
+        conversationId: convId,
+        role: AIMessageRole.USER,
+        content: dto.content,
+        taskType: dto.taskType,
+        modelUsed,
+        creditsUsed: 0,
+      },
+    });
+
+    // 대화 히스토리 로드 (최근 20개)
+    const historyRows = await this.prisma.aIMessage.findMany({
+      where: { conversationId: convId },
+      orderBy: { createdAt: 'asc' },
+      take: 20,
+      select: { role: true, content: true },
+    });
+
+    // SSE 헤더 설정
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    // 대화 ID를 FE에 먼저 전달
+    res.write(`data: ${JSON.stringify({ type: 'start', conversationId: convId })}\n\n`);
+
+    // 스트리밍 AI 호출
+    let fullText = '';
+    try {
+      for await (const token of this.callAIStream(modelUsed, historyRows)) {
+        fullText += token;
+        res.write(`data: ${JSON.stringify({ type: 'token', text: token })}\n\n`);
+      }
+    } catch (err) {
+      res.write(`data: ${JSON.stringify({ type: 'error', message: (err as Error).message })}\n\n`);
+      res.end();
+      return;
+    }
+
+    // 스트리밍 완료 후 트랜잭션 (메시지 저장 + 크레딧 차감)
+    await this.prisma.$transaction(async (tx) => {
+      await tx.aIMessage.create({
+        data: {
+          conversationId: convId!,
+          role: AIMessageRole.ASSISTANT,
+          content: fullText,
+          taskType: dto.taskType,
+          modelUsed,
+          creditsUsed: cost,
+        },
+      });
+      await tx.user.update({ where: { id: userId }, data: { credit: { decrement: cost } } });
+      await tx.creditTransaction.create({
+        data: {
+          userId,
+          amount: -cost,
+          type: CreditTransactionType.SPEND,
+          description: `AI멘토링 스트리밍 (${modelUsed}, ${dto.taskType} ${dto.tier}등급)`,
+          relatedId: convId,
+        },
+      });
+      await tx.aIConversation.update({ where: { id: convId! }, data: { updatedAt: new Date() } });
+    });
+
+    res.write(`data: ${JSON.stringify({ type: 'done', model: modelUsed, creditsUsed: cost })}\n\n`);
+    res.end();
   }
 }

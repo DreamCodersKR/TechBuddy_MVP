@@ -8,7 +8,7 @@ useHead({ title: 'AI 멘토 질문 - FLOWIT' })
 
 const route = useRoute()
 const authStore = useAuthStore()
-const { post: authPost } = useAuthFetch()
+const config = useRuntimeConfig()
 
 // ─── query param pre-fill ─────────────────────────────────
 const taskId = route.query.taskId as string | undefined
@@ -39,14 +39,23 @@ const content = ref(prefillTitle
   ? `${prefillTitle}${prefillDesc ? `\n\n${prefillDesc}` : ''}\n\n어떤 부분에서 막히셨나요?`
   : '')
 
+interface ChatMessage {
+  role: 'USER' | 'ASSISTANT'
+  content: string
+  modelUsed?: string
+  isStreaming?: boolean
+}
+
 const isSending = ref(false)
-const messages = ref<{ role: 'USER' | 'ASSISTANT', content: string, modelUsed?: string }[]>([])
+const messages = ref<ChatMessage[]>([])
 const conversationId = ref<string | null>(null)
 const inputContent = ref(content.value)
 const hasStarted = ref(false)
 
 const userCredit = computed(() => authStore.currentUser?.credit ?? 0)
 const selectedTierData = computed(() => TIERS.find(t => t.value === selectedTier.value)!)
+
+const userPlan = computed(() => authStore.currentUser?.plan ?? 'FREE')
 
 async function sendMessage() {
   const text = inputContent.value.trim()
@@ -63,39 +72,76 @@ async function sendMessage() {
   messages.value.push({ role: 'USER', content: text })
   inputContent.value = ''
 
+  // 스트리밍 AI 메시지 placeholder
+  const streamingIdx = messages.value.length
+  messages.value.push({ role: 'ASSISTANT', content: '', isStreaming: true })
+
+  const endpoint = conversationId.value
+    ? `${config.public.apiBaseUrl}/ai-mentor/conversations/${conversationId.value}/messages/stream`
+    : `${config.public.apiBaseUrl}/ai-mentor/messages/stream`
+
+  const body: Record<string, unknown> = {
+    content: text,
+    taskType: selectedTaskType.value,
+    tier: selectedTier.value,
+  }
+  if (taskId) body.taskId = taskId
+
   try {
-    const body: Record<string, unknown> = {
-      content: text,
-      taskType: selectedTaskType.value,
-      tier: selectedTier.value,
-    }
-    if (taskId) body.taskId = taskId
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authStore.accessToken}`,
+      },
+      body: JSON.stringify(body),
+    })
 
-    const endpoint = conversationId.value
-      ? `/ai-mentor/conversations/${conversationId.value}/messages`
-      : '/ai-mentor/messages'
-
-    const res = await authPost<{ conversationId: string, model: string, creditsUsed: number }>(endpoint, body)
-    conversationId.value = res.conversationId
-
-    // 대화 상세에서 AI 응답 로드
-    const { get: authGet } = useAuthFetch()
-    const conv = await authGet<{ messages: { role: string, content: string, modelUsed: string }[] }>(`/ai-mentor/conversations/${res.conversationId}`)
-    const lastMsg = conv.messages[conv.messages.length - 1]
-    if (lastMsg?.role === 'ASSISTANT') {
-      messages.value.push({ role: 'ASSISTANT', content: lastMsg.content, modelUsed: lastMsg.modelUsed })
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.message || '전송에 실패했습니다.')
     }
 
-    // 크레딧 차감 반영
-    if (authStore.currentUser) {
-      authStore.currentUser.credit -= res.creditsUsed
+    const reader = response.body!.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const data = JSON.parse(line.slice(6))
+
+        if (data.type === 'start') {
+          conversationId.value = data.conversationId
+        }
+        if (data.type === 'token') {
+          messages.value[streamingIdx].content += data.text
+        }
+        if (data.type === 'done') {
+          messages.value[streamingIdx].isStreaming = false
+          messages.value[streamingIdx].modelUsed = data.model
+          if (authStore.currentUser) {
+            authStore.currentUser.credit -= data.creditsUsed
+          }
+        }
+        if (data.type === 'error') {
+          throw new Error(data.message)
+        }
+      }
     }
   }
   catch (e: unknown) {
-    const err = e as { data?: { message?: string } }
-    messages.value.pop()
+    messages.value.splice(streamingIdx, 1) // 스트리밍 메시지 제거
+    messages.value.pop() // USER 메시지 제거
     inputContent.value = text
-    alert(err?.data?.message || '전송에 실패했습니다.')
+    hasStarted.value = messages.value.length > 0
+    alert((e as Error).message || '전송에 실패했습니다.')
   }
   finally { isSending.value = false }
 }
@@ -162,12 +208,21 @@ function handleKeydown(e: KeyboardEvent) {
           <button
             v-for="tier in TIERS"
             :key="tier.value"
-            class="flex flex-col items-center p-3 rounded-lg border transition-colors"
-            :class="selectedTier === tier.value
-              ? 'border-primary bg-primary/10'
-              : 'border-border hover:border-primary/50'"
-            @click="selectedTier = tier.value"
+            class="flex flex-col items-center p-3 rounded-lg border transition-colors relative"
+            :class="[
+              selectedTier === tier.value
+                ? 'border-primary bg-primary/10'
+                : 'border-border hover:border-primary/50',
+              (tier.value > 1 && userPlan === 'FREE') ? 'opacity-50 cursor-not-allowed' : '',
+            ]"
+            :disabled="tier.value > 1 && userPlan === 'FREE'"
+            @click="tier.value > 1 && userPlan === 'FREE' ? null : selectedTier = tier.value"
           >
+            <Icon
+              v-if="tier.value > 1 && userPlan === 'FREE'"
+              icon="heroicons:lock-closed"
+              class="w-3 h-3 absolute top-2 right-2 text-muted-foreground"
+            />
             <span class="text-sm font-semibold text-foreground">{{ tier.label }}</span>
             <span class="text-xs text-muted-foreground mt-0.5">{{ tier.desc }}</span>
             <span
@@ -208,13 +263,18 @@ function handleKeydown(e: KeyboardEvent) {
             ? 'bg-primary text-primary-foreground'
             : 'bg-muted text-foreground'"
         >
-          <ClientOnly>
-            <MarkdownViewer v-if="msg.role === 'ASSISTANT'" :content="msg.content" class="prose prose-sm dark:prose-invert max-w-none" />
-            <p v-else class="whitespace-pre-wrap">{{ msg.content }}</p>
-          </ClientOnly>
-          <p v-if="msg.modelUsed && msg.role === 'ASSISTANT'" class="text-xs opacity-60 mt-1">
-            {{ msg.modelUsed }}
-          </p>
+          <template v-if="msg.role === 'ASSISTANT'">
+            <!-- 스트리밍 중: plain text + 커서 -->
+            <p v-if="msg.isStreaming" class="whitespace-pre-wrap">{{ msg.content }}<span class="animate-pulse">▋</span></p>
+            <!-- 완료: 마크다운 렌더링 -->
+            <ClientOnly v-else>
+              <MarkdownViewer :content="msg.content" class="prose prose-sm dark:prose-invert max-w-none" />
+            </ClientOnly>
+            <p v-if="msg.modelUsed && !msg.isStreaming" class="text-xs opacity-60 mt-1">
+              {{ msg.modelUsed }}
+            </p>
+          </template>
+          <p v-else class="whitespace-pre-wrap">{{ msg.content }}</p>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 
 interface Props {
   content?: string
@@ -12,6 +12,35 @@ const props = withDefaults(defineProps<Props>(), {
 const viewerEl = ref<HTMLElement | null>(null)
 let viewerInstance: any = null
 
+function injectCopyButtons() {
+  if (!viewerEl.value) return
+  const preElements = viewerEl.value.querySelectorAll<HTMLElement>('.toastui-editor-contents pre')
+  preElements.forEach((pre) => {
+    if (pre.querySelector('.copy-code-btn')) return
+    pre.style.position = 'relative'
+
+    const btn = document.createElement('button')
+    btn.className = 'copy-code-btn'
+    btn.setAttribute('aria-label', '코드 복사')
+    btn.textContent = '복사'
+
+    btn.addEventListener('click', async (e: Event) => {
+      e.stopPropagation()
+      const code = pre.querySelector('code')?.textContent ?? ''
+      try {
+        await navigator.clipboard.writeText(code)
+        btn.textContent = '복사됨 ✓'
+        setTimeout(() => { btn.textContent = '복사' }, 2000)
+      } catch {
+        btn.textContent = '실패'
+        setTimeout(() => { btn.textContent = '복사' }, 2000)
+      }
+    })
+
+    pre.appendChild(btn)
+  })
+}
+
 onMounted(async () => {
   const { default: Viewer } = await import('@toast-ui/editor/dist/toastui-editor-viewer')
   await import('@toast-ui/editor/dist/toastui-editor-viewer.css')
@@ -20,6 +49,8 @@ onMounted(async () => {
     el: viewerEl.value!,
     initialValue: props.content,
   })
+  await nextTick()
+  injectCopyButtons()
 })
 
 onBeforeUnmount(() => {
@@ -29,9 +60,11 @@ onBeforeUnmount(() => {
 
 watch(
   () => props.content,
-  (newVal) => {
+  async (newVal) => {
     if (!viewerInstance) return
     viewerInstance.setMarkdown(newVal || '')
+    await nextTick()
+    injectCopyButtons()
   },
 )
 </script>
@@ -141,6 +174,30 @@ watch(
 /* toast-ui 내부 wrapper 배경 제거 */
 .toastui-editor-contents .toastui-editor-ww-code-block {
   background-color: hsl(var(--muted)) !important;
+}
+
+/* 코드블록 복사 버튼 */
+.copy-code-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #e0e0e0;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  line-height: 1.4;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.toastui-editor-contents pre:hover .copy-code-btn {
+  opacity: 1;
 }
 
 .markdown-viewer-wrapper .toastui-editor-main,

@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { AiMentorService } from './ai-mentor.service';
 import { CreateMessageDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -44,5 +45,26 @@ export class AiMentorController {
   @ApiOperation({ summary: '새 대화 시작 + 첫 메시지 전송' })
   sendMessage(@CurrentUser() user: any, @Body() dto: CreateMessageDto) {
     return this.aiMentorService.sendMessage(null, user.id, dto);
+  }
+
+  @Post('messages/stream')
+  @ApiOperation({ summary: '새 대화 시작 + 첫 메시지 전송 (SSE 스트리밍)' })
+  streamNewMessage(
+    @CurrentUser() user: any,
+    @Body() dto: CreateMessageDto,
+    @Res() res: Response,
+  ) {
+    return this.aiMentorService.streamMessage(null, user.id, dto, res);
+  }
+
+  @Post('conversations/:id/messages/stream')
+  @ApiOperation({ summary: '메시지 전송 (SSE 스트리밍)' })
+  streamConversationMessage(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+    @Body() dto: CreateMessageDto,
+    @Res() res: Response,
+  ) {
+    return this.aiMentorService.streamMessage(id, user.id, dto, res);
   }
 }
