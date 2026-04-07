@@ -20,6 +20,11 @@ import {
 
 const route = useRoute()
 const authStore = useAuthStore()
+const colorMode = useColorMode()
+
+function toggleDark() {
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+}
 
 // 메인 메뉴 아이템
 const menuItems = [
@@ -114,6 +119,12 @@ const userInitials = computed(() => {
         <!-- Search Button (Mobile) -->
         <Button variant="ghost" size="icon" class="md:hidden">
           <Icon icon="heroicons:magnifying-glass" class="h-5 w-5" />
+        </Button>
+
+        <!-- Dark Mode Toggle -->
+        <Button variant="ghost" size="icon" @click="toggleDark">
+          <Icon v-if="colorMode.value === 'dark'" icon="heroicons:sun" class="h-5 w-5" />
+          <Icon v-else icon="heroicons:moon" class="h-5 w-5" />
         </Button>
 
         <!-- Auth Section -->
@@ -214,6 +225,16 @@ const userInitials = computed(() => {
                   />
                 </div>
               </form>
+
+              <!-- Dark Mode Toggle (Mobile) -->
+              <button
+                class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent w-full text-left text-muted-foreground"
+                @click="toggleDark"
+              >
+                <Icon v-if="colorMode.value === 'dark'" icon="heroicons:sun" class="h-4 w-4" />
+                <Icon v-else icon="heroicons:moon" class="h-4 w-4" />
+                {{ colorMode.value === 'dark' ? '라이트 모드' : '다크 모드' }}
+              </button>
 
               <!-- Mobile Menu Items -->
               <nav class="flex flex-col gap-2">

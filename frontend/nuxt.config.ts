@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
 
   // Modules
-  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', 'shadcn-nuxt'],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', 'shadcn-nuxt', '@nuxtjs/color-mode'],
 
   // Tailwind CSS
   tailwindcss: {
@@ -55,6 +55,10 @@ export default defineNuxtConfig({
     // API routes with CORS
     '/api/**': { cors: true },
   },
+  colorMode: {
+    classSuffix: '',
+  },
+
   compatibilityDate: '2025-07-15',
 
   // TypeScript
