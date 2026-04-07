@@ -86,7 +86,7 @@ function getDdayClass(dDay: string) {
       <div class="flex justify-center mb-5">
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-xs font-medium">
           <Icon icon="heroicons:bolt" class="w-3.5 h-3.5" />
-          IT 부트캠프 수료생을 위한 올인원 플랫폼
+          IT 인재를 위한 올인원 플랫폼
         </span>
       </div>
 
@@ -99,7 +99,7 @@ function getDdayClass(dDay: string) {
       <!-- 서브타이틀 -->
       <p class="text-center text-slate-400 text-sm md:text-base max-w-lg mx-auto mb-8 leading-relaxed">
         커뮤니티 · 팀원모집 · 프로젝트 관리 · AI 멘토링까지<br />
-        부트캠프 수료 후 성장에 필요한 모든 것을 한 곳에서
+        IT 인재 성장에 필요한 모든 것을 한 곳에서
       </p>
 
       <!-- CTA 버튼 -->
