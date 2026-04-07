@@ -148,4 +148,39 @@ watch(
   background-color: transparent !important;
   border: none !important;
 }
+
+/* ===== 다크모드 전용: --border와 --muted가 배경색과 동일해 안 보이는 문제 해결 ===== */
+
+/* h2/h3 제목 구분선 */
+.dark .toastui-editor-contents h1,
+.dark .toastui-editor-contents h2,
+.dark .toastui-editor-contents h3,
+.dark .toastui-editor-contents h4 {
+  border-bottom-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* 인용구 좌측 선 */
+.dark .toastui-editor-contents blockquote {
+  border-left-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 코드 블록 테두리 */
+.dark .toastui-editor-contents pre {
+  background-color: rgba(0, 0, 0, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 테이블 테두리 */
+.dark .toastui-editor-contents table th {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.dark .toastui-editor-contents table td {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .toastui-editor-contents table tr:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
 </style>
