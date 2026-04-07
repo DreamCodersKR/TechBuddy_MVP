@@ -101,6 +101,34 @@ watch(
   color: hsl(var(--primary)) !important;
 }
 
+/* 테이블 */
+.toastui-editor-contents table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+}
+
+.toastui-editor-contents table th {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  padding: 0.5em 1em !important;
+}
+
+.toastui-editor-contents table td {
+  background-color: transparent !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  padding: 0.5em 1em !important;
+}
+
+.toastui-editor-contents table tr {
+  background-color: transparent !important;
+}
+
+.toastui-editor-contents table tr:nth-child(even) td {
+  background-color: hsl(var(--muted) / 0.4) !important;
+}
+
 .toastui-editor-contents li {
   color: hsl(var(--foreground)) !important;
 }
