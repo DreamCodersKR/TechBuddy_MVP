@@ -19,7 +19,9 @@ generator client {
 
 enum UserRole {
   USER
-  ADMIN
+  MODERATOR   // 콘텐츠 관리자 (신고 처리)
+  ADMIN       // DreamCoders 운영 관리자 (회원/크레딧/문의)
+  SUPER_ADMIN // CEO (전체 권한)
 }
 
 enum UserPlan {
@@ -127,6 +129,40 @@ enum DocumentCategory {
   OTHER         // 기타
 }
 
+enum InquiryType {
+  BUG
+  FEATURE
+  BETA_FEEDBACK
+  GENERAL
+}
+
+enum InquiryStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ReportTarget {
+  POST
+  COMMENT
+  USER
+}
+
+enum ReportReason {
+  SPAM
+  ABUSE
+  INAPPROPRIATE
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+  ACTION_TAKEN
+}
+
 // ============================================
 // Phase 1: 커뮤니티 기능
 // ============================================
@@ -152,6 +188,9 @@ model User {
   // OAuth 관련 필드
   provider   String? // 'google', 'github', null(일반 로그인)
   providerId String? // OAuth provider의 사용자 ID
+
+  isBanned Boolean   @default(false)
+  bannedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -192,6 +231,10 @@ model User {
   sentNotifications Notification[] @relation("NotificationSender")
   refreshTokens     RefreshToken[]
 
+  // Relations - M8 운영 관리
+  inquiries Inquiry[]
+  reports   Report[]
+
   @@unique([provider, providerId])
   @@index([email])
   @@map("users")
@@ -222,6 +265,7 @@ model Post {
   content     String
   viewCount   Int     @default(0)
   isPublished Boolean @default(true)
+  isHidden    Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -247,6 +291,7 @@ model PostComment {
   authorId String
   content  String
   parentId String?
+  isHidden Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -724,4 +769,46 @@ model Document {
   @@index([uploadedById])
   @@index([category])
   @@map("documents")
+}
+
+// ============================================
+// M8: 운영 관리 시스템
+// ============================================
+
+model Inquiry {
+  id        String        @id @default(uuid())
+  userId    String
+  type      InquiryType
+  title     String
+  content   String        @db.Text
+  status    InquiryStatus @default(OPEN)
+  reply     String?       @db.Text
+  repliedAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("inquiries")
+}
+
+model Report {
+  id         String       @id @default(uuid())
+  reporterId String
+  targetType ReportTarget
+  targetId   String
+  reason     ReportReason
+  detail     String?      @db.Text
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([status])
+  @@index([targetType, targetId])
+  @@map("reports")
 }

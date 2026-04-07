@@ -73,6 +73,9 @@ async function submitEdit() {
 // ─── 삭제 ──────────────────────────────────────────────
 const showDeleteDialog = ref(false)
 
+// ─── 신고 ──────────────────────────────────────────────
+const showReportModal = ref(false)
+
 // ─── 날짜 포맷 ─────────────────────────────────────────
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
@@ -122,6 +125,16 @@ function formatDate(dateStr: string): string {
           </span>
         </div>
 
+        <!-- 신고 (타인만) -->
+        <button
+          v-if="!isAuthor"
+          class="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+          title="신고"
+          @click="showReportModal = true"
+        >
+          <Icon icon="heroicons:flag" class="w-3.5 h-3.5" />
+        </button>
+
         <!-- 수정/삭제 (본인만) -->
         <div v-if="isAuthor" class="flex items-center gap-0.5 shrink-0">
           <Button
@@ -166,6 +179,14 @@ function formatDate(dateStr: string): string {
         {{ comment.content }}
       </p>
     </div>
+
+    <!-- 신고 모달 -->
+    <CommonReportModal
+      v-if="showReportModal"
+      target-type="COMMENT"
+      :target-id="comment.id"
+      @close="showReportModal = false"
+    />
 
     <!-- 삭제 확인 다이얼로그 -->
     <AlertDialog v-model:open="showDeleteDialog">

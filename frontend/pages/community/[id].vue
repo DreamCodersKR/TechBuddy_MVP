@@ -68,6 +68,7 @@ const isLikeLoading = ref(false)
 
 const showDeleteDialog = ref(false)
 const isDeleting = ref(false)
+const showReportModal = ref(false)
 
 const commentCount = ref(0)
 
@@ -285,6 +286,16 @@ onMounted(() => {
           </div>
         </div>
 
+        <!-- 신고 (비로그인이 아닌 타인만) -->
+        <button
+          v-if="authStore.isAuthenticated && !isAuthor"
+          class="shrink-0 p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-muted"
+          title="게시글 신고"
+          @click="showReportModal = true"
+        >
+          <Icon icon="heroicons:flag" class="w-4 h-4" />
+        </button>
+
         <!-- 액션 버튼 (본인만: 수정/삭제) -->
         <div v-if="isAuthor" class="flex items-center gap-1 shrink-0">
           <NuxtLink :to="`/community/edit/${postId}`">
@@ -369,6 +380,14 @@ onMounted(() => {
         />
       </div>
     </article>
+
+    <!-- 게시글 신고 모달 -->
+    <CommonReportModal
+      v-if="showReportModal"
+      target-type="POST"
+      :target-id="postId"
+      @close="showReportModal = false"
+    />
 
     <!-- 삭제 확인 다이얼로그 -->
     <AlertDialog v-model:open="showDeleteDialog">

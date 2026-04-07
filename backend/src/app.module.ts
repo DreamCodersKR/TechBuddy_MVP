@@ -21,6 +21,9 @@ import { BadgeModule } from './badge/badge.module';
 import { DocumentModule } from './document/document.module';
 import { XpModule } from './xp/xp.module';
 import { NotificationModule } from './notification/notification.module';
+import { AdminModule } from './admin/admin.module';
+import { InquiryModule } from './inquiry/inquiry.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -47,6 +50,9 @@ import { NotificationModule } from './notification/notification.module';
     DocumentModule,
     XpModule,
     NotificationModule,
+    AdminModule,
+    InquiryModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
