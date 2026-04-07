@@ -19,8 +19,45 @@ import {
 } from '@/components/ui/sheet'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const colorMode = useColorMode()
+
+// 알림
+const isNotifOpen = ref(false)
+const {
+  notifications,
+  unreadCount,
+  loading: notifLoading,
+  getIcon,
+  getRoute,
+  fetchNotifications,
+  markAsRead,
+  markAllAsRead,
+} = useNotifications()
+
+async function openNotifications() {
+  isNotifOpen.value = !isNotifOpen.value
+  if (isNotifOpen.value) {
+    await fetchNotifications()
+  }
+}
+
+async function handleNotifClick(n: any) {
+  await markAsRead(n.id)
+  isNotifOpen.value = false
+  router.push(getRoute(n.type, n.relatedId))
+}
+
+function formatRelativeTime(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return '방금 전'
+  if (minutes < 60) return `${minutes}분 전`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}시간 전`
+  return `${Math.floor(hours / 24)}일 전`
+}
 
 function toggleDark() {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
@@ -126,6 +163,76 @@ const userInitials = computed(() => {
           <Icon v-if="colorMode.value === 'dark'" icon="heroicons:sun" class="h-5 w-5" />
           <Icon v-else icon="heroicons:moon" class="h-5 w-5" />
         </Button>
+
+        <!-- Notification Bell -->
+        <ClientOnly>
+          <div v-if="authStore.isAuthenticated" class="relative">
+            <Button variant="ghost" size="icon" @click="openNotifications">
+              <Icon icon="heroicons:bell" class="h-5 w-5" />
+              <span
+                v-if="unreadCount > 0"
+                class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground"
+              >
+                {{ unreadCount > 9 ? '9+' : unreadCount }}
+              </span>
+            </Button>
+
+            <!-- Notification Dropdown -->
+            <div
+              v-if="isNotifOpen"
+              class="absolute right-0 top-10 z-50 w-80 rounded-lg border border-border bg-background shadow-lg"
+            >
+              <!-- Header -->
+              <div class="flex items-center justify-between border-b px-4 py-2">
+                <span class="text-sm font-semibold">알림</span>
+                <button
+                  v-if="unreadCount > 0"
+                  class="text-xs text-muted-foreground hover:text-foreground"
+                  @click="markAllAsRead"
+                >
+                  전체 읽음
+                </button>
+              </div>
+
+              <!-- List -->
+              <div class="max-h-80 overflow-y-auto">
+                <div v-if="notifLoading" class="flex items-center justify-center py-8">
+                  <Icon icon="heroicons:arrow-path" class="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+                <template v-else-if="notifications.length > 0">
+                  <button
+                    v-for="n in notifications"
+                    :key="n.id"
+                    class="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
+                    :class="{ 'bg-muted/30': !n.isRead }"
+                    @click="handleNotifClick(n)"
+                  >
+                    <Icon :icon="getIcon(n.type)" class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <div class="min-w-0 flex-1">
+                      <p class="text-xs font-medium leading-tight" :class="n.isRead ? 'text-muted-foreground' : 'text-foreground'">
+                        {{ n.title }}
+                      </p>
+                      <p class="mt-0.5 text-xs text-muted-foreground line-clamp-2">{{ n.message }}</p>
+                      <p class="mt-1 text-[10px] text-muted-foreground">{{ formatRelativeTime(n.createdAt) }}</p>
+                    </div>
+                    <span v-if="!n.isRead" class="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                  </button>
+                </template>
+                <div v-else class="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <Icon icon="heroicons:bell-slash" class="mb-2 h-8 w-8" />
+                  <p class="text-sm">새 알림이 없습니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ClientOnly>
+
+        <!-- Close on outside click -->
+        <div
+          v-if="isNotifOpen"
+          class="fixed inset-0 z-40"
+          @click="isNotifOpen = false"
+        />
 
         <!-- Auth Section -->
         <ClientOnly>
