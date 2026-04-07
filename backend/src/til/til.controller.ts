@@ -36,11 +36,12 @@ export class TilController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   findAll(
+    @CurrentUser() user: any,
     @Query('authorId') authorId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.tilService.findAll(authorId, Number(page) || 1, Number(limit) || 20);
+    return this.tilService.findAll(user.id, authorId, Number(page) || 1, Number(limit) || 20);
   }
 
   @Get('heatmap')

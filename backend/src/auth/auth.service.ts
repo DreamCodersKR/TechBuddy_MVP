@@ -123,8 +123,8 @@ export class AuthService {
       },
     });
 
-    // 스트릭 마일스톤 보상 (3/7/30일)
-    const STREAK_REWARDS: Record<number, number> = { 3: 10, 7: 30, 30: 100 };
+    // 스트릭 마일스톤 크레딧 보상 (DRE-195: 3→3cr, 7→5cr, 30→30cr)
+    const STREAK_REWARDS: Record<number, number> = { 3: 3, 7: 5, 30: 30 };
     if (STREAK_REWARDS[newStreak]) {
       await this.prisma.creditTransaction.create({
         data: {
@@ -138,6 +138,11 @@ export class AuthService {
         where: { id: userId },
         data: { credit: { increment: STREAK_REWARDS[newStreak] } },
       });
+    }
+
+    // 스트릭 7일 달성 시 STREAK_7 뱃지 지급 (DRE-196)
+    if (newStreak === 7) {
+      await this.xp.awardBadge(userId, BadgeType.STREAK_7);
     }
   }
 

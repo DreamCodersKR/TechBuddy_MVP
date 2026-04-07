@@ -3,11 +3,13 @@ import {
   NotFoundException,
   ConflictException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
 import { QuestService, QUEST_KEYS } from '../quest/quest.service';
 import { CreateTilDto, UpdateTilDto } from './til.dto';
+import { TilVisibility } from '@prisma/client';
 
 @Injectable()
 export class TilService {
@@ -25,6 +27,16 @@ export class TilService {
       ? new Date(dto.date)
       : new Date(new Date().toDateString());
 
+    // 워크스페이스 멤버 검증
+    if (dto.workspaceId) {
+      const member = await this.prisma.projectMember.findFirst({
+        where: { projectId: dto.workspaceId, userId: authorId },
+      });
+      if (!member) {
+        throw new BadRequestException('해당 워크스페이스의 멤버가 아닙니다');
+      }
+    }
+
     // 하루 1개 제한 체크
     const existing = await this.prisma.til.findUnique({
       where: { authorId_date: { authorId, date } },
@@ -40,6 +52,8 @@ export class TilService {
         content: dto.content,
         tags: dto.tags ?? [],
         date,
+        workspaceId: dto.workspaceId ?? null,
+        visibility: dto.visibility ?? TilVisibility.PUBLIC,
       },
       include: {
         author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
@@ -63,10 +77,23 @@ export class TilService {
 
   /**
    * 피드 (전체 또는 특정 유저 TIL 목록)
+   * - 본인 조회: 전체 공개 범위 반환
+   * - 타인 조회: PUBLIC만 반환
    */
-  async findAll(authorId?: string, page = 1, limit = 20) {
+  async findAll(requesterId?: string, authorId?: string, page = 1, limit = 20) {
     const skip = (page - 1) * limit;
-    const where = authorId ? { authorId } : {};
+
+    let where: any = {};
+    if (authorId) {
+      where.authorId = authorId;
+      // 본인이 아니면 PUBLIC만 노출
+      if (requesterId !== authorId) {
+        where.visibility = TilVisibility.PUBLIC;
+      }
+    } else {
+      // 전체 피드: PUBLIC만
+      where.visibility = TilVisibility.PUBLIC;
+    }
 
     const [items, total] = await Promise.all([
       this.prisma.til.findMany({
@@ -112,6 +139,7 @@ export class TilService {
         ...(dto.title && { title: dto.title }),
         ...(dto.content && { content: dto.content }),
         ...(dto.tags !== undefined && { tags: dto.tags }),
+        ...(dto.visibility !== undefined && { visibility: dto.visibility }),
       },
       include: {
         author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },

@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsArray, IsDateString, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsDateString, IsEnum, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TilVisibility } from '@prisma/client';
 
 export class CreateTilDto {
   @ApiProperty({ example: '오늘 배운 Prisma Transaction' })
@@ -23,6 +24,16 @@ export class CreateTilDto {
   @IsDateString()
   @IsOptional()
   date?: string;
+
+  @ApiPropertyOptional({ example: 'workspace-uuid', description: '스터디 워크스페이스 ID (없으면 개인 TIL)' })
+  @IsString()
+  @IsOptional()
+  workspaceId?: string;
+
+  @ApiPropertyOptional({ enum: TilVisibility, default: 'PUBLIC', description: 'PRIVATE | WORKSPACE | PUBLIC' })
+  @IsEnum(TilVisibility)
+  @IsOptional()
+  visibility?: TilVisibility;
 }
 
 export class UpdateTilDto {
@@ -43,4 +54,9 @@ export class UpdateTilDto {
   @IsString({ each: true })
   @IsOptional()
   tags?: string[];
+
+  @ApiPropertyOptional({ enum: TilVisibility })
+  @IsEnum(TilVisibility)
+  @IsOptional()
+  visibility?: TilVisibility;
 }

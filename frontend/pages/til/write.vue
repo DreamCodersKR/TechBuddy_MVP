@@ -9,13 +9,24 @@ useHead({ title: 'TIL 작성 - FLOWIT' })
 
 const { post: authPost } = useAuthFetch()
 const router = useRouter()
+const route = useRoute()
+
+// 워크스페이스에서 진입한 경우 workspaceId 전달됨
+const workspaceId = route.query.workspaceId as string | undefined
 
 const title = ref('')
 const content = ref('')
 const tagInput = ref('')
 const tags = ref<string[]>([])
+const visibility = ref<'PRIVATE' | 'WORKSPACE' | 'PUBLIC'>(workspaceId ? 'WORKSPACE' : 'PUBLIC')
 const submitting = ref(false)
 const error = ref('')
+
+const VISIBILITY_OPTIONS = [
+  { value: 'PUBLIC', label: '전체 공개' },
+  { value: 'WORKSPACE', label: '팀원만', disabled: !workspaceId },
+  { value: 'PRIVATE', label: '나만 보기' },
+]
 
 function addTag() {
   const tag = tagInput.value.trim().replace(/^#/, '')
@@ -37,12 +48,20 @@ async function submit() {
   submitting.value = true
   error.value = ''
   try {
-    const res = await authPost<{ id: string }>('/tils', {
+    const body: Record<string, unknown> = {
       title: title.value,
       content: content.value,
       tags: tags.value,
-    })
-    router.push(`/til/${res.id}`)
+      visibility: visibility.value,
+    }
+    if (workspaceId) body.workspaceId = workspaceId
+    const res = await authPost<{ id: string }>('/tils', body)
+    // 워크스페이스에서 진입했으면 TIL 탭으로 돌아가기
+    if (workspaceId) {
+      router.push(`/workspaces/${workspaceId}/til`)
+    } else {
+      router.push(`/til/${res.id}`)
+    }
   } catch (e: any) {
     error.value = e?.data?.message || '작성에 실패했습니다'
   } finally {
@@ -54,7 +73,10 @@ async function submit() {
 <template>
   <div class="max-w-2xl mx-auto py-8 px-4">
     <div class="flex items-center gap-2 mb-6">
-      <NuxtLink to="/til" class="text-muted-foreground hover:text-foreground">
+      <NuxtLink
+        :to="workspaceId ? `/workspaces/${workspaceId}/til` : '/til'"
+        class="text-muted-foreground hover:text-foreground"
+      >
         <Icon icon="heroicons:arrow-left" class="w-5 h-5" />
       </NuxtLink>
       <h1 class="text-xl font-bold">오늘의 TIL 작성</h1>
@@ -76,6 +98,24 @@ async function submit() {
           placeholder="오늘 배운 것을 자유롭게 작성하세요..."
           class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y min-h-[200px]"
         />
+      </div>
+
+      <!-- 공개 범위 -->
+      <div>
+        <label class="text-sm font-medium mb-1 block">공개 범위</label>
+        <select
+          v-model="visibility"
+          class="w-full h-9 px-3 text-sm border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option
+            v-for="opt in VISIBILITY_OPTIONS"
+            :key="opt.value"
+            :value="opt.value"
+            :disabled="opt.disabled"
+          >
+            {{ opt.label }}{{ opt.disabled ? ' (워크스페이스 진입 시 사용 가능)' : '' }}
+          </option>
+        </select>
       </div>
 
       <!-- 태그 -->

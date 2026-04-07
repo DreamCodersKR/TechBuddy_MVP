@@ -64,7 +64,7 @@ const streakMessage = computed(() => {
           :class="streak.currentStreak >= milestone ? 'bg-orange-400' : 'bg-muted'"
         />
         <div class="text-xs text-muted-foreground mt-0.5">
-          {{ milestone === 3 ? '+10cr' : milestone === 7 ? '+30cr' : '+100cr' }}
+          {{ milestone === 3 ? '+3cr' : milestone === 7 ? '+5cr' : '+30cr' }}
         </div>
       </div>
     </div>

@@ -11,7 +11,7 @@ export const QUEST_KEYS = {
   AI_CHAT:        'AI_CHAT',
 } as const;
 
-// 기본 데일리 퀘스트 시드 데이터
+// 기본 데일리 퀘스트 시드 데이터 (DRE-195: creditReward 전체 0으로 변경 - XP만 지급)
 const DEFAULT_QUESTS = [
   {
     title: 'TIL 작성하기',
@@ -19,7 +19,7 @@ const DEFAULT_QUESTS = [
     type: 'DAILY' as const,
     conditionKey: QUEST_KEYS.TIL_WRITE,
     xpReward: 20,
-    creditReward: 5,
+    creditReward: 0,
   },
   {
     title: '커뮤니티 글 작성하기',
@@ -27,7 +27,7 @@ const DEFAULT_QUESTS = [
     type: 'DAILY' as const,
     conditionKey: QUEST_KEYS.POST_WRITE,
     xpReward: 15,
-    creditReward: 3,
+    creditReward: 0,
   },
   {
     title: '댓글 달기',
@@ -35,7 +35,7 @@ const DEFAULT_QUESTS = [
     type: 'DAILY' as const,
     conditionKey: QUEST_KEYS.COMMENT_WRITE,
     xpReward: 10,
-    creditReward: 2,
+    creditReward: 0,
   },
   {
     title: '아고라 답변하기',
@@ -43,7 +43,7 @@ const DEFAULT_QUESTS = [
     type: 'DAILY' as const,
     conditionKey: QUEST_KEYS.AGORA_ANSWER,
     xpReward: 20,
-    creditReward: 5,
+    creditReward: 0,
   },
   {
     title: 'AI 멘토링 이용하기',
@@ -51,7 +51,7 @@ const DEFAULT_QUESTS = [
     type: 'DAILY' as const,
     conditionKey: QUEST_KEYS.AI_CHAT,
     xpReward: 10,
-    creditReward: 2,
+    creditReward: 0,
   },
 ];
 

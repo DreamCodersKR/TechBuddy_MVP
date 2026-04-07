@@ -6,9 +6,9 @@ import { randomBytes } from 'crypto';
 export class ReferralService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // 초대 보상 크레딧
-  private readonly REFERRER_REWARD = 50;  // 초대한 사람
-  private readonly INVITEE_REWARD  = 30;  // 초대받아 가입한 사람
+  // 초대 보상 크레딧 (DRE-195: 50/30cr → 20cr으로 조정)
+  private readonly REFERRER_REWARD = 20;  // 초대한 사람
+  private readonly INVITEE_REWARD  = 20;  // 초대받아 가입한 사람
 
   /**
    * 내 초대 코드 조회 (없으면 자동 생성)

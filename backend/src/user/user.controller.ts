@@ -120,6 +120,19 @@ export class UserController {
     return this.userService.getStreak(user.id);
   }
 
+  @Get('me/activity-heatmap')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '활동 히트맵 조회', description: 'TIL 작성 + 내게 배분된 Task DONE 날짜별 합산' })
+  @ApiQuery({ name: 'year', required: false, description: '연도 (기본: 현재 연도)', example: 2026 })
+  async getMyActivityHeatmap(
+    @CurrentUser() user: any,
+    @Query('year') year?: string,
+  ) {
+    const targetYear = year ? parseInt(year, 10) : new Date().getFullYear();
+    return this.userService.getActivityHeatmap(user.id, targetYear);
+  }
+
   /**
    * 현재 로그인한 사용자 프로필 수정
    */

@@ -115,6 +115,13 @@ enum BadgeType {
   SUBSCRIBER   // 구독 중
   LOYALTY      // 구독 6개월 연속
   ORGANIZATION // 소속 (Enterprise)
+  STREAK_7     // 7일 연속 출석
+}
+
+enum TilVisibility {
+  PRIVATE    // 본인만
+  WORKSPACE  // 워크스페이스 팀원만
+  PUBLIC     // 전체 공개
 }
 
 enum AIMessageRole {
@@ -421,6 +428,7 @@ model Project {
   sprints   Sprint[]
   recruits  Recruit[]
   documents Document[]
+  tils      Til[]
 
   @@index([createdById])
   @@index([status])
@@ -835,23 +843,27 @@ model Report {
 
 // TIL (Today I Learned)
 model Til {
-  id         String   @id @default(uuid())
-  authorId   String
-  title      String
-  content    String   @db.Text
-  date       DateTime @db.Date  // 작성 날짜 (하루 1개 제한)
-  tags       String[] @default([])
-  xpGranted  Boolean  @default(false)
+  id          String        @id @default(uuid())
+  authorId    String
+  workspaceId String?       // 스터디 워크스페이스 ID (nullable - 기존 데이터 호환)
+  title       String
+  content     String        @db.Text
+  date        DateTime      @db.Date  // 작성 날짜 (하루 1개 제한)
+  tags        String[]      @default([])
+  xpGranted   Boolean       @default(false)
+  visibility  TilVisibility @default(PUBLIC)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  workspace Project? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
 
   @@unique([authorId, date])
   @@index([authorId])
   @@index([date])
+  @@index([workspaceId])
   @@map("tils")
 }
 

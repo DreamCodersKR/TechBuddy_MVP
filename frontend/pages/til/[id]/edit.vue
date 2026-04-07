@@ -14,16 +14,24 @@ const title = ref('')
 const content = ref('')
 const tagInput = ref('')
 const tags = ref<string[]>([])
+const visibility = ref<'PRIVATE' | 'WORKSPACE' | 'PUBLIC'>('PUBLIC')
 const submitting = ref(false)
 const loading = ref(true)
 const error = ref('')
 
+const VISIBILITY_OPTIONS = [
+  { value: 'PUBLIC', label: '전체 공개' },
+  { value: 'WORKSPACE', label: '팀원만' },
+  { value: 'PRIVATE', label: '나만 보기' },
+]
+
 onMounted(async () => {
   try {
-    const til = await authGet<{ title: string; content: string; tags: string[] }>(`/tils/${route.params.id}`)
+    const til = await authGet<{ title: string; content: string; tags: string[]; visibility: 'PRIVATE' | 'WORKSPACE' | 'PUBLIC' }>(`/tils/${route.params.id}`)
     title.value = til.title
     content.value = til.content
     tags.value = til.tags ?? []
+    visibility.value = til.visibility ?? 'PUBLIC'
     useHead({ title: `TIL 수정 - FLOWIT` })
   } finally {
     loading.value = false
@@ -54,6 +62,7 @@ async function submit() {
       title: title.value,
       content: content.value,
       tags: tags.value,
+      visibility: visibility.value,
     })
     router.push(`/til/${route.params.id}`)
   } catch (e: any) {
@@ -93,6 +102,18 @@ async function submit() {
             placeholder="내용을 입력하세요..."
             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y min-h-[200px]"
           />
+        </div>
+
+        <div>
+          <label class="text-sm font-medium mb-1 block">공개 범위</label>
+          <select
+            v-model="visibility"
+            class="w-full h-9 px-3 text-sm border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option v-for="opt in VISIBILITY_OPTIONS" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
         </div>
 
         <div>

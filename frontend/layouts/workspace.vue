@@ -28,44 +28,53 @@ watch(workspaceId, async (id) => {
   catch { workspace.value = null }
 }, { immediate: true })
 
-const sidebarItems = computed(() => [
-  {
-    label: '대시보드',
-    icon: 'heroicons:chart-bar',
-    to: `/workspaces/${workspaceId.value}/dashboard`,
-  },
-  {
-    label: '칸반 보드',
-    icon: 'heroicons:view-columns',
-    to: `/workspaces/${workspaceId.value}`,
-    exact: true,
-  },
-  {
-    label: '태스크 목록',
-    icon: 'heroicons:list-bullet',
-    to: `/workspaces/${workspaceId.value}/tasks`,
-  },
-  {
-    label: '스프린트',
-    icon: 'heroicons:bolt',
-    to: `/workspaces/${workspaceId.value}/sprints`,
-  },
-  {
-    label: '멤버',
-    icon: 'heroicons:users',
-    to: `/workspaces/${workspaceId.value}/members`,
-  },
-  {
-    label: '산출문서',
-    icon: 'heroicons:folder-open',
-    to: `/workspaces/${workspaceId.value}/documents`,
-  },
-  {
-    label: '설정',
-    icon: 'heroicons:cog-6-tooth',
-    to: `/workspaces/${workspaceId.value}/settings`,
-  },
-])
+const sidebarItems = computed(() => {
+  const isStudy = workspace.value?.type === 'STUDY'
+  const items = [
+    {
+      label: '대시보드',
+      icon: 'heroicons:chart-bar',
+      to: `/workspaces/${workspaceId.value}/dashboard`,
+    },
+    {
+      label: '칸반 보드',
+      icon: 'heroicons:view-columns',
+      to: `/workspaces/${workspaceId.value}`,
+      exact: true,
+    },
+    {
+      label: '태스크 목록',
+      icon: 'heroicons:list-bullet',
+      to: `/workspaces/${workspaceId.value}/tasks`,
+    },
+    {
+      label: '스프린트',
+      icon: 'heroicons:bolt',
+      to: `/workspaces/${workspaceId.value}/sprints`,
+    },
+    ...(isStudy ? [{
+      label: 'TIL',
+      icon: 'heroicons:pencil-square',
+      to: `/workspaces/${workspaceId.value}/til`,
+    }] : []),
+    {
+      label: '멤버',
+      icon: 'heroicons:users',
+      to: `/workspaces/${workspaceId.value}/members`,
+    },
+    {
+      label: '산출문서',
+      icon: 'heroicons:folder-open',
+      to: `/workspaces/${workspaceId.value}/documents`,
+    },
+    {
+      label: '설정',
+      icon: 'heroicons:cog-6-tooth',
+      to: `/workspaces/${workspaceId.value}/settings`,
+    },
+  ]
+  return items
+})
 
 const myTasksItem = { label: '내 Task', icon: 'heroicons:clipboard-document-check', to: '/workspaces/my-tasks' }
 

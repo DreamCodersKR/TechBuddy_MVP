@@ -120,6 +120,51 @@ export class UserService {
   }
 
   /**
+   * 활동 히트맵 조회 (TIL 작성 + 내게 배분된 Task DONE 합산)
+   * @returns { [date: string]: number } 날짜별 활동 횟수
+   */
+  async getActivityHeatmap(
+    userId: string,
+    year: number,
+  ): Promise<Record<string, number>> {
+    const startDate = new Date(year, 0, 1); // 1월 1일
+    const endDate = new Date(year + 1, 0, 1); // 다음해 1월 1일 (미만)
+
+    // TIL 작성 날짜 조회
+    const tils = await this.prisma.til.findMany({
+      where: {
+        authorId: userId,
+        date: { gte: startDate, lt: endDate },
+      },
+      select: { date: true },
+    });
+
+    // 내게 배분된 Task DONE (updatedAt 기준)
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        assigneeId: userId,
+        status: 'DONE',
+        updatedAt: { gte: startDate, lt: endDate },
+      },
+      select: { updatedAt: true },
+    });
+
+    const heatmap: Record<string, number> = {};
+
+    for (const til of tils) {
+      const key = til.date.toISOString().slice(0, 10); // YYYY-MM-DD
+      heatmap[key] = (heatmap[key] ?? 0) + 1;
+    }
+
+    for (const task of tasks) {
+      const key = task.updatedAt.toISOString().slice(0, 10);
+      heatmap[key] = (heatmap[key] ?? 0) + 1;
+    }
+
+    return heatmap;
+  }
+
+  /**
    * 공개 프로필 조회 (이메일 제외)
    */
   async findPublicProfile(id: string): Promise<PublicUserResponseDto> {

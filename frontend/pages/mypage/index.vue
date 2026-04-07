@@ -30,7 +30,7 @@ async function loadBadges() {
 async function loadHeatmap() {
   try {
     heatmap.value = await authGet<Record<string, number>>(
-      `/tils/heatmap?year=${new Date().getFullYear()}`
+      `/users/me/activity-heatmap?year=${new Date().getFullYear()}`
     )
   } catch { heatmap.value = {} }
 }
@@ -175,11 +175,11 @@ const BADGE_META: Record<string, { label: string; icon: string; color: string }>
       <GamificationDailyQuestWidget />
     </div>
 
-    <!-- TIL 잔디 히트맵 -->
+    <!-- 활동 히트맵 -->
     <div class="bg-card border border-border rounded-xl p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold">TIL 활동 기록</h2>
-        <NuxtLink to="/til" class="text-xs text-primary hover:underline">TIL 작성하기 →</NuxtLink>
+        <h2 class="text-sm font-semibold">활동 기록 (TIL + 완료 Task)</h2>
+        <NuxtLink to="/workspaces" class="text-xs text-primary hover:underline">워크스페이스 →</NuxtLink>
       </div>
       <GamificationActivityHeatmap :heatmap="heatmap" />
     </div>
@@ -191,7 +191,7 @@ const BADGE_META: Record<string, { label: string; icon: string; color: string }>
     >
       <div>
         <p class="font-semibold text-sm">🎁 친구 초대 보상</p>
-        <p class="text-xs text-muted-foreground mt-0.5">초대 시 +50cr, 피초대자 +30cr</p>
+        <p class="text-xs text-muted-foreground mt-0.5">초대 시 +20cr, 피초대자 +20cr</p>
       </div>
       <Icon icon="heroicons:chevron-right" class="w-5 h-5 text-muted-foreground" />
     </NuxtLink>
