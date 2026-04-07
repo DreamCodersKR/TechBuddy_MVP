@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '@prisma/client';
 import { CreateCommentDto, UpdateCommentDto } from './dto';
 
 @Injectable()
@@ -8,6 +10,7 @@ export class CommentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly xp: XpService,
+    private readonly notification: NotificationService,
   ) {}
 
   /**
@@ -52,6 +55,16 @@ export class CommentService {
 
     // XP 부여: 댓글 작성 +5
     await this.xp.grantXP(authorId, 5);
+
+    // 알림: 게시글 작성자에게 댓글 알림 (본인 제외)
+    await this.notification.create({
+      recipientId: post.authorId,
+      senderId: authorId,
+      type: NotificationType.COMMENT_ADDED,
+      title: '새 댓글이 달렸어요',
+      message: `"${post.title}"에 댓글이 달렸습니다`,
+      relatedId: postId,
+    });
 
     return comment;
   }

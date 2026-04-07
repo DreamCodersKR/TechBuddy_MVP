@@ -6,15 +6,17 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
+import { NotificationService } from '../notification/notification.service';
 import { CreateAgoraDto } from './dto/create-agora.dto';
 import { CreateAgoraAnswerDto } from './dto/create-agora-answer.dto';
-import { AgoraStatus, CreditTransactionType } from '@prisma/client';
+import { AgoraStatus, CreditTransactionType, NotificationType } from '@prisma/client';
 
 @Injectable()
 export class AgoraService {
   constructor(
     private prisma: PrismaService,
     private readonly xp: XpService,
+    private readonly notification: NotificationService,
   ) {}
 
   // ========================
@@ -151,12 +153,24 @@ export class AgoraService {
     if (agora.authorId === userId)
       throw new ForbiddenException('본인 질문에는 답변할 수 없습니다');
 
-    return this.prisma.agoraAnswer.create({
+    const answer = await this.prisma.agoraAnswer.create({
       data: { ...dto, agoraId, authorId: userId },
       include: {
         author: { select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } } },
       },
     });
+
+    // 알림: 질문자에게 답변 알림
+    await this.notification.create({
+      recipientId: agora.authorId,
+      senderId: userId,
+      type: NotificationType.AGORA_ANSWERED,
+      title: '아고라에 답변이 달렸어요',
+      message: `"${agora.title}"에 새 답변이 등록되었습니다`,
+      relatedId: agoraId,
+    });
+
+    return answer;
   }
 
   async removeAnswer(agoraId: string, answerId: string, userId: string) {
@@ -209,6 +223,16 @@ export class AgoraService {
 
     // XP 부여: 답변 채택 +100 (레벨 계산 포함)
     await this.xp.grantXP(answer.authorId, 100);
+
+    // 알림: 답변자에게 채택 알림
+    await this.notification.create({
+      recipientId: answer.authorId,
+      senderId: userId,
+      type: NotificationType.AGORA_ACCEPTED,
+      title: '내 답변이 채택됐어요! 🎉',
+      message: `"${agora.title}" 질문에서 답변이 채택되어 ${agora.bounty}C를 받았습니다`,
+      relatedId: agoraId,
+    });
 
     return { message: '답변이 채택되었습니다' };
   }

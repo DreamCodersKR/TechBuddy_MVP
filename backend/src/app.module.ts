@@ -20,6 +20,7 @@ import { CreditModule } from './credit/credit.module';
 import { BadgeModule } from './badge/badge.module';
 import { DocumentModule } from './document/document.module';
 import { XpModule } from './xp/xp.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { XpModule } from './xp/xp.module';
     BadgeModule,
     DocumentModule,
     XpModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
