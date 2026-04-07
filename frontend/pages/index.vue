@@ -57,8 +57,8 @@ const features = [
   },
   {
     icon: 'heroicons:sparkles',
-    title: 'AI 멘토링',
-    desc: 'Claude · GPT · Gemini',
+    title: 'FLOWIT AI',
+    desc: 'Task 맞춤 AI 어시스턴트',
     to: '/ai-mentor',
     color: 'text-amber-400',
     bg: 'bg-amber-500/10',
