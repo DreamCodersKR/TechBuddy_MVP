@@ -5,13 +5,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { XpService } from '../xp/xp.service';
 import { CreateAgoraDto } from './dto/create-agora.dto';
 import { CreateAgoraAnswerDto } from './dto/create-agora-answer.dto';
 import { AgoraStatus, CreditTransactionType } from '@prisma/client';
 
 @Injectable()
 export class AgoraService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly xp: XpService,
+  ) {}
 
   // ========================
   // 질문 CRUD
@@ -75,8 +79,8 @@ export class AgoraService {
       throw new BadRequestException('크레딧이 부족합니다');
 
     // 트랜잭션: 질문 생성 + 크레딧 차감 + 거래내역
-    return this.prisma.$transaction(async (tx) => {
-      const agora = await tx.agora.create({
+    const agora = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.agora.create({
         data: { ...dto, authorId: userId },
       });
       await tx.user.update({
@@ -89,11 +93,16 @@ export class AgoraService {
           amount: -dto.bounty,
           type: CreditTransactionType.SPEND,
           description: `아고라 현상금 - ${dto.title}`,
-          relatedId: agora.id,
+          relatedId: created.id,
         },
       });
-      return agora;
+      return created;
     });
+
+    // XP 부여: 질문 등록 +10
+    await this.xp.grantXP(userId, 10);
+
+    return agora;
   }
 
   async remove(id: string, userId: string) {
@@ -179,13 +188,13 @@ export class AgoraService {
     if (!answer || answer.agoraId !== agoraId)
       throw new NotFoundException('답변을 찾을 수 없습니다');
 
-    // 트랜잭션: 채택 + 현상금 지급 + 크레딧 거래내역 + XP 지급
+    // 트랜잭션: 채택 + 현상금 지급 + 크레딧 거래내역
     await this.prisma.$transaction(async (tx) => {
       await tx.agoraAnswer.update({ where: { id: answerId }, data: { isAccepted: true } });
       await tx.agora.update({ where: { id: agoraId }, data: { status: AgoraStatus.CLOSED } });
       await tx.user.update({
         where: { id: answer.authorId },
-        data: { credit: { increment: agora.bounty }, xp: { increment: 100 } },
+        data: { credit: { increment: agora.bounty } },
       });
       await tx.creditTransaction.create({
         data: {
@@ -197,6 +206,9 @@ export class AgoraService {
         },
       });
     });
+
+    // XP 부여: 답변 채택 +100 (레벨 계산 포함)
+    await this.xp.grantXP(answer.authorId, 100);
 
     return { message: '답변이 채택되었습니다' };
   }

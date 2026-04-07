@@ -11,13 +11,16 @@ import { ApplicationStatus, ProjectRole } from '@prisma/client';
 export class RecruitService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(params: { type?: string; position?: string; page?: number; limit?: number }) {
-    const { type, position, page = 1, limit = 20 } = params;
+  async findAll(params: { type?: string; position?: string; status?: string; page?: number; limit?: number }) {
+    const { type, position, status, page = 1, limit = 20 } = params;
     const skip = (page - 1) * limit;
+    const now = new Date();
 
-    const where = {
+    const where: any = {
       ...(type && { type: type as any }),
       ...(position && { positions: { hasSome: [position] } }),
+      ...(status === 'open' && { isClosed: false, deadline: { gt: now } }),
+      ...(status === 'closed' && { OR: [{ isClosed: true }, { deadline: { lte: now } }] }),
     };
 
     const [items, total] = await Promise.all([
@@ -67,7 +70,7 @@ export class RecruitService {
       data: {
         ...rest,
         authorId: userId,
-        deadline: deadline ? new Date(deadline) : null,
+        deadline: new Date(deadline),
       },
     });
   }

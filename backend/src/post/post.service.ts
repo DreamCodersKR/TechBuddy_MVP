@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { XpService } from '../xp/xp.service';
 import { CreatePostDto, UpdatePostDto } from './dto';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class PostService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly xp: XpService,
+  ) {}
 
   /**
    * 게시글 생성
@@ -13,7 +17,7 @@ export class PostService {
   async create(authorId: string, createPostDto: CreatePostDto) {
     const { tags, ...postData } = createPostDto;
 
-    return this.prisma.post.create({
+    const post = await this.prisma.post.create({
       data: {
         ...postData,
         authorId,
@@ -40,6 +44,11 @@ export class PostService {
         },
       },
     });
+
+    // XP 부여: 게시글 작성 +20
+    await this.xp.grantXP(authorId, 20);
+
+    return post;
   }
 
   /**

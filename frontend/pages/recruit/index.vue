@@ -29,6 +29,7 @@ interface RecruitListItem {
 // ─── 상태 ────────────────────────────────────────────────
 const tab = ref<'all' | 'PROJECT' | 'STUDY'>((route.query.tab as 'all' | 'PROJECT' | 'STUDY') || 'all')
 const selectedPosition = ref((route.query.position as string) || '')
+const statusFilter = ref<'all' | 'open' | 'closed'>('open')
 const items = ref<RecruitListItem[]>([])
 const total = ref(0)
 const page = ref(1)
@@ -37,7 +38,7 @@ const loading = ref(false)
 
 const totalPages = computed(() => Math.ceil(total.value / limit))
 
-const POSITIONS = ['프론트엔드', '백엔드', '풀스택', '디자이너', '기획자', 'DevOps', 'iOS', 'Android']
+const POSITIONS = ['프론트엔드', '백엔드', '풀스택', '디자이너', '기획자', '마케터', 'DevOps', 'iOS', 'Android']
 
 // ─── 데이터 패칭 ─────────────────────────────────────────
 async function fetchList(p = 1) {
@@ -47,6 +48,7 @@ async function fetchList(p = 1) {
     const params = new URLSearchParams({ page: String(p), limit: String(limit) })
     if (tab.value !== 'all') params.set('type', tab.value)
     if (selectedPosition.value) params.set('position', selectedPosition.value)
+    if (statusFilter.value !== 'all') params.set('status', statusFilter.value)
     const res = await $fetch<{
       data: RecruitListItem[]
       meta: { total: number; page: number; limit: number; totalPages: number }
@@ -73,6 +75,8 @@ watch(tab, () => {
   fetchList(1)
 })
 
+watch(statusFilter, () => fetchList(1))
+
 await fetchList(1)
 </script>
 
@@ -90,18 +94,33 @@ await fetchList(1)
       </Button>
     </div>
 
-    <!-- 탭 -->
-    <nav class="flex gap-1 mb-3">
-      <button
-        v-for="t in [{ label: '전체', value: 'all' }, { label: '프로젝트', value: 'PROJECT' }, { label: '스터디', value: 'STUDY' }]"
-        :key="t.value"
-        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
-        :class="tab === t.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent'"
-        @click="tab = t.value as 'all' | 'PROJECT' | 'STUDY'"
-      >
-        {{ t.label }}
-      </button>
-    </nav>
+    <!-- 탭 + 상태 필터 -->
+    <div class="flex items-center justify-between mb-3 gap-4">
+      <nav class="flex gap-1">
+        <button
+          v-for="t in [{ label: '전체', value: 'all' }, { label: '프로젝트', value: 'PROJECT' }, { label: '스터디', value: 'STUDY' }]"
+          :key="t.value"
+          class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
+          :class="tab === t.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent'"
+          @click="tab = t.value as 'all' | 'PROJECT' | 'STUDY'"
+        >
+          {{ t.label }}
+        </button>
+      </nav>
+      <div class="flex gap-1">
+        <button
+          v-for="s in [{ label: '모집중', value: 'open' }, { label: '전체', value: 'all' }, { label: '마감', value: 'closed' }]"
+          :key="s.value"
+          class="px-3 py-1 text-xs font-medium rounded-md border transition-colors"
+          :class="statusFilter === s.value
+            ? 'border-primary bg-primary/10 text-primary dark:bg-primary/20'
+            : 'border-border text-muted-foreground hover:text-foreground hover:bg-accent'"
+          @click="statusFilter = s.value as 'all' | 'open' | 'closed'"
+        >
+          {{ s.label }}
+        </button>
+      </div>
+    </div>
 
     <!-- 포지션 필터 -->
     <div class="flex flex-wrap gap-1.5 mb-4">

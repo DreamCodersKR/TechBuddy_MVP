@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { XpService } from '../xp/xp.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto';
 
 @Injectable()
 export class CommentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly xp: XpService,
+  ) {}
 
   /**
    * 댓글 생성
@@ -32,7 +36,7 @@ export class CommentService {
       }
     }
 
-    return this.prisma.postComment.create({
+    const comment = await this.prisma.postComment.create({
       data: {
         postId,
         authorId,
@@ -45,6 +49,11 @@ export class CommentService {
         },
       },
     });
+
+    // XP 부여: 댓글 작성 +5
+    await this.xp.grantXP(authorId, 5);
+
+    return comment;
   }
 
   /**

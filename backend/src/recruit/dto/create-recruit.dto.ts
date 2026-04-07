@@ -1,7 +1,7 @@
 import {
-  IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, IsInt, Min, IsDateString, IsBoolean,
+  IsString, IsNotEmpty, IsEnum, IsArray, IsInt, Min, IsDateString,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { RecruitType } from '@prisma/client';
 
 export class CreateRecruitDto {
@@ -34,8 +34,8 @@ export class CreateRecruitDto {
   @Min(1)
   maxMembers: number;
 
-  @ApiPropertyOptional({ example: '2025-04-30' })
+  @ApiProperty({ example: '2025-04-30' })
   @IsDateString()
-  @IsOptional()
-  deadline?: string;
+  @IsNotEmpty()
+  deadline: string;
 }

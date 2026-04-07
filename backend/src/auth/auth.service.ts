@@ -3,8 +3,10 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomUUID } from 'crypto';
 import { UserService } from '../user/user.service';
+import { XpService } from '../xp/xp.service';
 import { CreateUserDto, LoginDto, UserResponseDto } from '../user/dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadgeType } from '@prisma/client';
 import { GoogleProfile } from './strategies/google.strategy';
 import { GitHubProfile } from './strategies/github.strategy';
 
@@ -17,6 +19,7 @@ const REFRESH_TOKEN_EXPIRES_IN_MS = 7 * 24 * 60 * 60 * 1000;
 export class AuthService {
   constructor(
     private readonly userService: UserService,
+    private readonly xp: XpService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
@@ -28,6 +31,9 @@ export class AuthService {
   async register(createUserDto: CreateUserDto) {
     const user = await this.userService.create(createUserDto);
     const accessToken = this.generateAccessToken(user.id, user.email);
+
+    // 신규 가입 뱃지 부여
+    await this.xp.awardBadge(user.id, BadgeType.NEW_MEMBER);
 
     return {
       user,

@@ -19,6 +19,7 @@ import { TaskModule } from './task/task.module';
 import { CreditModule } from './credit/credit.module';
 import { BadgeModule } from './badge/badge.module';
 import { DocumentModule } from './document/document.module';
+import { XpModule } from './xp/xp.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { DocumentModule } from './document/document.module';
     CreditModule,
     BadgeModule,
     DocumentModule,
+    XpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -48,7 +48,7 @@ async function loadWorkspaces() {
 }
 
 // ─── 포지션 프리셋 ────────────────────────────────────────
-const POSITION_PRESETS = ['프론트엔드', '백엔드', '풀스택', 'AI/ML', '기획', '디자인']
+const POSITION_PRESETS = ['프론트엔드', '백엔드', '풀스택', 'AI/ML', '기획', '디자인', '마케터']
 
 // ─── 폼 상태 ─────────────────────────────────────────────
 const form = reactive({
@@ -67,6 +67,7 @@ const errors = reactive({
   description: '',
   positions: '',
   maxMembers: '',
+  deadline: '',
 })
 
 // 워크스페이스 선택 시 type 자동 매핑
@@ -89,6 +90,7 @@ function validate(): boolean {
   errors.description = ''
   errors.positions = ''
   errors.maxMembers = ''
+  errors.deadline = ''
 
   if (!form.projectId) {
     errors.projectId = '워크스페이스를 선택해주세요.'
@@ -110,6 +112,14 @@ function validate(): boolean {
     errors.maxMembers = '최소 1명 이상이어야 합니다.'
     valid = false
   }
+  if (!form.deadline) {
+    errors.deadline = '마감일을 선택해주세요.'
+    valid = false
+  }
+  else if (new Date(form.deadline) <= new Date()) {
+    errors.deadline = '마감일은 오늘 이후여야 합니다.'
+    valid = false
+  }
   return valid
 }
 
@@ -128,8 +138,8 @@ async function handleSubmit() {
       description: form.description.trim(),
       positions: form.positions,
       maxMembers: form.maxMembers,
+      deadline: form.deadline,
     }
-    if (form.deadline) body.deadline = form.deadline
 
     const result = await authPost<{ id: string }>('/recruit', body)
     await router.push(`/recruit/${result.id}`)
@@ -298,16 +308,17 @@ await loadWorkspaces()
         <p v-if="errors.maxMembers" class="text-sm text-destructive">{{ errors.maxMembers }}</p>
       </div>
 
-      <!-- 마감일 (선택) -->
+      <!-- 마감일 (필수) -->
       <div class="space-y-2">
-        <Label for="deadline">마감일 <span class="text-xs text-muted-foreground">(선택)</span></Label>
+        <Label for="deadline">마감일 <span class="text-destructive">*</span></Label>
         <input
           id="deadline"
           v-model="form.deadline"
           type="date"
-          class="h-10 px-3 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          class="h-10 px-3 text-sm border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          :class="errors.deadline ? 'border-destructive' : 'border-border'"
         />
-        <p class="text-xs text-muted-foreground">설정하지 않으면 직접 마감하기 전까지 모집이 유지됩니다.</p>
+        <p v-if="errors.deadline" class="text-sm text-destructive">{{ errors.deadline }}</p>
       </div>
 
       <!-- 하단 버튼 -->
