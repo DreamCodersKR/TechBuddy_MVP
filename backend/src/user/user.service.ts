@@ -108,6 +108,18 @@ export class UserService {
   }
 
   /**
+   * 스트릭 정보 조회
+   */
+  async getStreak(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { currentStreak: true, longestStreak: true, lastActiveDate: true },
+    });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다');
+    return user;
+  }
+
+  /**
    * 공개 프로필 조회 (이메일 제외)
    */
   async findPublicProfile(id: string): Promise<PublicUserResponseDto> {

@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHash, randomUUID } from 'crypto';
 import { UserService } from '../user/user.service';
 import { XpService } from '../xp/xp.service';
+import { ReferralService } from '../referral/referral.service';
 import { CreateUserDto, LoginDto, UserResponseDto } from '../user/dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadgeType } from '@prisma/client';
@@ -20,6 +21,7 @@ export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly xp: XpService,
+    private readonly referral: ReferralService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
@@ -29,11 +31,17 @@ export class AuthService {
    * 회원가입
    */
   async register(createUserDto: CreateUserDto) {
-    const user = await this.userService.create(createUserDto);
+    const { referralCode, ...userData } = createUserDto;
+    const user = await this.userService.create(userData as CreateUserDto);
     const accessToken = this.generateAccessToken(user.id, user.email);
 
     // 신규 가입 뱃지 부여
     await this.xp.awardBadge(user.id, BadgeType.NEW_MEMBER);
+
+    // 친구 초대 코드 처리
+    if (referralCode) {
+      await this.referral.applyReferral(user.id, referralCode);
+    }
 
     return {
       user,
@@ -65,6 +73,9 @@ export class AuthService {
       );
     }
 
+    // 스트릭 업데이트
+    await this.updateStreak(user.id);
+
     // Access Token 생성
     const accessToken = this.generateAccessToken(user.id, user.email);
 
@@ -72,6 +83,62 @@ export class AuthService {
       user: new UserResponseDto(user),
       accessToken,
     };
+  }
+
+  /**
+   * 연속 출석 스트릭 업데이트
+   * - 오늘 처음 로그인: 어제 접속했으면 streak+1, 아니면 streak=1
+   * - 이미 오늘 접속: 유지
+   * - 스트릭 마일스톤(3/7/30일) 달성 시 크레딧 보상
+   */
+  async updateStreak(userId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { currentStreak: true, longestStreak: true, lastActiveDate: true },
+    });
+    if (!user) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const lastActive = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
+    if (lastActive) lastActive.setHours(0, 0, 0, 0);
+
+    // 오늘 이미 접속했으면 무시
+    if (lastActive && lastActive.getTime() === today.getTime()) return;
+
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    const isConsecutive = lastActive && lastActive.getTime() === yesterday.getTime();
+    const newStreak = isConsecutive ? user.currentStreak + 1 : 1;
+    const newLongest = Math.max(newStreak, user.longestStreak);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        currentStreak: newStreak,
+        longestStreak: newLongest,
+        lastActiveDate: today,
+      },
+    });
+
+    // 스트릭 마일스톤 보상 (3/7/30일)
+    const STREAK_REWARDS: Record<number, number> = { 3: 10, 7: 30, 30: 100 };
+    if (STREAK_REWARDS[newStreak]) {
+      await this.prisma.creditTransaction.create({
+        data: {
+          userId,
+          amount: STREAK_REWARDS[newStreak],
+          type: 'EARN',
+          description: `${newStreak}일 연속 출석 보상`,
+        },
+      });
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { credit: { increment: STREAK_REWARDS[newStreak] } },
+      });
+    }
   }
 
   /**
@@ -290,6 +357,11 @@ export class AuthService {
     // 토큰 생성
     const accessToken = this.generateAccessToken(user.id, user.email);
     const refreshToken = await this.generateRefreshToken(user.id);
+
+    // 스트릭 업데이트 (신규 가입 제외)
+    if (!isNewUser) {
+      await this.updateStreak(user.id);
+    }
 
     return {
       user: new UserResponseDto(user),

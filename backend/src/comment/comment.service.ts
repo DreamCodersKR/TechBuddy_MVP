@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
 import { NotificationService } from '../notification/notification.service';
+import { QuestService, QUEST_KEYS } from '../quest/quest.service';
 import { NotificationType } from '@prisma/client';
 import { CreateCommentDto, UpdateCommentDto } from './dto';
 
@@ -11,6 +12,7 @@ export class CommentService {
     private readonly prisma: PrismaService,
     private readonly xp: XpService,
     private readonly notification: NotificationService,
+    private readonly quest: QuestService,
   ) {}
 
   /**
@@ -55,6 +57,8 @@ export class CommentService {
 
     // XP 부여: 댓글 작성 +5
     await this.xp.grantXP(authorId, 5);
+    // 퀘스트 체크: 댓글 작성
+    await this.quest.checkAndComplete(authorId, QUEST_KEYS.COMMENT_WRITE);
 
     // 알림: 게시글 작성자에게 댓글 알림 (본인 제외)
     await this.notification.create({

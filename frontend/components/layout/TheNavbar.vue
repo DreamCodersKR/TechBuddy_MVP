@@ -67,6 +67,7 @@ function toggleDark() {
 const menuItems = [
   { label: '커뮤니티', to: '/community' },
   { label: '프로젝트', to: '/workspaces' },
+  { label: 'TIL', to: '/til' },
   { label: 'FLOWIT AI', to: '/ai-mentor' },
 ]
 

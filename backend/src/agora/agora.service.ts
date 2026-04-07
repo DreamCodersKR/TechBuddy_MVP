@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
 import { NotificationService } from '../notification/notification.service';
+import { QuestService, QUEST_KEYS } from '../quest/quest.service';
 import { CreateAgoraDto } from './dto/create-agora.dto';
 import { CreateAgoraAnswerDto } from './dto/create-agora-answer.dto';
 import { AgoraStatus, CreditTransactionType, NotificationType } from '@prisma/client';
@@ -17,6 +18,7 @@ export class AgoraService {
     private prisma: PrismaService,
     private readonly xp: XpService,
     private readonly notification: NotificationService,
+    private readonly quest: QuestService,
   ) {}
 
   // ========================
@@ -169,6 +171,9 @@ export class AgoraService {
       message: `"${agora.title}"에 새 답변이 등록되었습니다`,
       relatedId: agoraId,
     });
+
+    // 퀘스트 체크: 아고라 답변
+    await this.quest.checkAndComplete(userId, QUEST_KEYS.AGORA_ANSWER);
 
     return answer;
   }

@@ -17,6 +17,7 @@ interface Badge {
 
 const badges = ref<Badge[]>([])
 const badgesLoading = ref(true)
+const heatmap = ref<Record<string, number>>({})
 
 async function loadBadges() {
   try {
@@ -26,7 +27,15 @@ async function loadBadges() {
   finally { badgesLoading.value = false }
 }
 
-onMounted(() => { loadBadges() })
+async function loadHeatmap() {
+  try {
+    heatmap.value = await authGet<Record<string, number>>(
+      `/tils/heatmap?year=${new Date().getFullYear()}`
+    )
+  } catch { heatmap.value = {} }
+}
+
+onMounted(() => { loadBadges(); loadHeatmap() })
 
 const user = computed(() => authStore.currentUser)
 const userInitials = computed(() => {
@@ -139,19 +148,13 @@ const BADGE_META: Record<string, { label: string; icon: string; color: string }>
     </div>
 
     <!-- 뱃지 -->
-    <div class="bg-card border border-border rounded-xl p-6">
-      <h2 class="text-sm font-semibold text-foreground mb-4">
-        보유 뱃지
-      </h2>
+    <div class="bg-card border border-border rounded-xl p-6 mb-6">
+      <h2 class="text-sm font-semibold text-foreground mb-4">보유 뱃지</h2>
       <div v-if="badgesLoading" class="flex gap-3">
         <div v-for="n in 3" :key="n" class="h-10 w-10 rounded-full bg-muted animate-pulse" />
       </div>
       <div v-else-if="badges.length > 0" class="flex flex-wrap gap-3">
-        <div
-          v-for="b in badges"
-          :key="b.id"
-          class="flex flex-col items-center gap-1"
-        >
+        <div v-for="b in badges" :key="b.id" class="flex flex-col items-center gap-1">
           <div class="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
             <Icon
               :icon="BADGE_META[b.badge]?.icon ?? 'heroicons:star'"
@@ -162,9 +165,35 @@ const BADGE_META: Record<string, { label: string; icon: string; color: string }>
           <span class="text-xs text-muted-foreground">{{ BADGE_META[b.badge]?.label ?? b.badge }}</span>
         </div>
       </div>
-      <p v-else class="text-sm text-muted-foreground">
-        아직 획득한 뱃지가 없습니다.
-      </p>
+      <p v-else class="text-sm text-muted-foreground">아직 획득한 뱃지가 없습니다.</p>
     </div>
+
+    <!-- ===== M10 게이미피케이션 섹션 ===== -->
+    <!-- 스트릭 + 퀘스트 (2열 그리드) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <GamificationStreakCard />
+      <GamificationDailyQuestWidget />
+    </div>
+
+    <!-- TIL 잔디 히트맵 -->
+    <div class="bg-card border border-border rounded-xl p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold">TIL 활동 기록</h2>
+        <NuxtLink to="/til" class="text-xs text-primary hover:underline">TIL 작성하기 →</NuxtLink>
+      </div>
+      <GamificationActivityHeatmap :heatmap="heatmap" />
+    </div>
+
+    <!-- 친구 초대 배너 -->
+    <NuxtLink
+      to="/mypage/referral"
+      class="flex items-center justify-between bg-gradient-to-r from-violet-500/10 to-blue-500/10 border border-violet-500/20 rounded-xl p-4 hover:opacity-80 transition-opacity"
+    >
+      <div>
+        <p class="font-semibold text-sm">🎁 친구 초대 보상</p>
+        <p class="text-xs text-muted-foreground mt-0.5">초대 시 +50cr, 피초대자 +30cr</p>
+      </div>
+      <Icon icon="heroicons:chevron-right" class="w-5 h-5 text-muted-foreground" />
+    </NuxtLink>
   </div>
 </template>

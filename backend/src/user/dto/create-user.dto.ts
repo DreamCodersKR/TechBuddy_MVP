@@ -71,4 +71,9 @@ export class CreateUserDto {
   @IsArray()
   @IsOptional()
   techStack?: string[];
+
+  @ApiProperty({ description: '친구 초대 코드 (선택사항)', required: false })
+  @IsString()
+  @IsOptional()
+  referralCode?: string;
 }

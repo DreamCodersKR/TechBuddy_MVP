@@ -5,6 +5,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
+import { QuestService, QUEST_KEYS } from '../quest/quest.service';
 import { CreateMessageDto, TIER_COST, MentoringTier } from './dto/create-message.dto';
 import { AIMessageRole, CreditTransactionType, UserPlan } from '@prisma/client';
 import Anthropic from '@anthropic-ai/sdk';
@@ -38,6 +39,7 @@ export class AiMentorService {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
+    private readonly quest: QuestService,
   ) {}
 
   // ─── AI 스트리밍 호출 (AsyncGenerator) ───────────────────────
@@ -284,6 +286,9 @@ export class AiMentorService {
       });
       await tx.aIConversation.update({ where: { id: convId! }, data: { updatedAt: new Date() } });
     });
+
+    // 퀘스트 체크: AI 멘토링 이용
+    await this.quest.checkAndComplete(userId, QUEST_KEYS.AI_CHAT);
 
     return { conversationId: convId, model: modelUsed, creditsUsed: cost };
   }

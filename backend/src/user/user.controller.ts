@@ -112,6 +112,14 @@ export class UserController {
     return this.userService.uploadAvatar(user.id, file);
   }
 
+  @Get('me/streak')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '내 스트릭 정보 조회' })
+  async getMyStreak(@CurrentUser() user: any) {
+    return this.userService.getStreak(user.id);
+  }
+
   /**
    * 현재 로그인한 사용자 프로필 수정
    */

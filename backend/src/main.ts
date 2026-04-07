@@ -13,6 +13,9 @@ async function bootstrap() {
   // CORS 설정 - 여러 도메인 허용
   const allowedOrigins = [
     'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:3003',
     'https://tech-buddy-mvp.vercel.app',
     process.env.FRONTEND_URL,
   ].filter(Boolean);

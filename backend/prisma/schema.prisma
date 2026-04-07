@@ -163,6 +163,11 @@ enum ReportStatus {
   ACTION_TAKEN
 }
 
+enum QuestType {
+  DAILY
+  WEEKLY
+}
+
 // ============================================
 // Phase 1: 커뮤니티 기능
 // ============================================
@@ -188,6 +193,11 @@ model User {
   // OAuth 관련 필드
   provider   String? // 'google', 'github', null(일반 로그인)
   providerId String? // OAuth provider의 사용자 ID
+
+  // 스트릭
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
 
   isBanned Boolean   @default(false)
   bannedAt DateTime?
@@ -234,6 +244,12 @@ model User {
   // Relations - M8 운영 관리
   inquiries Inquiry[]
   reports   Report[]
+
+  // Relations - M10 게이미피케이션
+  tils           Til[]
+  questProgresses QuestProgress[]
+  referralCode   ReferralCode?
+  referralUsage  ReferralUsage?
 
   @@unique([provider, providerId])
   @@index([email])
@@ -811,4 +827,105 @@ model Report {
   @@index([status])
   @@index([targetType, targetId])
   @@map("reports")
+}
+
+// ============================================
+// M10: 리텐션 & 게이미피케이션
+// ============================================
+
+// TIL (Today I Learned)
+model Til {
+  id         String   @id @default(uuid())
+  authorId   String
+  title      String
+  content    String   @db.Text
+  date       DateTime @db.Date  // 작성 날짜 (하루 1개 제한)
+  tags       String[] @default([])
+  xpGranted  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([authorId, date])
+  @@index([authorId])
+  @@index([date])
+  @@map("tils")
+}
+
+// 퀘스트 정의 (관리자가 시드로 생성)
+model Quest {
+  id           String    @id @default(uuid())
+  title        String
+  description  String
+  type         QuestType @default(DAILY)
+  conditionKey String    // 조건 키: 'TIL_WRITE', 'AGORA_ANSWER', 'AI_CHAT', 'COMMENT_WRITE', 'POST_WRITE'
+  xpReward     Int       @default(0)
+  creditReward Int       @default(0)
+  isActive     Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  progresses QuestProgress[]
+
+  @@index([type])
+  @@index([isActive])
+  @@map("quests")
+}
+
+// 사용자별 퀘스트 진행 상황
+model QuestProgress {
+  id          String    @id @default(uuid())
+  userId      String
+  questId     String
+  date        DateTime  @db.Date  // 해당 날짜 (DAILY: 오늘, WEEKLY: 주 시작일)
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quest Quest @relation(fields: [questId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questId, date])
+  @@index([userId])
+  @@index([questId])
+  @@index([date])
+  @@map("quest_progresses")
+}
+
+// 친구 초대 코드
+model ReferralCode {
+  id        String @id @default(uuid())
+  code      String @unique
+  userId    String @unique
+  usedCount Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usages ReferralUsage[]
+
+  @@map("referral_codes")
+}
+
+// 친구 초대 사용 기록
+model ReferralUsage {
+  id             String @id @default(uuid())
+  referralCodeId String
+  newUserId      String @unique  // 초대받아 가입한 사람 (1회만 사용 가능)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  referralCode ReferralCode @relation(fields: [referralCodeId], references: [id], onDelete: Cascade)
+  newUser      User         @relation(fields: [newUserId], references: [id], onDelete: Cascade)
+
+  @@index([referralCodeId])
+  @@map("referral_usages")
 }

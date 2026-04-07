@@ -9,11 +9,15 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { GitHubStrategy } from './strategies/github.strategy';
 import { UserModule } from '../user/user.module';
 import { XpModule } from '../xp/xp.module';
+import { ReferralModule } from '../referral/referral.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
     UserModule,
     XpModule,
+    ReferralModule,
+    PrismaModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

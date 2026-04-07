@@ -4,9 +4,10 @@ import { CommentController } from './comment.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { XpModule } from '../xp/xp.module';
 import { NotificationModule } from '../notification/notification.module';
+import { QuestModule } from '../quest/quest.module';
 
 @Module({
-  imports: [PrismaModule, XpModule, NotificationModule],
+  imports: [PrismaModule, XpModule, NotificationModule, QuestModule],
   providers: [CommentService],
   controllers: [CommentController],
 })

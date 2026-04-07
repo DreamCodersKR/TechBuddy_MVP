@@ -24,6 +24,9 @@ import { NotificationModule } from './notification/notification.module';
 import { AdminModule } from './admin/admin.module';
 import { InquiryModule } from './inquiry/inquiry.module';
 import { ReportModule } from './report/report.module';
+import { TilModule } from './til/til.module';
+import { QuestModule } from './quest/quest.module';
+import { ReferralModule } from './referral/referral.module';
 
 @Module({
   imports: [
@@ -53,6 +56,9 @@ import { ReportModule } from './report/report.module';
     AdminModule,
     InquiryModule,
     ReportModule,
+    TilModule,
+    QuestModule,
+    ReferralModule,
   ],
   controllers: [AppController],
   providers: [AppService],
