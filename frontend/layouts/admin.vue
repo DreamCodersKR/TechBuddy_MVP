@@ -22,7 +22,7 @@ function isActive(path: string) {
     <!-- 사이드바 -->
     <aside class="w-56 bg-background border-r border-border flex flex-col fixed top-0 left-0 h-full z-30">
       <div class="px-4 py-5 border-b border-border">
-        <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">FLOWIT</p>
+        <NuxtLink to="/" class="text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors">FLOWIT</NuxtLink>
         <p class="text-sm font-bold text-foreground mt-0.5">관리자 콘솔</p>
       </div>
 
