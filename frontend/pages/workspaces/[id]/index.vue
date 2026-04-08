@@ -513,107 +513,108 @@ onUnmounted(() => {
           </div>
 
           <!-- 태스크 카드들 (드래그앤드롭) -->
-          <Draggable
-            :list="boardColumns[col.status]"
-            :group="{ name: 'tasks' }"
-            ghost-class="opacity-40"
-            drag-class="rotate-1 shadow-xl"
-            class="p-2 space-y-2 min-h-[8rem] bg-muted/10 block"
-            @change="onColumnChange(col.status, $event)"
-          >
-            <div
-              v-for="task in boardColumns[col.status]"
-              :key="task.id"
-              class="bg-card border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:shadow-sm transition-all hover:border-primary/30"
-              @click="openTaskDetail(task)"
+          <div class="relative">
+            <Draggable
+              :list="boardColumns[col.status]"
+              :group="{ name: 'tasks' }"
+              ghost-class="opacity-40"
+              drag-class="dragging-card"
+              class="p-2 space-y-2 min-h-[8rem] bg-muted/10"
+              @change="onColumnChange(col.status, $event)"
             >
-              <!-- 이슈 번호 -->
-              <span
-                v-if="task.project?.issuePrefix && task.issueNumber"
-                class="block text-xs text-muted-foreground font-mono mb-1"
-              >
-                {{ task.project.issuePrefix }}-{{ String(task.issueNumber).padStart(3, '0') }}
-              </span>
-
-              <!-- 우선순위 + 제목 -->
-              <div class="flex items-start gap-1.5 mb-2">
-                <Icon
-                  icon="heroicons:flag"
-                  class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"
-                  :class="PRIORITY_COLOR[task.priority]"
-                />
-                <p class="text-sm font-medium text-foreground line-clamp-2 leading-tight">
-                  {{ task.title }}
-                </p>
-              </div>
-
-              <!-- 스프린트 뱃지 -->
-              <span
-                v-if="task.sprint"
-                class="inline-block text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 rounded px-1.5 py-0.5 mb-1.5"
-              >
-                {{ task.sprint.name }}
-              </span>
-
-              <!-- 태그 칩 -->
               <div
-                v-if="task.tags?.length"
-                class="flex flex-wrap gap-1 mb-1.5"
+                v-for="task in boardColumns[col.status]"
+                :key="task.id"
+                class="bg-card border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:shadow-sm transition-all hover:border-primary/30"
+                @click="openTaskDetail(task)"
               >
+                <!-- 이슈 번호 -->
                 <span
-                  v-for="tag in task.tags.slice(0, 2)"
-                  :key="tag"
-                  class="inline-block text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
+                  v-if="task.project?.issuePrefix && task.issueNumber"
+                  class="block text-xs text-muted-foreground font-mono mb-1"
                 >
-                  #{{ tag }}
+                  {{ task.project.issuePrefix }}-{{ String(task.issueNumber).padStart(3, '0') }}
                 </span>
-                <span
-                  v-if="task.tags.length > 2"
-                  class="text-xs text-muted-foreground"
-                >+{{ task.tags.length - 2 }}</span>
-              </div>
 
-              <!-- HELP 이유 -->
-              <p
-                v-if="task.helpReason"
-                class="text-xs text-red-500 mb-2 line-clamp-1"
-              >
-                {{ task.helpReason }}
-              </p>
+                <!-- 우선순위 + 제목 -->
+                <div class="flex items-start gap-1.5 mb-2">
+                  <Icon
+                    icon="heroicons:flag"
+                    class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"
+                    :class="PRIORITY_COLOR[task.priority]"
+                  />
+                  <p class="text-sm font-medium text-foreground line-clamp-2 leading-tight">
+                    {{ task.title }}
+                  </p>
+                </div>
 
-              <!-- 하단: 마감일 + 담당자 -->
-              <div class="flex items-center justify-between mt-2">
+                <!-- 스프린트 뱃지 -->
                 <span
-                  v-if="task.dueDate"
-                  class="text-xs text-muted-foreground flex items-center gap-1"
+                  v-if="task.sprint"
+                  class="inline-block text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 rounded px-1.5 py-0.5 mb-1.5"
                 >
-                  <Icon icon="heroicons:calendar" class="w-3 h-3" />
-                  {{ useRelativeTime(task.dueDate) }}
+                  {{ task.sprint.name }}
                 </span>
-                <span v-else />
+
+                <!-- 태그 칩 -->
                 <div
-                  v-if="task.assignee"
-                  class="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium overflow-hidden"
-                  :title="task.assignee.nickname ?? task.assignee.name"
+                  v-if="task.tags?.length"
+                  class="flex flex-wrap gap-1 mb-1.5"
                 >
-                  <img
-                    v-if="task.assignee.avatarUrl"
-                    :src="task.assignee.avatarUrl"
-                    class="h-full w-full object-cover"
+                  <span
+                    v-for="tag in task.tags.slice(0, 2)"
+                    :key="tag"
+                    class="inline-block text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
                   >
-                  <span v-else>{{ (task.assignee.nickname ?? task.assignee.name).slice(0, 1) }}</span>
+                    #{{ tag }}
+                  </span>
+                  <span
+                    v-if="task.tags.length > 2"
+                    class="text-xs text-muted-foreground"
+                  >+{{ task.tags.length - 2 }}</span>
+                </div>
+
+                <!-- HELP 이유 -->
+                <p
+                  v-if="task.helpReason"
+                  class="text-xs text-red-500 mb-2 line-clamp-1"
+                >
+                  {{ task.helpReason }}
+                </p>
+
+                <!-- 하단: 마감일 + 담당자 -->
+                <div class="flex items-center justify-between mt-2">
+                  <span
+                    v-if="task.dueDate"
+                    class="text-xs text-muted-foreground flex items-center gap-1"
+                  >
+                    <Icon icon="heroicons:calendar" class="w-3 h-3" />
+                    {{ useRelativeTime(task.dueDate) }}
+                  </span>
+                  <span v-else />
+                  <div
+                    v-if="task.assignee"
+                    class="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium overflow-hidden"
+                    :title="task.assignee.nickname ?? task.assignee.name"
+                  >
+                    <img
+                      v-if="task.assignee.avatarUrl"
+                      :src="task.assignee.avatarUrl"
+                      class="h-full w-full object-cover"
+                    >
+                    <span v-else>{{ (task.assignee.nickname ?? task.assignee.name).slice(0, 1) }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <!-- 빈 컬럼 -->
+            </Draggable>
+            <!-- 빈 컬럼 (Draggable 외부 — Sortable.js 인덱스 오염 방지) -->
             <div
               v-if="boardColumns[col.status].length === 0"
-              class="flex items-center justify-center h-16 text-xs text-muted-foreground"
+              class="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground pointer-events-none"
             >
               태스크 없음
             </div>
-          </Draggable>
+          </div>
         </div>
       </div>
     </div>
@@ -1058,3 +1059,9 @@ onUnmounted(() => {
     />
   </div>
 </template>
+
+<style scoped>
+.dragging-card {
+  @apply rotate-1 shadow-xl;
+}
+</style>
