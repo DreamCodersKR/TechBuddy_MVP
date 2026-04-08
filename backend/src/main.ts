@@ -1,3 +1,9 @@
+import { webcrypto } from 'node:crypto';
+// Node.js 18에서 crypto를 전역으로 사용하는 @nestjs/schedule 호환 폴리필
+if (!globalThis.crypto) {
+  (globalThis as any).crypto = webcrypto;
+}
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
