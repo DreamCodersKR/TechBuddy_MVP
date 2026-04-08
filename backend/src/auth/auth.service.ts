@@ -1,4 +1,5 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomUUID } from 'crypto';
@@ -57,6 +58,11 @@ export class AuthService {
 
     // 사용자 찾기
     const user = await this.userService.findByEmail(email);
+
+    // DRE-214: 정지된 계정 차단
+    if (user.isBanned) {
+      throw new ForbiddenException('계정이 정지되었습니다. 문의사항은 고객센터로 연락해주세요.');
+    }
 
     // 비밀번호 검증
     if (!user.password) {
@@ -283,7 +289,16 @@ export class AuthService {
   }
 
   /**
-   * 만료된 Refresh Token 정리 (선택적 - 크론잡으로 실행 가능)
+   * DRE-220: 매일 자정 만료/폐기된 Refresh Token 자동 정리
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async scheduledTokenCleanup(): Promise<void> {
+    const count = await this.cleanupExpiredTokens();
+    console.log(`[Auth] 만료 Refresh Token ${count}개 정리 완료`);
+  }
+
+  /**
+   * 만료된 Refresh Token 정리
    */
   async cleanupExpiredTokens(): Promise<number> {
     const result = await this.prisma.refreshToken.deleteMany({
@@ -321,6 +336,11 @@ export class AuthService {
     });
 
     let isNewUser = false;
+
+    // DRE-214: OAuth 로그인 시 정지된 계정 차단
+    if (user && user.isBanned) {
+      throw new ForbiddenException('계정이 정지되었습니다. 문의사항은 고객센터로 연락해주세요.');
+    }
 
     if (!user) {
       // 2. 동일 이메일로 가입한 사용자가 있는지 확인

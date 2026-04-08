@@ -10,6 +10,7 @@ import {
   ClassSerializerInterceptor,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import {
   ApiTags,
   ApiOperation,
@@ -46,6 +47,7 @@ export class AuthController {
    * 회원가입
    */
   @Post('signup')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: '회원가입' })
   @ApiResponse({
     status: 201,
@@ -78,6 +80,7 @@ export class AuthController {
    * 회원가입 (legacy)
    */
   @Post('register')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: '회원가입 (legacy)' })
   @ApiResponse({
     status: 201,
@@ -99,6 +102,7 @@ export class AuthController {
    * 로그인
    */
   @Post('login')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: '로그인' })
   @ApiResponse({
     status: 200,
@@ -274,11 +278,10 @@ export class AuthController {
     // Refresh Token을 Cookie에 설정
     this.setRefreshTokenCookie(res, result.refreshToken);
 
-    // Frontend로 리다이렉트 (Access Token은 URL 파라미터로 전달)
+    // DRE-215: Access Token을 URL Fragment(#)로 전달 (서버 로그/Referer 헤더 노출 방지)
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
     const redirectUrl = new URL('/auth/callback', frontendUrl);
-    redirectUrl.searchParams.set('accessToken', result.accessToken);
-    redirectUrl.searchParams.set('isNewUser', result.isNewUser.toString());
+    redirectUrl.hash = `accessToken=${result.accessToken}&isNewUser=${result.isNewUser}`;
 
     res.redirect(redirectUrl.toString());
   }
@@ -312,11 +315,10 @@ export class AuthController {
     // Refresh Token을 Cookie에 설정
     this.setRefreshTokenCookie(res, result.refreshToken);
 
-    // Frontend로 리다이렉트 (Access Token은 URL 파라미터로 전달)
+    // DRE-215: Access Token을 URL Fragment(#)로 전달 (서버 로그/Referer 헤더 노출 방지)
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
     const redirectUrl = new URL('/auth/callback', frontendUrl);
-    redirectUrl.searchParams.set('accessToken', result.accessToken);
-    redirectUrl.searchParams.set('isNewUser', result.isNewUser.toString());
+    redirectUrl.hash = `accessToken=${result.accessToken}&isNewUser=${result.isNewUser}`;
 
     res.redirect(redirectUrl.toString());
   }

@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
+import { fileTypeFromBuffer } from 'file-type';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateUserDto,
@@ -199,12 +200,17 @@ export class UserService {
     userId: string,
     file: Express.Multer.File,
   ): Promise<UserResponseDto> {
-    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowed.includes(file.mimetype)) {
+    const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!ALLOWED_MIME.includes(file.mimetype)) {
       throw new BadRequestException('이미지 파일만 업로드할 수 있습니다 (jpeg, png, gif, webp)');
     }
     if (file.size > 5 * 1024 * 1024) {
       throw new BadRequestException('파일 크기는 5MB 이하여야 합니다');
+    }
+    // DRE-221: Magic bytes 검증 (Content-Type 위조 방지)
+    const detected = await fileTypeFromBuffer(file.buffer);
+    if (!detected || !ALLOWED_MIME.includes(detected.mime)) {
+      throw new BadRequestException('올바르지 않은 이미지 파일입니다');
     }
 
     const ext = file.mimetype.split('/')[1];

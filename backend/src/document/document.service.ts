@@ -1,10 +1,18 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { R2Service } from './r2.service';
 import { DocumentCategory } from '@prisma/client';
 import * as archiver from 'archiver';
 import { randomUUID } from 'crypto';
 import type { Response } from 'express';
+
+// DRE-221: 업로드 허용 MIME 타입 (실행 파일/스크립트 차단)
+const BLOCKED_MIME = [
+  'application/x-executable', 'application/x-msdownload', 'application/x-sh',
+  'application/x-bat', 'text/x-script.phyton', 'application/x-php',
+  'application/javascript', 'text/javascript', 'application/x-httpd-php',
+];
+const MAX_DOC_SIZE = 50 * 1024 * 1024; // 50MB
 
 @Injectable()
 export class DocumentService {
@@ -19,6 +27,14 @@ export class DocumentService {
     file: Express.Multer.File,
     category: DocumentCategory = DocumentCategory.OTHER,
   ) {
+    // DRE-221: 파일 크기 및 위험 MIME 타입 차단
+    if (file.size > MAX_DOC_SIZE) {
+      throw new BadRequestException('파일 크기는 50MB 이하여야 합니다');
+    }
+    if (BLOCKED_MIME.includes(file.mimetype)) {
+      throw new BadRequestException('업로드할 수 없는 파일 형식입니다');
+    }
+
     const ext = file.originalname.split('.').pop();
     const r2Key = `${projectId}/${randomUUID()}-${file.originalname}`;
     const fileUrl = await this.r2.uploadFile(r2Key, file.buffer, file.mimetype);

@@ -18,10 +18,12 @@ const errorMessage = ref<string | null>(null)
 
 onMounted(async () => {
   try {
-    // URL 파라미터에서 토큰 추출
-    const accessToken = route.query.accessToken as string
-    const isNewUser = route.query.isNewUser === 'true'
-    const error = route.query.error as string
+    // DRE-215: URL Fragment(#)에서 토큰 추출 (서버 로그/Referer 미노출)
+    const hash = window.location.hash.slice(1)
+    const params = new URLSearchParams(hash)
+    const accessToken = params.get('accessToken') ?? ''
+    const isNewUser = params.get('isNewUser') === 'true'
+    const error = params.get('error') ?? route.query.error as string
 
     // 에러 체크
     if (error) {

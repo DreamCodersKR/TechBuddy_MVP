@@ -25,7 +25,6 @@ import {
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import {
-  CreateUserDto,
   UpdateUserDto,
   UserResponseDto,
   PublicUserResponseDto,
@@ -42,28 +41,6 @@ export class UserController {
     private readonly userService: UserService,
     private readonly taskService: TaskService,
   ) {}
-
-  /**
-   * 사용자 생성 (회원가입) - /auth/signup 사용 권장
-   */
-  @Post()
-  @ApiOperation({ summary: '사용자 생성', description: '회원가입은 /auth/signup 사용 권장' })
-  @ApiResponse({
-    status: 201,
-    description: '사용자 생성 성공',
-    type: UserResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: '유효성 검사 실패',
-  })
-  @ApiResponse({
-    status: 409,
-    description: '이메일 중복',
-  })
-  async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    return this.userService.create(createUserDto);
-  }
 
   /**
    * 현재 로그인한 사용자 정보 조회
