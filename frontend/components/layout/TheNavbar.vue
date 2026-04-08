@@ -290,7 +290,7 @@ const userInitials = computed(() => {
                     설정
                   </NuxtLink>
                 </DropdownMenuItem>
-                <template v-if="authStore.currentUser?.role === 'ADMIN'">
+                <template v-if="authStore.currentUser?.role === 'ADMIN' || authStore.currentUser?.role === 'SUPER_ADMIN'">
                   <DropdownMenuSeparator />
                   <DropdownMenuItem as-child>
                     <NuxtLink to="/admin" class="cursor-pointer">
