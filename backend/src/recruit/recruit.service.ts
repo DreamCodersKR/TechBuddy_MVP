@@ -11,8 +11,8 @@ import { ApplicationStatus, ProjectRole } from '@prisma/client';
 export class RecruitService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(params: { type?: string; position?: string; status?: string; page?: number; limit?: number }) {
-    const { type, position, status, page = 1, limit = 20 } = params;
+  async findAll(params: { query?: string; type?: string; position?: string; status?: string; page?: number; limit?: number }) {
+    const { query, type, position, status, page = 1, limit = 20 } = params;
     const skip = (page - 1) * limit;
     const now = new Date();
 
@@ -21,6 +21,12 @@ export class RecruitService {
       ...(position && { positions: { hasSome: [position] } }),
       ...(status === 'open' && { isClosed: false, deadline: { gt: now } }),
       ...(status === 'closed' && { OR: [{ isClosed: true }, { deadline: { lte: now } }] }),
+      ...(query && {
+        OR: [
+          { title: { contains: query, mode: 'insensitive' } },
+          { description: { contains: query, mode: 'insensitive' } },
+        ],
+      }),
     };
 
     const [items, total] = await Promise.all([

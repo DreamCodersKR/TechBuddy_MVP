@@ -12,15 +12,18 @@ export class AgoraController {
 
   @Get()
   @ApiOperation({ summary: '아고라 질문 목록' })
+  @ApiQuery({ name: 'query', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, enum: ['OPEN', 'CLOSED'] })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   findAll(
+    @Query('query') query?: string,
     @Query('status') status?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
     return this.agoraService.findAll({
+      query,
       status,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,

@@ -25,12 +25,18 @@ export class AgoraService {
   // 질문 CRUD
   // ========================
 
-  async findAll(params: { status?: string; page?: number; limit?: number }) {
-    const { status, page = 1, limit = 20 } = params;
+  async findAll(params: { query?: string; status?: string; page?: number; limit?: number }) {
+    const { query, status, page = 1, limit = 20 } = params;
     const skip = (page - 1) * limit;
 
     const where = {
       ...(status && { status: status as AgoraStatus }),
+      ...(query && {
+        OR: [
+          { title: { contains: query, mode: 'insensitive' as const } },
+          { content: { contains: query, mode: 'insensitive' as const } },
+        ],
+      }),
     };
 
     const [items, total] = await Promise.all([
