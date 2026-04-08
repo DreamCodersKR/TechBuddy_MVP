@@ -8,7 +8,12 @@ definePageMeta({
 })
 
 useHead({
-  title: '게시판 - FLOWIT',
+  title: '커뮤니티 - FLOWIT',
+  meta: [
+    { property: 'og:title', content: '커뮤니티 - FLOWIT' },
+    { property: 'og:description', content: 'IT 취준생들의 정보 공유 공간' },
+    { property: 'og:url', content: 'https://flowit.co/community' },
+  ],
 })
 
 const route = useRoute()

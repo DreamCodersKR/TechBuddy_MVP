@@ -4,7 +4,14 @@ import { Button } from '@/components/ui/button'
 
 definePageMeta({ layout: 'default' })
 
-useHead({ title: '아고라 - FLOWIT' })
+useHead({
+  title: '아고라 - FLOWIT',
+  meta: [
+    { property: 'og:title', content: '아고라 - FLOWIT' },
+    { property: 'og:description', content: '크레딧 현상금으로 질문하고 답변받아요' },
+    { property: 'og:url', content: 'https://flowit.co/agora' },
+  ],
+})
 
 const route = useRoute()
 const authStore = useAuthStore()

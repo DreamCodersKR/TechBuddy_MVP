@@ -6,12 +6,12 @@ definePageMeta({
 })
 
 useHead({
-  title: 'FLOWIT - IT 커뮤니티 플랫폼',
+  title: 'FLOWIT - IT 부트캠프 수료생 커뮤니티',
   meta: [
-    {
-      name: 'description',
-      content: 'IT 개발자를 위한 커뮤니티 플랫폼. 인사이트 공유, Q&A, 팀원 모집까지.',
-    },
+    { name: 'description', content: '취업까지 함께하는 개발자 성장 플랫폼' },
+    { property: 'og:title', content: 'FLOWIT - IT 부트캠프 수료생 커뮤니티' },
+    { property: 'og:description', content: '취업까지 함께하는 개발자 성장 플랫폼' },
+    { property: 'og:url', content: 'https://flowit.co' },
   ],
 })
 

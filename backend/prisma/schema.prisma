@@ -85,6 +85,7 @@ enum NotificationType {
   AGORA_ANSWERED
   AGORA_ACCEPTED
   CREDIT_RECEIVED
+  PROJECT_VERIFIED
 }
 
 enum AgoraStatus {
@@ -275,6 +276,10 @@ model User {
   studyPenaltyConsents  StudyPenaltyConsent[]
   studyPenaltyHistories StudyPenaltyHistory[]
   uploadedStudyResources StudyResource[]
+
+  // 포트폴리오 공개 설정
+  portfolioPublic    Boolean @default(true)
+  portfolioSections  Json?   // { stats: true, grass: true, projects: true, badges: true, recentTILs: true }
 
   @@unique([provider, providerId])
   @@index([email])

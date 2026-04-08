@@ -109,6 +109,17 @@ function isActive(item: (typeof sidebarItems.value)[0]) {
 
 const isSidebarCollapsed = ref(false)
 
+// Verified Project 상태
+const isVerified = ref(false)
+watch(workspaceId, async (id) => {
+  if (!id) return
+  try {
+    const result = await authGet<boolean>(`/portfolio/verified/${id}`)
+    isVerified.value = result
+  }
+  catch { isVerified.value = false }
+}, { immediate: true })
+
 const userInitials = computed(() => {
   const user = authStore.currentUser
   if (!user?.nickname) return 'U'
@@ -162,9 +173,18 @@ async function handleLogout() {
           v-if="!isSidebarCollapsed && workspace"
           class="mt-2 px-2"
         >
-          <p class="text-xs font-semibold text-foreground truncate">
-            {{ workspace.name }}
-          </p>
+          <div class="flex items-center gap-1.5">
+            <p class="text-xs font-semibold text-foreground truncate">
+              {{ workspace.name }}
+            </p>
+            <span
+              v-if="isVerified"
+              class="flex-shrink-0 flex items-center gap-0.5 text-[10px] px-1 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+            >
+              <Icon icon="heroicons:check-badge" class="w-3 h-3" />
+              Verified
+            </span>
+          </div>
           <span class="text-xs text-muted-foreground">
             {{ workspace.type === 'PROJECT' ? '프로젝트' : '스터디' }}
           </span>

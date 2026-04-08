@@ -8,7 +8,7 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: '설정 - FLOWIT' })
 
 const authStore = useAuthStore()
-const { patch: authPatch, post: authPost } = useAuthFetch()
+const { patch: authPatch, post: authPost, get: authGet } = useAuthFetch()
 
 const user = computed(() => authStore.currentUser)
 
@@ -150,6 +150,58 @@ const userInitials = computed(() => {
   if (!user.value?.nickname) return 'U'
   return user.value.nickname.slice(0, 2).toUpperCase()
 })
+
+// ─── 포트폴리오 공개 설정 ─────────────────────────────────
+const authPatchPortfolio = authPatch
+const portfolioPublic = ref(true)
+const portfolioSections = reactive({
+  stats: true,
+  grass: true,
+  projects: true,
+  badges: true,
+  recentTILs: true,
+})
+const portfolioSettingsLoading = ref(false)
+const portfolioSettingsSaving = ref(false)
+const portfolioSettingsSuccess = ref(false)
+const portfolioNickname = ref('')
+
+onMounted(async () => {
+  try {
+    portfolioSettingsLoading.value = true
+    const data = await authGet<any>('/portfolio/settings')
+    portfolioPublic.value = data.portfolioPublic ?? true
+    portfolioNickname.value = data.nickname ?? ''
+    if (data.portfolioSections) {
+      Object.assign(portfolioSections, data.portfolioSections)
+    }
+  }
+  catch { /* 조용히 실패 */ }
+  finally { portfolioSettingsLoading.value = false }
+})
+
+async function savePortfolioSettings() {
+  portfolioSettingsSaving.value = true
+  portfolioSettingsSuccess.value = false
+  try {
+    await authPatchPortfolio('/portfolio/settings', {
+      portfolioPublic: portfolioPublic.value,
+      portfolioSections: { ...portfolioSections },
+    })
+    portfolioSettingsSuccess.value = true
+    setTimeout(() => { portfolioSettingsSuccess.value = false }, 3000)
+  }
+  catch (e: any) {
+    alert(e?.data?.message || '저장 실패')
+  }
+  finally { portfolioSettingsSaving.value = false }
+}
+
+function copyPortfolioLink() {
+  const link = `${window.location.origin}/portfolio/${portfolioNickname.value}`
+  navigator.clipboard.writeText(link)
+  alert('링크가 복사되었습니다!')
+}
 </script>
 
 <template>
@@ -264,6 +316,85 @@ const userInitials = computed(() => {
         <Icon v-if="profileLoading" icon="heroicons:arrow-path" class="w-4 h-4 mr-2 animate-spin" />
         저장하기
       </Button>
+    </div>
+
+    <!-- 포트폴리오 공개 설정 -->
+    <div class="bg-card border border-border rounded-xl p-6 mb-6">
+      <h2 class="text-sm font-semibold text-foreground mb-1">포트폴리오 공개 설정</h2>
+      <p class="text-xs text-muted-foreground mb-4">포트폴리오는 공개 링크로 누구나 볼 수 있습니다</p>
+
+      <div v-if="portfolioSettingsLoading" class="text-xs text-muted-foreground py-4 text-center">불러오는 중...</div>
+
+      <div v-else class="space-y-4">
+        <!-- 공개 여부 토글 -->
+        <label class="flex items-center justify-between cursor-pointer">
+          <div>
+            <p class="text-sm font-medium text-foreground">포트폴리오 공개</p>
+            <p class="text-xs text-muted-foreground">비공개 시 링크로 접근 불가</p>
+          </div>
+          <div
+            class="relative w-10 h-5 rounded-full transition-colors cursor-pointer"
+            :class="portfolioPublic ? 'bg-primary' : 'bg-muted'"
+            @click="portfolioPublic = !portfolioPublic"
+          >
+            <div
+              class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+              :class="portfolioPublic ? 'translate-x-5' : 'translate-x-0.5'"
+            />
+          </div>
+        </label>
+
+        <!-- 섹션 설정 -->
+        <div>
+          <p class="text-xs font-medium text-muted-foreground mb-2">표시할 섹션 선택</p>
+          <div class="space-y-2">
+            <label
+              v-for="(label, key) in { stats: '활동 요약 (TIL/아고라/프로젝트)', grass: 'TIL 잔디', projects: '프로젝트 목록', badges: '뱃지', recentTILs: '최근 TIL' }"
+              :key="key"
+              class="flex items-center gap-2 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                v-model="(portfolioSections as any)[key]"
+                class="w-4 h-4 accent-primary"
+              />
+              <span class="text-sm text-foreground">{{ label }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 링크 섹션 -->
+        <div v-if="portfolioNickname" class="border border-border rounded-lg p-3 bg-muted/30">
+          <p class="text-xs text-muted-foreground mb-1">내 포트폴리오 링크</p>
+          <p class="text-sm text-foreground font-mono truncate">
+            {{ `${$nuxt ? '' : ''}flowit.co/portfolio/${portfolioNickname}` }}
+          </p>
+          <div class="flex gap-2 mt-2">
+            <button
+              class="flex items-center gap-1 text-xs px-2 py-1 border border-border rounded hover:bg-accent transition"
+              @click="copyPortfolioLink"
+            >
+              <Icon icon="heroicons:clipboard" class="w-3.5 h-3.5" />
+              링크 복사
+            </button>
+            <NuxtLink
+              :to="`/portfolio/${portfolioNickname}`"
+              target="_blank"
+              class="flex items-center gap-1 text-xs px-2 py-1 border border-border rounded hover:bg-accent transition"
+            >
+              <Icon icon="heroicons:arrow-top-right-on-square" class="w-3.5 h-3.5" />
+              미리보기
+            </NuxtLink>
+          </div>
+        </div>
+
+        <p v-if="portfolioSettingsSuccess" class="text-xs text-green-600">저장되었습니다.</p>
+
+        <Button class="w-full" :disabled="portfolioSettingsSaving" @click="savePortfolioSettings">
+          <Icon v-if="portfolioSettingsSaving" icon="heroicons:arrow-path" class="w-4 h-4 mr-2 animate-spin" />
+          저장하기
+        </Button>
+      </div>
     </div>
 
     <!-- 비밀번호 변경 -->

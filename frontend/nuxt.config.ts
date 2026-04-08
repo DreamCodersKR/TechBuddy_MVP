@@ -50,13 +50,13 @@ export default defineNuxtConfig({
     },
   },
 
-  // Route Rules
-  routeRules: {
-    // API routes with CORS
-    '/api/**': { cors: true },
-  },
   colorMode: {
     classSuffix: '',
+  },
+
+  // Route Rules
+  routeRules: {
+    '/api/**': { cors: true },
   },
 
   compatibilityDate: '2025-07-15',

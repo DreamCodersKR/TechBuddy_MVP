@@ -1,2 +1,9 @@
 User-Agent: *
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /settings
+Disallow: /mypage/
+Disallow: /workspaces/
+Disallow: /auth/
+
+Sitemap: https://flowit.co/sitemap.xml

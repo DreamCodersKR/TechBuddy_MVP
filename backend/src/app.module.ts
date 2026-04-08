@@ -31,6 +31,7 @@ import { TilModule } from './til/til.module';
 import { QuestModule } from './quest/quest.module';
 import { ReferralModule } from './referral/referral.module';
 import { StudyModule } from './study/study.module';
+import { PortfolioModule } from './portfolio/portfolio.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { StudyModule } from './study/study.module';
     QuestModule,
     ReferralModule,
     StudyModule,
+    PortfolioModule,
   ],
   controllers: [AppController],
   providers: [
