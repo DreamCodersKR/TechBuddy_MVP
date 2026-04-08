@@ -19,7 +19,7 @@ const delegatedProps = computed(() => {
 <template>
   <img
     v-if="src"
-    :class="cn('aspect-square h-full w-full object-cover', props.class)"
+    :class="cn('absolute inset-0 w-full h-full object-cover object-center', props.class)"
     :src="src"
     :alt="alt"
     v-bind="delegatedProps"
