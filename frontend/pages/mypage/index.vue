@@ -66,7 +66,7 @@ const BADGE_META: Record<string, { label: string; icon: string; color: string }>
     <!-- 프로필 카드 -->
     <div class="bg-card border border-border rounded-xl p-6 mb-6">
       <div class="flex items-start gap-4">
-        <Avatar class="h-16 w-16">
+        <Avatar class="h-16 w-16 shrink-0 overflow-hidden">
           <AvatarImage :src="user?.avatarUrl ?? undefined" :alt="user?.nickname ?? undefined" />
           <AvatarFallback class="text-lg">{{ userInitials }}</AvatarFallback>
         </Avatar>

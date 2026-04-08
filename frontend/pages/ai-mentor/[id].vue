@@ -40,6 +40,7 @@ const loading = ref(true)
 const inputContent = ref('')
 const isSending = ref(false)
 const selectedTier = ref(1)
+const copiedMsgId = ref<string | null>(null)
 
 const userCredit = computed(() => authStore.currentUser?.credit ?? 0)
 const userPlan = computed(() => authStore.currentUser?.plan ?? 'FREE')
@@ -144,6 +145,12 @@ async function sendMessage() {
   finally { isSending.value = false }
 }
 
+async function copyMessage(msgId: string, content: string) {
+  await navigator.clipboard.writeText(content)
+  copiedMsgId.value = msgId
+  setTimeout(() => { copiedMsgId.value = null }, 2000)
+}
+
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
     e.preventDefault()
@@ -204,6 +211,19 @@ onMounted(() => { loadConversation() })
             <ClientOnly v-else>
               <MarkdownViewer :content="msg.content" class="prose prose-sm dark:prose-invert max-w-none" />
             </ClientOnly>
+            <!-- 전체 복사 버튼 (DRE-207) -->
+            <div v-if="!msg.isStreaming" class="mt-2 flex justify-end">
+              <button
+                class="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                @click="copyMessage(msg.id, msg.content)"
+              >
+                <Icon
+                  :icon="copiedMsgId === msg.id ? 'heroicons:check' : 'heroicons:clipboard'"
+                  class="w-3.5 h-3.5"
+                />
+                {{ copiedMsgId === msg.id ? '복사됨' : '전체 복사' }}
+              </button>
+            </div>
           </template>
           <p v-else class="whitespace-pre-wrap">{{ msg.content }}</p>
         </div>
@@ -234,8 +254,11 @@ onMounted(() => { loadConversation() })
           @keydown="handleKeydown"
         />
         <div class="flex items-center justify-between px-4 py-2 border-t border-border bg-muted/30 gap-2">
-          <!-- tier 선택 -->
-          <div class="flex items-center gap-1">
+          <!-- tier 선택 (DRE-208: 첫 메시지 후 고정) -->
+          <div
+            class="flex items-center gap-1"
+            :title="(conversation?.messages.length ?? 0) > 0 ? '품질은 대화 시작 시에만 변경 가능합니다' : ''"
+          >
             <button
               v-for="tier in TIERS"
               :key="tier.value"
@@ -244,10 +267,12 @@ onMounted(() => { loadConversation() })
                 selectedTier === tier.value
                   ? 'border-primary bg-primary/10 text-primary font-medium'
                   : 'border-border text-muted-foreground hover:border-primary/50',
-                (tier.value > 1 && userPlan === 'FREE') ? 'opacity-40 cursor-not-allowed' : '',
+                (tier.value > 1 && userPlan === 'FREE') || (conversation?.messages.length ?? 0) > 0
+                  ? 'opacity-40 cursor-not-allowed'
+                  : '',
               ]"
-              :disabled="tier.value > 1 && userPlan === 'FREE'"
-              @click="tier.value > 1 && userPlan === 'FREE' ? null : selectedTier = tier.value"
+              :disabled="(tier.value > 1 && userPlan === 'FREE') || (conversation?.messages.length ?? 0) > 0"
+              @click="(tier.value > 1 && userPlan === 'FREE') || (conversation?.messages.length ?? 0) > 0 ? null : selectedTier = tier.value"
             >
               {{ tier.label }} {{ tier.cost }}cr
               <Icon v-if="tier.value > 1 && userPlan === 'FREE'" icon="heroicons:lock-closed" class="w-2.5 h-2.5 inline ml-0.5" />
