@@ -29,7 +29,7 @@ interface RecruitListItem {
 // ─── 상태 ────────────────────────────────────────────────
 const tab = ref<'all' | 'PROJECT' | 'STUDY'>((route.query.tab as 'all' | 'PROJECT' | 'STUDY') || 'all')
 const selectedPosition = ref((route.query.position as string) || '')
-const statusFilter = ref<'all' | 'open' | 'closed'>('open')
+const statusFilter = ref<'all' | 'open' | 'closed'>('all')
 const items = ref<RecruitListItem[]>([])
 const total = ref(0)
 const page = ref(1)
@@ -109,7 +109,7 @@ await fetchList(1)
       </nav>
       <div class="flex gap-1">
         <button
-          v-for="s in [{ label: '모집중', value: 'open' }, { label: '전체', value: 'all' }, { label: '마감', value: 'closed' }]"
+          v-for="s in [{ label: '전체', value: 'all' }, { label: '모집중', value: 'open' }, { label: '마감', value: 'closed' }]"
           :key="s.value"
           class="px-3 py-1 text-xs font-medium rounded-md border transition-colors"
           :class="statusFilter === s.value

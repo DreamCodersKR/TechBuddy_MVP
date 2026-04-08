@@ -250,6 +250,7 @@ const selectedTask = ref<Task | null>(null)
 const editSprintId = ref('')
 const editTags = ref<string[]>([])
 const editTagInput = ref('')
+const editingDescription = ref(false)
 
 function openTaskDetail(task: Task) {
   selectedTask.value = { ...task }
@@ -286,6 +287,7 @@ const editingContent = ref('')
 const isSubmittingComment = ref(false)
 
 watch(selectedTask, (task) => {
+  editingDescription.value = false
   if (task) {
     comments.value = []
     newComment.value = ''
@@ -645,11 +647,9 @@ onUnmounted(() => {
             class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             @keydown.enter="handleCreate"
           >
-          <textarea
+          <PostMarkdownEditor
             v-model="createForm.description"
-            placeholder="설명 (선택)"
-            rows="3"
-            class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+            height="200px"
           />
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -795,12 +795,40 @@ onUnmounted(() => {
           v-model="selectedTask.title"
           class="w-full px-3 py-2 text-sm font-medium border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
         >
-        <textarea
-          v-model="selectedTask.description"
-          placeholder="설명 추가..."
-          rows="4"
-          class="w-full px-3 py-2 text-sm border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-        />
+        <!-- Description: 뷰어/에디터 토글 (DRE-222/223) -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs text-muted-foreground">설명</label>
+            <button
+              class="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              @click="editingDescription = !editingDescription"
+            >
+              {{ editingDescription ? '취소' : '편집' }}
+            </button>
+          </div>
+          <div
+            v-if="!editingDescription"
+            class="min-h-[60px] rounded-md border border-transparent hover:border-border px-3 py-2 cursor-pointer transition-colors"
+            @click="editingDescription = true"
+          >
+            <PostMarkdownViewer
+              v-if="selectedTask.description"
+              :content="selectedTask.description"
+            />
+            <p
+              v-else
+              class="text-sm text-muted-foreground"
+            >
+              설명 추가... (클릭하여 편집)
+            </p>
+          </div>
+          <PostMarkdownEditor
+            v-else
+            :model-value="selectedTask.description ?? ''"
+            height="220px"
+            @update:model-value="selectedTask!.description = $event || null"
+          />
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-xs text-muted-foreground mb-1 block">상태</label>
