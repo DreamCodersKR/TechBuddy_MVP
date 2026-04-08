@@ -142,6 +142,18 @@ function isNew(dateStr: string): boolean {
   return Date.now() - new Date(dateStr).getTime() < 24 * 60 * 60 * 1000
 }
 
+// ─── 미니 프로필 팝업 ─────────────────────────────────────
+const popupNickname = ref<string | null>(null)
+const popupAnchor = ref<HTMLElement | null>(null)
+
+function openPopup(nickname: string | null | undefined, event: MouseEvent) {
+  if (!nickname) return
+  event.preventDefault()
+  event.stopPropagation()
+  popupNickname.value = nickname
+  popupAnchor.value = event.currentTarget as HTMLElement
+}
+
 // ─── 마운트 + 카테고리 변경 감시 ──────────────────────────
 watch(selectedCategory, () => {
   loadCurrentCategory()
@@ -192,7 +204,10 @@ onMounted(async () => {
                 <span v-if="post.board" class="text-sm text-muted-foreground shrink-0">[{{ post.board.name }}]</span>
                 <span class="flex-1 text-sm text-foreground truncate">{{ post.title }}</span>
                 <div class="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
-                  <span>{{ post.author.nickname || post.author.name }}</span>
+                  <span
+                    :class="post.author.nickname ? 'cursor-pointer hover:underline hover:text-foreground' : ''"
+                    @click.prevent.stop="openPopup(post.author.nickname, $event)"
+                  >{{ post.author.nickname || post.author.name }}</span>
                   <span>{{ formatDate(post.createdAt) }}</span>
                   <span class="flex items-center gap-1">
                     <Icon icon="heroicons:eye" class="w-4 h-4" />
@@ -254,7 +269,10 @@ onMounted(async () => {
                 <span class="flex-1 text-sm text-foreground truncate" :class="post.isPinned ? 'font-medium' : ''">{{ post.title }}</span>
                 <span v-if="isNew(post.createdAt)" class="text-xs font-bold text-destructive shrink-0">N</span>
                 <div class="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
-                  <span>{{ post.author.nickname || post.author.name }}</span>
+                  <span
+                    :class="post.author.nickname ? 'cursor-pointer hover:underline hover:text-foreground' : ''"
+                    @click.prevent.stop="openPopup(post.author.nickname, $event)"
+                  >{{ post.author.nickname || post.author.name }}</span>
                   <span>{{ formatDate(post.createdAt) }}</span>
                   <span class="flex items-center gap-1">
                     <Icon icon="heroicons:eye" class="w-4 h-4" />
@@ -435,4 +453,12 @@ onMounted(async () => {
       </div>
     </template>
   </div>
+
+  <!-- 미니 프로필 팝업 -->
+  <UserMiniProfilePopup
+    v-if="popupNickname"
+    :nickname="popupNickname"
+    :anchor-el="popupAnchor"
+    @close="popupNickname = null"
+  />
 </template>

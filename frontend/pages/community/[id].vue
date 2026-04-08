@@ -203,6 +203,17 @@ async function handleDelete() {
   }
 }
 
+// ─── 미니 프로필 팝업 ─────────────────────────────────────
+const popupNickname = ref<string | null>(null)
+const popupAnchor = ref<HTMLElement | null>(null)
+
+function openPopup(nickname: string | null | undefined, event: MouseEvent) {
+  if (!nickname) return
+  event.stopPropagation()
+  popupNickname.value = nickname
+  popupAnchor.value = event.currentTarget as HTMLElement
+}
+
 // ─── 마운트 ─────────────────────────────────────────────
 onMounted(() => {
   fetchPost()
@@ -259,7 +270,11 @@ onMounted(() => {
       <div class="flex items-start justify-between gap-4 mb-4">
         <!-- 작성자 -->
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+          <div
+            class="w-9 h-9 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0"
+            :class="post.author.nickname ? 'cursor-pointer' : ''"
+            @click="openPopup(post.author.nickname, $event)"
+          >
             <img
               v-if="post.author.avatarUrl"
               :src="post.author.avatarUrl"
@@ -269,7 +284,11 @@ onMounted(() => {
             <Icon v-else icon="heroicons:user-circle" class="w-6 h-6 text-muted-foreground" />
           </div>
           <div>
-            <p class="text-sm font-medium text-foreground">
+            <p
+              class="text-sm font-medium text-foreground"
+              :class="post.author.nickname ? 'cursor-pointer hover:underline' : ''"
+              @click="openPopup(post.author.nickname, $event)"
+            >
               {{ post.author.nickname || post.author.name }}
             </p>
             <div class="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
@@ -380,6 +399,14 @@ onMounted(() => {
         />
       </div>
     </article>
+
+    <!-- 미니 프로필 팝업 -->
+    <UserMiniProfilePopup
+      v-if="popupNickname"
+      :nickname="popupNickname"
+      :anchor-el="popupAnchor"
+      @close="popupNickname = null"
+    />
 
     <!-- 게시글 신고 모달 -->
     <CommonReportModal

@@ -78,6 +78,17 @@ watch(tab, () => {
 })
 
 await fetchList(1)
+
+// ─── 미니 프로필 팝업 ─────────────────────────────────────
+const popupNickname = ref<string | null>(null)
+const popupAnchor = ref<HTMLElement | null>(null)
+
+function openPopup(nickname: string | null | undefined, event: MouseEvent) {
+  if (!nickname) return
+  event.stopPropagation()
+  popupNickname.value = nickname
+  popupAnchor.value = event.currentTarget as HTMLElement
+}
 </script>
 
 <template>
@@ -158,7 +169,10 @@ await fetchList(1)
                 {{ item.content.replace(/<[^>]*>/g, '').slice(0, 100) }}
               </p>
               <div class="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                <span>{{ item.author.nickname ?? item.author.name }}</span>
+                <span
+                  :class="item.author.nickname ? 'cursor-pointer hover:underline hover:text-foreground' : ''"
+                  @click.stop="openPopup(item.author.nickname, $event)"
+                >{{ item.author.nickname ?? item.author.name }}</span>
                 <span>{{ useRelativeTime(item.createdAt) }}</span>
                 <span class="flex items-center gap-1">
                   <Icon icon="heroicons:chat-bubble-left" class="w-3 h-3" />
@@ -206,4 +220,12 @@ await fetchList(1)
       </Button>
     </div>
   </div>
+
+  <!-- 미니 프로필 팝업 -->
+  <UserMiniProfilePopup
+    v-if="popupNickname"
+    :nickname="popupNickname"
+    :anchor-el="popupAnchor"
+    @close="popupNickname = null"
+  />
 </template>

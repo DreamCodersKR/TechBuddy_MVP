@@ -76,6 +76,17 @@ const showDeleteDialog = ref(false)
 // ─── 신고 ──────────────────────────────────────────────
 const showReportModal = ref(false)
 
+// ─── 미니 프로필 팝업 ─────────────────────────────────────
+const popupNickname = ref<string | null>(null)
+const popupAnchor = ref<HTMLElement | null>(null)
+
+function openPopup(nickname: string | null | undefined, event: MouseEvent) {
+  if (!nickname) return
+  event.stopPropagation()
+  popupNickname.value = nickname
+  popupAnchor.value = event.currentTarget as HTMLElement
+}
+
 // ─── 날짜 포맷 ─────────────────────────────────────────
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
@@ -95,7 +106,11 @@ function formatDate(dateStr: string): string {
 <template>
   <li class="flex gap-3">
     <!-- 아바타 -->
-    <div class="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden mt-0.5">
+    <div
+      class="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden mt-0.5"
+      :class="comment.author.nickname ? 'cursor-pointer' : ''"
+      @click="openPopup(comment.author.nickname, $event)"
+    >
       <img
         v-if="comment.author.avatarUrl"
         :src="comment.author.avatarUrl"
@@ -110,7 +125,11 @@ function formatDate(dateStr: string): string {
       <!-- 헤더: 작성자 + 날짜 + 액션 -->
       <div class="flex items-center justify-between gap-2 mb-1">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-medium text-foreground">
+          <span
+            class="text-sm font-medium text-foreground"
+            :class="comment.author.nickname ? 'cursor-pointer hover:underline' : ''"
+            @click="openPopup(comment.author.nickname, $event)"
+          >
             {{ comment.author.nickname || comment.author.name }}
           </span>
           <Icon
@@ -179,6 +198,14 @@ function formatDate(dateStr: string): string {
         {{ comment.content }}
       </p>
     </div>
+
+    <!-- 미니 프로필 팝업 -->
+    <UserMiniProfilePopup
+      v-if="popupNickname"
+      :nickname="popupNickname"
+      :anchor-el="popupAnchor"
+      @close="popupNickname = null"
+    />
 
     <!-- 신고 모달 -->
     <CommonReportModal

@@ -199,6 +199,17 @@ async function deleteAnswer() {
   }
 }
 
+// ─── 미니 프로필 팝업 ─────────────────────────────────────
+const popupNickname = ref<string | null>(null)
+const popupAnchor = ref<HTMLElement | null>(null)
+
+function openPopup(nickname: string | null | undefined, event: MouseEvent) {
+  if (!nickname) return
+  event.stopPropagation()
+  popupNickname.value = nickname
+  popupAnchor.value = event.currentTarget as HTMLElement
+}
+
 // ─── 마운트 ──────────────────────────────────────────────
 await fetchAgora()
 </script>
@@ -254,7 +265,11 @@ await fetchAgora()
 
         <!-- 메타 -->
         <div class="flex items-center gap-4 text-xs text-muted-foreground mb-5">
-          <span class="font-medium text-foreground">{{ agora.author.nickname ?? agora.author.name }}</span>
+          <span
+            class="font-medium text-foreground"
+            :class="agora.author.nickname ? 'cursor-pointer hover:underline' : ''"
+            @click="openPopup(agora.author.nickname, $event)"
+          >{{ agora.author.nickname ?? agora.author.name }}</span>
           <span>{{ useRelativeTime(agora.createdAt) }}</span>
           <span class="flex items-center gap-1">
             <Icon icon="heroicons:eye" class="w-3 h-3" />
@@ -330,7 +345,11 @@ await fetchAgora()
             <!-- 메타 + 버튼 -->
             <div class="flex items-center justify-between mt-4 pt-3 border-t border-border">
               <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                <span class="font-medium text-foreground">{{ answer.author.nickname ?? answer.author.name }}</span>
+                <span
+                  class="font-medium text-foreground"
+                  :class="answer.author.nickname ? 'cursor-pointer hover:underline' : ''"
+                  @click="openPopup(answer.author.nickname, $event)"
+                >{{ answer.author.nickname ?? answer.author.name }}</span>
                 <Icon
                   v-for="ub in answer.author.userBadges?.slice(0, 2)"
                   :key="ub.badge"
@@ -422,4 +441,12 @@ await fetchAgora()
       </div>
     </template>
   </div>
+
+  <!-- 미니 프로필 팝업 -->
+  <UserMiniProfilePopup
+    v-if="popupNickname"
+    :nickname="popupNickname"
+    :anchor-el="popupAnchor"
+    @close="popupNickname = null"
+  />
 </template>

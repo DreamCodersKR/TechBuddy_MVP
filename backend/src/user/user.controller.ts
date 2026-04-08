@@ -142,6 +142,18 @@ export class UserController {
   }
 
   /**
+   * 닉네임으로 미니 프로필 조회 (팝업용, 인증 불필요)
+   */
+  @Get('by-nickname/:nickname/mini')
+  @ApiOperation({ summary: '닉네임으로 미니 프로필 조회', description: '닉네임 클릭 시 팝업에 표시할 미니 프로필 정보' })
+  @ApiParam({ name: 'nickname', description: '사용자 닉네임' })
+  @ApiResponse({ status: 200, description: '미니 프로필 조회 성공' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
+  async getMiniProfile(@Param('nickname') nickname: string) {
+    return this.userService.getMiniProfile(nickname);
+  }
+
+  /**
    * 특정 사용자 공개 프로필 조회 (이메일 제외)
    */
   @Get(':id')

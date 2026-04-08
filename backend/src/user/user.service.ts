@@ -166,6 +166,31 @@ export class UserService {
   }
 
   /**
+   * 닉네임으로 미니 프로필 조회 (팝업용)
+   */
+  async getMiniProfile(nickname: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { nickname },
+      select: {
+        id: true,
+        nickname: true,
+        name: true,
+        avatarUrl: true,
+        level: true,
+        techStack: true,
+        bio: true,
+        portfolioPublic: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다');
+    }
+
+    return user;
+  }
+
+  /**
    * 공개 프로필 조회 (이메일 제외)
    */
   async findPublicProfile(id: string): Promise<PublicUserResponseDto> {
