@@ -57,6 +57,11 @@ const members = ref<Member[]>([])
 const sprints = ref<Sprint[]>([])
 const loading = ref(true)
 
+// 드래그용 안정적 컬럼 배열 (vue-draggable-next가 참조를 유지할 수 있도록)
+const boardColumns = ref<Record<TaskStatus, Task[]>>({
+  TODO: [], IN_PROGRESS: [], REVIEW: [], HELP: [], DONE: [],
+})
+
 const COLUMNS: { status: TaskStatus, label: string, color: string }[] = [
   { status: 'TODO', label: '할 일', color: 'border-t-slate-400' },
   { status: 'IN_PROGRESS', label: '진행 중', color: 'border-t-blue-500' },
@@ -86,18 +91,23 @@ const filterPriority = ref<TaskPriority | ''>('')
 
 const currentUserId = computed(() => (authStore.currentUser as any)?.id ?? '')
 
-function columnTasks(status: TaskStatus) {
-  return tasks.value.filter((t) => {
-    if (t.status !== status) return false
-    if (searchQuery.value.trim()) {
-      const q = searchQuery.value.toLowerCase()
-      if (!t.title.toLowerCase().includes(q)) return false
-    }
-    if (myTasksOnly.value && t.assignee?.id !== currentUserId.value) return false
-    if (filterPriority.value && t.priority !== filterPriority.value) return false
-    return true
+// boardColumns 재구성 (필터 적용 후 안정적 참조 유지)
+function refreshBoard() {
+  const map: Record<TaskStatus, Task[]> = { TODO: [], IN_PROGRESS: [], REVIEW: [], HELP: [], DONE: [] }
+  tasks.value.forEach((t) => {
+    if (searchQuery.value.trim() && !t.title.toLowerCase().includes(searchQuery.value.toLowerCase())) return
+    if (myTasksOnly.value && t.assignee?.id !== currentUserId.value) return
+    if (filterPriority.value && t.priority !== filterPriority.value) return
+    map[t.status].push(t)
+  })
+  ;(Object.keys(map) as TaskStatus[]).forEach(s => map[s].sort((a, b) => a.position - b.position))
+  // 기존 배열 참조를 유지하면서 내용만 교체 (vue-draggable-next 호환)
+  ;(Object.keys(map) as TaskStatus[]).forEach((s) => {
+    boardColumns.value[s].splice(0, boardColumns.value[s].length, ...map[s])
   })
 }
+
+watch([tasks, searchQuery, myTasksOnly, filterPriority], refreshBoard)
 
 const hasFilter = computed(() => searchQuery.value.trim() || myTasksOnly.value || filterPriority.value)
 
@@ -119,6 +129,7 @@ async function loadData() {
     tasks.value = taskRes
     members.value = memberRes
     sprints.value = sprintRes
+    refreshBoard()
   }
   catch { tasks.value = [] }
   finally { loading.value = false }
@@ -160,12 +171,8 @@ async function onColumnChange(colStatus: TaskStatus, evt: any) {
     const { oldIndex, newIndex } = evt.moved
     if (oldIndex === newIndex) return
 
-    const colTasks = tasks.value
-      .filter(t => t.status === colStatus)
-      .sort((a, b) => a.position - b.position)
-    const [moved] = colTasks.splice(oldIndex, 1)
-    colTasks.splice(newIndex, 0, moved)
-
+    // boardColumns 배열을 직접 사용 (이미 splice로 vue-draggable-next가 순서 변경 완료)
+    const colTasks = boardColumns.value[colStatus]
     const updates = colTasks.map((t, i) => ({ id: t.id, position: (i + 1) * 10, status: colStatus }))
     updates.forEach((u) => {
       const ti = tasks.value.findIndex(t => t.id === u.id)
@@ -494,7 +501,7 @@ onUnmounted(() => {
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold text-foreground">{{ col.label }}</span>
               <span class="text-xs bg-muted text-muted-foreground rounded-full px-1.5 py-0.5">
-                {{ columnTasks(col.status).length }}
+                {{ boardColumns[col.status].length }}
               </span>
             </div>
             <button
@@ -507,7 +514,7 @@ onUnmounted(() => {
 
           <!-- 태스크 카드들 (드래그앤드롭) -->
           <Draggable
-            :list="columnTasks(col.status)"
+            :list="boardColumns[col.status]"
             :group="{ name: 'tasks' }"
             ghost-class="opacity-40"
             drag-class="rotate-1 shadow-xl"
@@ -515,7 +522,7 @@ onUnmounted(() => {
             @change="onColumnChange(col.status, $event)"
           >
             <div
-              v-for="task in columnTasks(col.status)"
+              v-for="task in boardColumns[col.status]"
               :key="task.id"
               class="bg-card border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:shadow-sm transition-all hover:border-primary/30"
               @click="openTaskDetail(task)"
@@ -601,7 +608,7 @@ onUnmounted(() => {
 
             <!-- 빈 컬럼 -->
             <div
-              v-if="columnTasks(col.status).length === 0"
+              v-if="boardColumns[col.status].length === 0"
               class="flex items-center justify-center h-16 text-xs text-muted-foreground"
             >
               태스크 없음
