@@ -30,6 +30,7 @@ import { ReportModule } from './report/report.module';
 import { TilModule } from './til/til.module';
 import { QuestModule } from './quest/quest.module';
 import { ReferralModule } from './referral/referral.module';
+import { StudyModule } from './study/study.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { ReferralModule } from './referral/referral.module';
     TilModule,
     QuestModule,
     ReferralModule,
+    StudyModule,
   ],
   controllers: [AppController],
   providers: [

@@ -175,6 +175,18 @@ enum QuestType {
   WEEKLY
 }
 
+enum AssignmentSubmissionStatus {
+  SUBMITTED // 제출완료
+  LATE      // 지각 제출
+}
+
+enum StudyResourceCategory {
+  LINK    // 링크
+  FILE    // 파일
+  VIDEO   // 영상
+  OTHER   // 기타
+}
+
 // ============================================
 // Phase 1: 커뮤니티 기능
 // ============================================
@@ -257,6 +269,12 @@ model User {
   questProgresses QuestProgress[]
   referralCode   ReferralCode?
   referralUsage  ReferralUsage?
+
+  // Relations - 스터디룸
+  studySubmissions      StudyAssignmentSubmission[]
+  studyPenaltyConsents  StudyPenaltyConsent[]
+  studyPenaltyHistories StudyPenaltyHistory[]
+  uploadedStudyResources StudyResource[]
 
   @@unique([provider, providerId])
   @@index([email])
@@ -423,13 +441,18 @@ model Project {
   deletedAt DateTime?
 
   // Relations
-  createdBy User            @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  members   ProjectMember[]
-  tasks     Task[]
-  sprints   Sprint[]
-  recruits  Recruit[]
-  documents Document[]
-  tils      Til[]
+  createdBy        User              @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  members          ProjectMember[]
+  tasks            Task[]
+  sprints          Sprint[]
+  recruits         Recruit[]
+  documents        Document[]
+  tils             Til[]
+
+  // Relations - 스터디룸
+  studyWeeks       StudyWeek[]
+  studyPenaltyRule StudyPenaltyRule?
+  studyResources   StudyResource[]
 
   @@index([createdById])
   @@index([status])
@@ -546,6 +569,154 @@ model TaskComment {
   @@index([taskId])
   @@index([authorId])
   @@map("task_comments")
+}
+
+// ============================================
+// 스터디룸 (WorkspaceType = STUDY)
+// ============================================
+
+// 주차별 커리큘럼
+model StudyWeek {
+  id         String    @id @default(uuid())
+  projectId  String
+  weekNumber Int       // 1, 2, 3...
+  title      String    // 예: "1주차: TypeScript 기초"
+  goal       String?
+  startDate  DateTime?
+  endDate    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignments StudyAssignment[]
+
+  @@unique([projectId, weekNumber])
+  @@index([projectId])
+  @@map("study_weeks")
+}
+
+// 주차별 과제
+model StudyAssignment {
+  id          String    @id @default(uuid())
+  weekId      String
+  title       String
+  description String?   @db.Text
+  dueDate     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  week        StudyWeek                   @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  submissions StudyAssignmentSubmission[]
+
+  @@index([weekId])
+  @@map("study_assignments")
+}
+
+// 멤버별 과제 제출
+model StudyAssignmentSubmission {
+  id           String                     @id @default(uuid())
+  assignmentId String
+  userId       String
+  content      String?                    @db.Text // 텍스트 인증
+  proofUrl     String?                             // 증거 링크/URL
+  status       AssignmentSubmissionStatus @default(SUBMITTED)
+
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  assignment StudyAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
+  @@index([assignmentId])
+  @@index([userId])
+  @@map("study_assignment_submissions")
+}
+
+// 벌금 규칙 (프로젝트당 1개)
+model StudyPenaltyRule {
+  id             String    @id @default(uuid())
+  projectId      String    @unique
+  isEnabled      Boolean   @default(false) // 전원 동의 후 활성화
+  depositAmount  Int       @default(0)     // 1인당 예치금 (크레딧)
+  penaltyPerMiss Int       @default(0)     // 1회 미제출당 벌금 (크레딧)
+  periodStart    DateTime?
+  periodEnd      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project   Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  consents  StudyPenaltyConsent[]
+  histories StudyPenaltyHistory[]
+
+  @@map("study_penalty_rules")
+}
+
+// 벌금 동의
+model StudyPenaltyConsent {
+  id            String   @id @default(uuid())
+  penaltyRuleId String
+  userId        String
+  agreedAt      DateTime @default(now())
+
+  // Relations
+  penaltyRule StudyPenaltyRule @relation(fields: [penaltyRuleId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([penaltyRuleId, userId])
+  @@index([penaltyRuleId])
+  @@index([userId])
+  @@map("study_penalty_consents")
+}
+
+// 벌금 이력
+model StudyPenaltyHistory {
+  id            String @id @default(uuid())
+  penaltyRuleId String
+  userId        String
+  amount        Int    // 차감 크레딧 (양수)
+  reason        String // 예: "1주차 과제 미제출"
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  penaltyRule StudyPenaltyRule @relation(fields: [penaltyRuleId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([penaltyRuleId])
+  @@index([userId])
+  @@map("study_penalty_histories")
+}
+
+// 자료 공유
+model StudyResource {
+  id           String                @id @default(uuid())
+  projectId    String
+  uploadedById String
+  title        String
+  url          String?               // 링크형 자료
+  fileUrl      String?               // 파일형 자료 (R2 URL)
+  r2Key        String?               // R2 object key (삭제 시)
+  category     StudyResourceCategory @default(LINK)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([projectId])
+  @@index([uploadedById])
+  @@index([category])
+  @@map("study_resources")
 }
 
 // ============================================
