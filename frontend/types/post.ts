@@ -29,6 +29,7 @@ export interface PostListItem {
   title: string
   content: string
   viewCount: number
+  isPinned: boolean
   createdAt: string
   author: {
     id: string

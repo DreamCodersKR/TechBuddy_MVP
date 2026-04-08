@@ -158,6 +158,13 @@ const userInitials = computed(() => {
           <Icon icon="heroicons:magnifying-glass" class="h-5 w-5" />
         </Button>
 
+        <!-- Support Button (문의하기) -->
+        <NuxtLink to="/support">
+          <Button variant="ghost" size="icon" title="문의하기">
+            <Icon icon="heroicons:question-mark-circle" class="h-5 w-5" />
+          </Button>
+        </NuxtLink>
+
         <!-- Dark Mode Toggle -->
         <Button variant="ghost" size="icon" @click="toggleDark">
           <Icon v-if="colorMode.value === 'dark'" icon="heroicons:sun" class="h-5 w-5" />
@@ -283,6 +290,15 @@ const userInitials = computed(() => {
                     설정
                   </NuxtLink>
                 </DropdownMenuItem>
+                <template v-if="authStore.currentUser?.role === 'ADMIN'">
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem as-child>
+                    <NuxtLink to="/admin" class="cursor-pointer">
+                      <Icon icon="heroicons:shield-check" class="mr-2 h-4 w-4 text-amber-500" />
+                      관리자 콘솔
+                    </NuxtLink>
+                  </DropdownMenuItem>
+                </template>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem class="cursor-pointer text-destructive" @click="handleLogout">
                   <Icon icon="heroicons:arrow-right-on-rectangle" class="mr-2 h-4 w-4" />

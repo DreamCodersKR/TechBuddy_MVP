@@ -99,7 +99,7 @@ export class PostService {
         where,
         skip,
         take: limit,
-        orderBy: { [sortBy]: order },
+        orderBy: [{ isPinned: 'desc' }, { [sortBy]: order }],
         include: {
           author: {
             select: { id: true, name: true, nickname: true, avatarUrl: true },
@@ -234,6 +234,20 @@ export class PostService {
     });
 
     return { message: '게시글이 삭제되었습니다' };
+  }
+
+  /**
+   * 게시글 핀 고정/해제 (관리자 전용)
+   */
+  async togglePin(id: string) {
+    const post = await this.prisma.post.findUnique({ where: { id }, select: { isPinned: true } });
+    if (!post) throw new NotFoundException('게시글을 찾을 수 없습니다');
+
+    return this.prisma.post.update({
+      where: { id },
+      data: { isPinned: !post.isPinned },
+      select: { id: true, isPinned: true },
+    });
   }
 
   /**

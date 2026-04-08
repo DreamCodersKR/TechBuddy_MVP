@@ -27,6 +27,12 @@
         >
           개인정보처리방침
         </NuxtLink>
+        <NuxtLink
+          to="/support"
+          class="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          문의하기
+        </NuxtLink>
       </div>
     </div>
   </footer>

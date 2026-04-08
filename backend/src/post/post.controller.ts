@@ -19,7 +19,8 @@ import {
 import { PostService } from './post.service';
 import { CreatePostDto, UpdatePostDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser } from '../common/decorators';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { CurrentUser, Roles } from '../common/decorators';
 
 @ApiTags('Posts')
 @Controller('posts')
@@ -105,6 +106,19 @@ export class PostController {
   @ApiResponse({ status: 404, description: '게시글을 찾을 수 없음' })
   findOne(@Param('id') id: string) {
     return this.postService.findOne(id);
+  }
+
+  /**
+   * 게시글 핀 고정/해제 (관리자 전용)
+   */
+  @Patch(':id/pin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '게시글 핀 고정/해제 (관리자 전용)' })
+  @ApiResponse({ status: 200, description: '핀 상태 변경 성공' })
+  togglePin(@Param('id') id: string) {
+    return this.postService.togglePin(id);
   }
 
   /**

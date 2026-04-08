@@ -204,7 +204,6 @@ onMounted(() => { loadConversation() })
             <ClientOnly v-else>
               <MarkdownViewer :content="msg.content" class="prose prose-sm dark:prose-invert max-w-none" />
             </ClientOnly>
-            <p v-if="msg.modelUsed && !msg.isStreaming" class="text-xs opacity-60 mt-1">{{ msg.modelUsed }}</p>
           </template>
           <p v-else class="whitespace-pre-wrap">{{ msg.content }}</p>
         </div>

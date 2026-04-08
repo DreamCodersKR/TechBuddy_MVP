@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { Button } from '@/components/ui/button'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 useHead({ title: '관리자 대시보드 - FLOWIT' })
 
-const { get: authGet } = useAuthFetch()
+const { get: authGet, patch: authPatch } = useAuthFetch()
 
 interface Stats {
   users: { total: number; newToday: number; byPlan: Record<string, number> }
@@ -12,8 +13,18 @@ interface Stats {
   operations: { openInquiries: number; pendingReports: number }
 }
 
+interface PinnedPost {
+  id: string
+  title: string
+  isPinned: boolean
+  createdAt: string
+  author: { nickname: string | null; name: string }
+}
+
 const stats = ref<Stats | null>(null)
 const loading = ref(true)
+const recentPosts = ref<PinnedPost[]>([])
+const postsLoading = ref(false)
 
 async function loadStats() {
   try {
@@ -22,7 +33,27 @@ async function loadStats() {
   finally { loading.value = false }
 }
 
-onMounted(loadStats)
+async function loadRecentPosts() {
+  postsLoading.value = true
+  try {
+    const res = await authGet<{ data: PinnedPost[] }>('/posts?limit=10&sortBy=createdAt&order=desc')
+    recentPosts.value = res.data
+  }
+  catch { recentPosts.value = [] }
+  finally { postsLoading.value = false }
+}
+
+async function togglePin(post: PinnedPost) {
+  try {
+    const res = await authPatch<{ id: string; isPinned: boolean }>(`/posts/${post.id}/pin`, {})
+    post.isPinned = res.isPinned
+  }
+  catch { alert('핀 변경에 실패했습니다') }
+}
+
+onMounted(async () => {
+  await Promise.all([loadStats(), loadRecentPosts()])
+})
 </script>
 
 <template>
@@ -66,7 +97,7 @@ onMounted(loadStats)
       </div>
 
       <!-- 서비스 사용 통계 -->
-      <div class="bg-background rounded-xl border border-border p-5">
+      <div class="bg-background rounded-xl border border-border p-5 mb-6">
         <h2 class="text-sm font-semibold text-foreground mb-4">서비스 사용 현황</h2>
         <div class="grid grid-cols-3 gap-4">
           <div class="text-center">
@@ -82,6 +113,31 @@ onMounted(loadStats)
             <p class="text-xs text-muted-foreground mt-1">AI 멘토링 대화</p>
           </div>
         </div>
+      </div>
+
+      <!-- 공지사항 핀 관리 -->
+      <div class="bg-background rounded-xl border border-border p-5">
+        <h2 class="text-sm font-semibold text-foreground mb-4">📌 공지사항 핀 관리 <span class="text-xs text-muted-foreground font-normal ml-1">(최근 게시글 10개)</span></h2>
+        <div v-if="postsLoading" class="flex items-center justify-center h-20">
+          <Icon icon="heroicons:arrow-path" class="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+        <ul v-else class="divide-y divide-border">
+          <li v-for="post in recentPosts" :key="post.id" class="flex items-center gap-3 py-2.5" :class="post.isPinned ? 'bg-amber-50/50 dark:bg-amber-950/20 -mx-5 px-5' : ''">
+            <span class="text-sm flex-1 truncate">
+              <span v-if="post.isPinned" class="mr-1">📌</span>
+              <NuxtLink :to="`/community/${post.id}`" class="hover:text-primary transition-colors">{{ post.title }}</NuxtLink>
+            </span>
+            <span class="text-xs text-muted-foreground shrink-0">{{ post.author.nickname ?? post.author.name }}</span>
+            <Button
+              size="sm"
+              :variant="post.isPinned ? 'destructive' : 'outline'"
+              class="shrink-0 h-7 text-xs"
+              @click="togglePin(post)"
+            >
+              {{ post.isPinned ? '핀 해제' : '핀 고정' }}
+            </Button>
+          </li>
+        </ul>
       </div>
     </template>
   </div>

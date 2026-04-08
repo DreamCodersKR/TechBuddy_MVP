@@ -152,11 +152,6 @@ onMounted(async () => {
   <div class="container py-6">
     <!-- ── 전체 카테고리 ── -->
     <template v-if="selectedCategory === 'all'">
-      <!-- 배너 -->
-      <div class="bg-muted rounded-lg p-8 mb-8 text-center">
-        <p class="text-muted-foreground">게시판 소개 배너</p>
-      </div>
-
       <!-- 실시간 인기글 -->
       <section class="mb-10">
         <h2 class="text-lg font-bold text-foreground mb-4">
@@ -243,13 +238,15 @@ onMounted(async () => {
               v-for="post in posts"
               :key="post.id"
               class="hover:bg-accent/50 transition-colors"
+              :class="post.isPinned ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''"
             >
               <NuxtLink
                 :to="`/community/${post.id}`"
                 class="flex items-center gap-4 px-4 py-3"
               >
+                <span v-if="post.isPinned" class="text-sm shrink-0" title="공지사항">📌</span>
                 <span v-if="post.board" class="text-sm text-muted-foreground shrink-0">[{{ post.board.name }}]</span>
-                <span class="flex-1 text-sm text-foreground truncate">{{ post.title }}</span>
+                <span class="flex-1 text-sm text-foreground truncate" :class="post.isPinned ? 'font-medium' : ''">{{ post.title }}</span>
                 <span v-if="isNew(post.createdAt)" class="text-xs font-bold text-destructive shrink-0">N</span>
                 <div class="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
                   <span>{{ post.author.nickname || post.author.name }}</span>
@@ -359,13 +356,15 @@ onMounted(async () => {
             v-for="post in posts"
             :key="post.id"
             class="hover:bg-accent/50 transition-colors"
+            :class="post.isPinned ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''"
           >
             <NuxtLink
               :to="`/community/${post.id}`"
               class="flex items-center gap-4 px-4 py-3"
             >
+              <span v-if="post.isPinned" class="text-sm shrink-0" title="공지사항">📌</span>
               <span class="text-sm text-muted-foreground shrink-0">[{{ currentCategoryLabel }}]</span>
-              <span class="flex-1 text-sm text-foreground truncate">{{ post.title }}</span>
+              <span class="flex-1 text-sm text-foreground truncate" :class="post.isPinned ? 'font-medium' : ''">{{ post.title }}</span>
               <span v-if="isNew(post.createdAt)" class="text-xs font-bold text-destructive shrink-0">N</span>
               <div class="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
                 <span>{{ post.author.nickname || post.author.name }}</span>
