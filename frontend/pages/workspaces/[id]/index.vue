@@ -247,6 +247,7 @@ const helpModalTask = ref<Task | null>(null)
 
 // ─── 태스크 상세 모달 ────────────────────────────────────
 const selectedTask = ref<Task | null>(null)
+const showAiMentor = ref(false)
 const editSprintId = ref('')
 const editTags = ref<string[]>([])
 const editTagInput = ref('')
@@ -257,6 +258,7 @@ function openTaskDetail(task: Task) {
   editSprintId.value = task.sprint?.id ?? ''
   editTags.value = [...(task.tags ?? [])]
   editTagInput.value = ''
+  showAiMentor.value = false
 }
 
 function addCreateTag() {
@@ -388,7 +390,8 @@ async function handleTaskUpdate() {
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') {
-    if (selectedTask.value) selectedTask.value = null
+    if (showAiMentor.value) showAiMentor.value = false
+    else if (selectedTask.value) selectedTask.value = null
     else if (showCreateModal.value) showCreateModal.value = false
   }
 }
@@ -405,6 +408,8 @@ onUnmounted(() => {
 
 <template>
   <div>
+    <!-- 칸반 보드 뷰 -->
+    <template v-if="!selectedTask">
     <!-- 헤더 -->
     <div class="flex items-center justify-between mb-4">
       <div>
@@ -620,6 +625,348 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+    </template>
+
+    <!-- 태스크 상세 전체 영역 -->
+    <div
+      v-else
+      class="-mx-6 -mt-6 flex overflow-hidden"
+      style="height: calc(100vh - 56px)"
+    >
+      <!-- 왼쪽: 태스크 상세 -->
+      <div
+        class="flex flex-col overflow-hidden transition-all duration-200 bg-card"
+        :class="showAiMentor ? 'w-[60%] border-r border-border' : 'w-full'"
+      >
+        <!-- 헤더 -->
+        <div class="flex items-center justify-between px-5 py-3.5 border-b border-border flex-shrink-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <span
+              v-if="selectedTask.project?.issuePrefix && selectedTask.issueNumber"
+              class="text-xs text-muted-foreground font-mono flex-shrink-0 bg-muted px-1.5 py-0.5 rounded"
+            >
+              {{ selectedTask.project.issuePrefix }}-{{ String(selectedTask.issueNumber).padStart(3, '0') }}
+            </span>
+            <span class="text-sm font-semibold text-foreground truncate">태스크 상세</span>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button
+              class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors"
+              :class="showAiMentor
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'border-border text-muted-foreground hover:text-foreground hover:bg-accent'"
+              @click="showAiMentor = !showAiMentor"
+            >
+              <Icon icon="heroicons:sparkles" class="w-3.5 h-3.5" />
+              AI 멘토
+            </button>
+            <button
+              class="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-accent"
+              @click="selectedTask = null; showAiMentor = false"
+            >
+              <Icon icon="heroicons:x-mark" class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <!-- 본문 (스크롤) -->
+        <div class="flex-1 overflow-y-auto p-5 space-y-4">
+          <input
+            v-model="selectedTask.title"
+            class="w-full px-3 py-2 text-sm font-medium border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+          <!-- Description: 뷰어/에디터 토글 (DRE-222/223) -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs text-muted-foreground">설명</label>
+              <button
+                class="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                @click="editingDescription = !editingDescription"
+              >
+                {{ editingDescription ? '취소' : '편집' }}
+              </button>
+            </div>
+            <div
+              v-if="!editingDescription"
+              class="min-h-[60px] rounded-md border border-transparent hover:border-border px-3 py-2 cursor-pointer transition-colors"
+              @click="editingDescription = true"
+            >
+              <PostMarkdownViewer
+                v-if="selectedTask.description"
+                :content="selectedTask.description"
+              />
+              <p
+                v-else
+                class="text-sm text-muted-foreground"
+              >
+                설명 추가... (클릭하여 편집)
+              </p>
+            </div>
+            <PostMarkdownEditor
+              v-else
+              :model-value="selectedTask.description ?? ''"
+              height="220px"
+              @update:model-value="selectedTask!.description = $event || null"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-muted-foreground mb-1 block">상태</label>
+              <select
+                v-model="selectedTask.status"
+                class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+              >
+                <option
+                  v-for="col in COLUMNS"
+                  :key="col.status"
+                  :value="col.status"
+                >
+                  {{ col.label }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-muted-foreground mb-1 block">우선순위</label>
+              <select
+                v-model="selectedTask.priority"
+                class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+              >
+                <option
+                  v-for="(label, val) in PRIORITY_LABEL"
+                  :key="val"
+                  :value="val"
+                >
+                  {{ label }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-muted-foreground mb-1 block">담당자</label>
+              <select
+                :value="selectedTask.assignee?.id ?? ''"
+                class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+                @change="selectedTask!.assignee = members.find(m => m.user.id === ($event.target as HTMLSelectElement).value)?.user as Task['assignee'] ?? null"
+              >
+                <option value="">
+                  미배정
+                </option>
+                <option
+                  v-for="m in members"
+                  :key="m.user.id"
+                  :value="m.user.id"
+                >
+                  {{ m.user.nickname ?? m.user.name }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-muted-foreground mb-1 block">마감일</label>
+              <input
+                :value="selectedTask.dueDate ? selectedTask.dueDate.slice(0, 10) : ''"
+                type="date"
+                class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+                @change="selectedTask!.dueDate = ($event.target as HTMLInputElement).value || null"
+              >
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-muted-foreground mb-1 block">스프린트</label>
+            <select
+              v-model="editSprintId"
+              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+            >
+              <option value="">
+                미배정
+              </option>
+              <option
+                v-for="s in sprints"
+                :key="s.id"
+                :value="s.id"
+              >
+                {{ s.name }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-muted-foreground mb-1 block">태그</label>
+            <div class="flex flex-wrap gap-1 mb-1.5">
+              <span
+                v-for="tag in editTags"
+                :key="tag"
+                class="inline-flex items-center gap-1 text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
+              >
+                #{{ tag }}
+                <button class="hover:text-foreground" @click="removeEditTag(tag)">
+                  <Icon icon="heroicons:x-mark" class="w-3 h-3" />
+                </button>
+              </span>
+            </div>
+            <input
+              v-model="editTagInput"
+              placeholder="태그 입력 후 Enter"
+              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
+              @keydown.enter.prevent="addEditTag"
+              @keydown.comma.prevent="addEditTag"
+            >
+          </div>
+          <div
+            v-if="selectedTask.status === 'HELP'"
+            class="space-y-1"
+          >
+            <label class="text-xs text-muted-foreground block">도움 요청 사유</label>
+            <input
+              v-model="selectedTask.helpReason"
+              placeholder="어떤 부분이 막히나요?"
+              class="w-full px-3 py-2 text-sm border border-red-300 rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-red-400"
+            >
+          </div>
+
+          <div class="flex justify-end gap-2">
+            <Button variant="outline" @click="selectedTask = null; showAiMentor = false">
+              취소
+            </Button>
+            <Button @click="handleTaskUpdate">
+              저장
+            </Button>
+          </div>
+
+          <!-- 코멘트 섹션 -->
+          <div class="border-t border-border pt-4 space-y-3">
+            <h4 class="text-sm font-semibold text-foreground flex items-center gap-1.5">
+              <Icon icon="heroicons:chat-bubble-left-ellipsis" class="w-4 h-4" />
+              코멘트
+              <span class="text-xs font-normal text-muted-foreground">({{ comments.length }})</span>
+            </h4>
+
+            <!-- 코멘트 목록 -->
+            <div
+              v-if="comments.length > 0"
+              class="space-y-3 max-h-64 overflow-y-auto pr-1"
+            >
+              <div
+                v-for="comment in comments"
+                :key="comment.id"
+                class="flex gap-2.5"
+              >
+                <div class="h-7 w-7 rounded-full bg-muted flex-shrink-0 flex items-center justify-center text-xs font-medium overflow-hidden mt-0.5">
+                  <img
+                    v-if="comment.author.avatarUrl"
+                    :src="comment.author.avatarUrl"
+                    class="h-full w-full object-cover"
+                  >
+                  <span v-else>{{ (comment.author.nickname ?? comment.author.name).slice(0, 1) }}</span>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-0.5">
+                    <span class="text-xs font-medium text-foreground">{{ comment.author.nickname ?? comment.author.name }}</span>
+                    <span class="text-xs text-muted-foreground">{{ useRelativeTime(comment.createdAt) }}</span>
+                  </div>
+
+                  <div
+                    v-if="editingCommentId === comment.id"
+                    class="space-y-1.5"
+                  >
+                    <textarea
+                      v-model="editingContent"
+                      rows="2"
+                      class="w-full px-2.5 py-1.5 text-xs border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                      @keydown.enter.ctrl="saveEditComment(comment.id)"
+                      @keydown.esc="editingCommentId = null"
+                    />
+                    <div class="flex gap-1.5">
+                      <button
+                        class="text-xs px-2 py-0.5 bg-primary text-primary-foreground rounded hover:opacity-90"
+                        @click="saveEditComment(comment.id)"
+                      >
+                        저장
+                      </button>
+                      <button
+                        class="text-xs px-2 py-0.5 border border-border rounded text-muted-foreground hover:text-foreground"
+                        @click="editingCommentId = null"
+                      >
+                        취소
+                      </button>
+                    </div>
+                  </div>
+
+                  <div v-else>
+                    <p class="text-xs text-foreground whitespace-pre-wrap break-words">
+                      {{ comment.content }}
+                    </p>
+                    <div
+                      v-if="comment.author.id === currentUserId"
+                      class="flex gap-2 mt-0.5"
+                    >
+                      <button
+                        class="text-xs text-muted-foreground hover:text-foreground"
+                        @click="startEditComment(comment)"
+                      >
+                        수정
+                      </button>
+                      <button
+                        class="text-xs text-muted-foreground hover:text-red-500"
+                        @click="removeComment(comment.id)"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p
+              v-else
+              class="text-xs text-muted-foreground"
+            >
+              아직 코멘트가 없습니다.
+            </p>
+
+            <!-- 코멘트 작성 -->
+            <div class="flex gap-2 items-start">
+              <div class="h-7 w-7 rounded-full bg-muted flex-shrink-0 flex items-center justify-center text-xs font-medium overflow-hidden mt-0.5">
+                <img
+                  v-if="(authStore.currentUser as any)?.avatarUrl"
+                  :src="(authStore.currentUser as any).avatarUrl"
+                  class="h-full w-full object-cover"
+                >
+                <span v-else>{{ ((authStore.currentUser as any)?.nickname ?? (authStore.currentUser as any)?.name ?? '?').slice(0, 1) }}</span>
+              </div>
+              <div class="flex-1 space-y-1.5">
+                <textarea
+                  v-model="newComment"
+                  placeholder="코멘트 작성... (Ctrl+Enter로 제출)"
+                  rows="2"
+                  class="w-full px-2.5 py-1.5 text-xs border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  @keydown.enter.ctrl="submitComment"
+                />
+                <div class="flex justify-end">
+                  <button
+                    :disabled="!newComment.trim() || isSubmittingComment"
+                    class="text-xs px-3 py-1 bg-primary text-primary-foreground rounded hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+                    @click="submitComment"
+                  >
+                    <Icon v-if="isSubmittingComment" icon="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
+                    작성
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 오른쪽: AI 멘토 패널 -->
+      <WorkspaceAiMentorPanel
+        v-if="showAiMentor"
+        :task="selectedTask"
+        class="w-[40%] flex-shrink-0"
+        @close="showAiMentor = false"
+      />
+    </div>
 
     <!-- 태스크 생성 모달 -->
     <div
@@ -761,320 +1108,6 @@ onUnmounted(() => {
             <Icon v-if="isCreating" icon="heroicons:arrow-path" class="w-4 h-4 mr-1 animate-spin" />
             생성
           </Button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 태스크 상세 슬라이드 패널 -->
-    <div
-      v-if="selectedTask"
-      class="fixed right-0 top-14 h-[calc(100vh-56px)] w-[520px] bg-card border-l border-border z-50 flex flex-col shadow-2xl"
-    >
-      <!-- 패널 헤더 -->
-      <div class="flex items-center justify-between px-5 py-3.5 border-b border-border flex-shrink-0">
-        <div class="flex items-center gap-2 min-w-0">
-          <span
-            v-if="selectedTask.project?.issuePrefix && selectedTask.issueNumber"
-            class="text-xs text-muted-foreground font-mono flex-shrink-0 bg-muted px-1.5 py-0.5 rounded"
-          >
-            {{ selectedTask.project.issuePrefix }}-{{ String(selectedTask.issueNumber).padStart(3, '0') }}
-          </span>
-          <span class="text-sm font-semibold text-foreground truncate">태스크 상세</span>
-        </div>
-        <button
-          class="text-muted-foreground hover:text-foreground flex-shrink-0 ml-2"
-          @click="selectedTask = null"
-        >
-          <Icon icon="heroicons:x-mark" class="w-5 h-5" />
-        </button>
-      </div>
-
-      <!-- 패널 본문 (스크롤) -->
-      <div class="flex-1 overflow-y-auto p-5 space-y-4">
-        <input
-          v-model="selectedTask.title"
-          class="w-full px-3 py-2 text-sm font-medium border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-        <!-- Description: 뷰어/에디터 토글 (DRE-222/223) -->
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <label class="text-xs text-muted-foreground">설명</label>
-            <button
-              class="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              @click="editingDescription = !editingDescription"
-            >
-              {{ editingDescription ? '취소' : '편집' }}
-            </button>
-          </div>
-          <div
-            v-if="!editingDescription"
-            class="min-h-[60px] rounded-md border border-transparent hover:border-border px-3 py-2 cursor-pointer transition-colors"
-            @click="editingDescription = true"
-          >
-            <PostMarkdownViewer
-              v-if="selectedTask.description"
-              :content="selectedTask.description"
-            />
-            <p
-              v-else
-              class="text-sm text-muted-foreground"
-            >
-              설명 추가... (클릭하여 편집)
-            </p>
-          </div>
-          <PostMarkdownEditor
-            v-else
-            :model-value="selectedTask.description ?? ''"
-            height="220px"
-            @update:model-value="selectedTask!.description = $event || null"
-          />
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs text-muted-foreground mb-1 block">상태</label>
-            <select
-              v-model="selectedTask.status"
-              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
-            >
-              <option
-                v-for="col in COLUMNS"
-                :key="col.status"
-                :value="col.status"
-              >
-                {{ col.label }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs text-muted-foreground mb-1 block">우선순위</label>
-            <select
-              v-model="selectedTask.priority"
-              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
-            >
-              <option
-                v-for="(label, val) in PRIORITY_LABEL"
-                :key="val"
-                :value="val"
-              >
-                {{ label }}
-              </option>
-            </select>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs text-muted-foreground mb-1 block">담당자</label>
-            <select
-              :value="selectedTask.assignee?.id ?? ''"
-              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
-              @change="selectedTask!.assignee = members.find(m => m.user.id === ($event.target as HTMLSelectElement).value)?.user as Task['assignee'] ?? null"
-            >
-              <option value="">
-                미배정
-              </option>
-              <option
-                v-for="m in members"
-                :key="m.user.id"
-                :value="m.user.id"
-              >
-                {{ m.user.nickname ?? m.user.name }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs text-muted-foreground mb-1 block">마감일</label>
-            <input
-              :value="selectedTask.dueDate ? selectedTask.dueDate.slice(0, 10) : ''"
-              type="date"
-              class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
-              @change="selectedTask!.dueDate = ($event.target as HTMLInputElement).value || null"
-            >
-          </div>
-        </div>
-        <div>
-          <label class="text-xs text-muted-foreground mb-1 block">스프린트</label>
-          <select
-            v-model="editSprintId"
-            class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
-          >
-            <option value="">
-              미배정
-            </option>
-            <option
-              v-for="s in sprints"
-              :key="s.id"
-              :value="s.id"
-            >
-              {{ s.name }}
-            </option>
-          </select>
-        </div>
-        <div>
-          <label class="text-xs text-muted-foreground mb-1 block">태그</label>
-          <div class="flex flex-wrap gap-1 mb-1.5">
-            <span
-              v-for="tag in editTags"
-              :key="tag"
-              class="inline-flex items-center gap-1 text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
-            >
-              #{{ tag }}
-              <button class="hover:text-foreground" @click="removeEditTag(tag)">
-                <Icon icon="heroicons:x-mark" class="w-3 h-3" />
-              </button>
-            </span>
-          </div>
-          <input
-            v-model="editTagInput"
-            placeholder="태그 입력 후 Enter"
-            class="w-full h-9 px-2 text-sm border border-border rounded-md bg-background focus:outline-none"
-            @keydown.enter.prevent="addEditTag"
-            @keydown.comma.prevent="addEditTag"
-          >
-        </div>
-        <div
-          v-if="selectedTask.status === 'HELP'"
-          class="space-y-1"
-        >
-          <label class="text-xs text-muted-foreground block">도움 요청 사유</label>
-          <input
-            v-model="selectedTask.helpReason"
-            placeholder="어떤 부분이 막히나요?"
-            class="w-full px-3 py-2 text-sm border border-red-300 rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-red-400"
-          >
-        </div>
-
-        <div class="flex justify-end gap-2">
-          <Button variant="outline" @click="selectedTask = null">
-            취소
-          </Button>
-          <Button @click="handleTaskUpdate">
-            저장
-          </Button>
-        </div>
-
-        <!-- 코멘트 섹션 -->
-        <div class="border-t border-border pt-4 space-y-3">
-          <h4 class="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <Icon icon="heroicons:chat-bubble-left-ellipsis" class="w-4 h-4" />
-            코멘트
-            <span class="text-xs font-normal text-muted-foreground">({{ comments.length }})</span>
-          </h4>
-
-          <!-- 코멘트 목록 -->
-          <div
-            v-if="comments.length > 0"
-            class="space-y-3 max-h-64 overflow-y-auto pr-1"
-          >
-            <div
-              v-for="comment in comments"
-              :key="comment.id"
-              class="flex gap-2.5"
-            >
-              <div class="h-7 w-7 rounded-full bg-muted flex-shrink-0 flex items-center justify-center text-xs font-medium overflow-hidden mt-0.5">
-                <img
-                  v-if="comment.author.avatarUrl"
-                  :src="comment.author.avatarUrl"
-                  class="h-full w-full object-cover"
-                >
-                <span v-else>{{ (comment.author.nickname ?? comment.author.name).slice(0, 1) }}</span>
-              </div>
-
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-0.5">
-                  <span class="text-xs font-medium text-foreground">{{ comment.author.nickname ?? comment.author.name }}</span>
-                  <span class="text-xs text-muted-foreground">{{ useRelativeTime(comment.createdAt) }}</span>
-                </div>
-
-                <div
-                  v-if="editingCommentId === comment.id"
-                  class="space-y-1.5"
-                >
-                  <textarea
-                    v-model="editingContent"
-                    rows="2"
-                    class="w-full px-2.5 py-1.5 text-xs border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                    @keydown.enter.ctrl="saveEditComment(comment.id)"
-                    @keydown.esc="editingCommentId = null"
-                  />
-                  <div class="flex gap-1.5">
-                    <button
-                      class="text-xs px-2 py-0.5 bg-primary text-primary-foreground rounded hover:opacity-90"
-                      @click="saveEditComment(comment.id)"
-                    >
-                      저장
-                    </button>
-                    <button
-                      class="text-xs px-2 py-0.5 border border-border rounded text-muted-foreground hover:text-foreground"
-                      @click="editingCommentId = null"
-                    >
-                      취소
-                    </button>
-                  </div>
-                </div>
-
-                <div v-else>
-                  <p class="text-xs text-foreground whitespace-pre-wrap break-words">
-                    {{ comment.content }}
-                  </p>
-                  <div
-                    v-if="comment.author.id === currentUserId"
-                    class="flex gap-2 mt-0.5"
-                  >
-                    <button
-                      class="text-xs text-muted-foreground hover:text-foreground"
-                      @click="startEditComment(comment)"
-                    >
-                      수정
-                    </button>
-                    <button
-                      class="text-xs text-muted-foreground hover:text-red-500"
-                      @click="removeComment(comment.id)"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p
-            v-else
-            class="text-xs text-muted-foreground"
-          >
-            아직 코멘트가 없습니다.
-          </p>
-
-          <!-- 코멘트 작성 -->
-          <div class="flex gap-2 items-start">
-            <div class="h-7 w-7 rounded-full bg-muted flex-shrink-0 flex items-center justify-center text-xs font-medium overflow-hidden mt-0.5">
-              <img
-                v-if="(authStore.currentUser as any)?.avatarUrl"
-                :src="(authStore.currentUser as any).avatarUrl"
-                class="h-full w-full object-cover"
-              >
-              <span v-else>{{ ((authStore.currentUser as any)?.nickname ?? (authStore.currentUser as any)?.name ?? '?').slice(0, 1) }}</span>
-            </div>
-            <div class="flex-1 space-y-1.5">
-              <textarea
-                v-model="newComment"
-                placeholder="코멘트 작성... (Ctrl+Enter로 제출)"
-                rows="2"
-                class="w-full px-2.5 py-1.5 text-xs border border-border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                @keydown.enter.ctrl="submitComment"
-              />
-              <div class="flex justify-end">
-                <button
-                  :disabled="!newComment.trim() || isSubmittingComment"
-                  class="text-xs px-3 py-1 bg-primary text-primary-foreground rounded hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
-                  @click="submitComment"
-                >
-                  <Icon v-if="isSubmittingComment" icon="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
-                  작성
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
