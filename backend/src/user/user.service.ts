@@ -5,7 +5,6 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import { fileTypeFromBuffer } from 'file-type';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateUserDto,
@@ -232,7 +231,8 @@ export class UserService {
     if (file.size > 5 * 1024 * 1024) {
       throw new BadRequestException('파일 크기는 5MB 이하여야 합니다');
     }
-    // DRE-221: Magic bytes 검증 (Content-Type 위조 방지)
+    // DRE-221: Magic bytes 검증 (Content-Type 위조 방지, file-type은 ESM이므로 dynamic import)
+    const { fileTypeFromBuffer } = await import('file-type');
     const detected = await fileTypeFromBuffer(file.buffer);
     if (!detected || !ALLOWED_MIME.includes(detected.mime)) {
       throw new BadRequestException('올바르지 않은 이미지 파일입니다');
