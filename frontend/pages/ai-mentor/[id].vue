@@ -10,7 +10,7 @@ const route = useRoute()
 const conversationId = route.params.id as string
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
-const { get: authGet } = useAuthFetch()
+const { get: authGet, patch: authPatch } = useAuthFetch()
 
 const TIERS = [
   { value: 1, label: '기본', cost: 1 },
@@ -26,6 +26,7 @@ interface Message {
   taskType: string
   creditsUsed: number
   createdAt: string
+  rating?: number | null
   isStreaming?: boolean
 }
 
@@ -145,6 +146,15 @@ async function sendMessage() {
   finally { isSending.value = false }
 }
 
+async function rateMessage(msg: Message, rating: 1 | -1) {
+  if (msg.rating === rating) return // 이미 동일 평가
+  try {
+    await authPatch(`/ai-mentor/conversations/${conversationId}/messages/${msg.id}/rating`, { rating })
+    msg.rating = rating
+  }
+  catch { /* 실패 시 조용히 무시 */ }
+}
+
 async function copyMessage(msgId: string, content: string) {
   await navigator.clipboard.writeText(content)
   copiedMsgId.value = msgId
@@ -211,8 +221,28 @@ onMounted(() => { loadConversation() })
             <ClientOnly v-else>
               <MarkdownViewer :content="msg.content" class="prose prose-sm dark:prose-invert max-w-none" />
             </ClientOnly>
-            <!-- 전체 복사 버튼 (DRE-207) -->
-            <div v-if="!msg.isStreaming" class="mt-2 flex justify-end">
+            <!-- 액션 버튼 영역 (DRE-207 복사, DRE-211 피드백) -->
+            <div v-if="!msg.isStreaming" class="mt-2 flex items-center justify-between">
+              <!-- 피드백 (좋아요/싫어요) -->
+              <div class="flex items-center gap-1">
+                <button
+                  class="p-1 rounded transition-colors"
+                  :class="msg.rating === 1 ? 'text-emerald-500' : 'text-muted-foreground hover:text-emerald-500'"
+                  title="좋아요"
+                  @click="rateMessage(msg, 1)"
+                >
+                  <Icon icon="heroicons:hand-thumb-up" class="w-3.5 h-3.5" />
+                </button>
+                <button
+                  class="p-1 rounded transition-colors"
+                  :class="msg.rating === -1 ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'"
+                  title="싫어요"
+                  @click="rateMessage(msg, -1)"
+                >
+                  <Icon icon="heroicons:hand-thumb-down" class="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <!-- 전체 복사 -->
               <button
                 class="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 @click="copyMessage(msg.id, msg.content)"

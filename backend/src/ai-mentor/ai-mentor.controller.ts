@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AiMentorService } from './ai-mentor.service';
-import { CreateMessageDto } from './dto';
+import { CreateMessageDto, RateMessageDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators';
 
@@ -55,6 +55,17 @@ export class AiMentorController {
     @Res() res: Response,
   ) {
     return this.aiMentorService.streamMessage(null, user.id, dto, res);
+  }
+
+  @Patch('conversations/:conversationId/messages/:messageId/rating')
+  @ApiOperation({ summary: 'AI 메시지 피드백 (좋아요/싫어요)' })
+  rateMessage(
+    @Param('conversationId') conversationId: string,
+    @Param('messageId') messageId: string,
+    @CurrentUser() user: any,
+    @Body() dto: RateMessageDto,
+  ) {
+    return this.aiMentorService.rateMessage(conversationId, messageId, user.id, dto.rating);
   }
 
   @Post('conversations/:id/messages/stream')

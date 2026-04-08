@@ -709,6 +709,7 @@ model AIMessage {
   taskType       String?       // TaskType 문자열 (CODE, DOCUMENT 등)
   modelUsed      String?       // 사용된 AI 모델 (예: claude-haiku-4-5)
   creditsUsed    Int           @default(0)
+  rating         Int?          // 1=좋아요, -1=싫어요, null=미평가 (DRE-211)
 
   createdAt DateTime @default(now())
 

@@ -406,4 +406,27 @@ export class AiMentorService {
     res.write(`data: ${JSON.stringify({ type: 'done', model: modelUsed, creditsUsed: cost })}\n\n`);
     res.end();
   }
+
+  // ─── AI 메시지 피드백 (DRE-211) ──────────────────────────────
+  async rateMessage(conversationId: string, messageId: string, userId: string, rating: 1 | -1) {
+    // 대화 소유자 확인
+    const conversation = await this.prisma.aIConversation.findUnique({
+      where: { id: conversationId },
+      select: { userId: true },
+    });
+    if (!conversation) throw new NotFoundException('대화를 찾을 수 없습니다.');
+    if (conversation.userId !== userId) throw new ForbiddenException('접근 권한이 없습니다.');
+
+    // 메시지가 해당 대화에 속하는지 확인 + ASSISTANT 메시지만 평가 가능
+    const message = await this.prisma.aIMessage.findFirst({
+      where: { id: messageId, conversationId, role: AIMessageRole.ASSISTANT },
+    });
+    if (!message) throw new NotFoundException('메시지를 찾을 수 없습니다.');
+
+    return this.prisma.aIMessage.update({
+      where: { id: messageId },
+      data: { rating },
+      select: { id: true, rating: true },
+    });
+  }
 }
