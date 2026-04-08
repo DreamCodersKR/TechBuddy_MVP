@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 useHead({ title: '관리자 대시보드 - FLOWIT' })
 
-const { get: authGet, patch: authPatch } = useAuthFetch()
+const { get: authGet, patch: authPatch, post: authPost } = useAuthFetch()
 
 interface Stats {
   users: { total: number; newToday: number; byPlan: Record<string, number> }
@@ -21,10 +21,21 @@ interface PinnedPost {
   author: { nickname: string | null; name: string }
 }
 
+interface Board {
+  id: string
+  name: string
+}
+
 const stats = ref<Stats | null>(null)
 const loading = ref(true)
 const recentPosts = ref<PinnedPost[]>([])
 const postsLoading = ref(false)
+
+// 공지사항 작성
+const boards = ref<Board[]>([])
+const noticeForm = ref({ boardId: '', title: '', content: '' })
+const noticeSubmitting = ref(false)
+const noticeSuccess = ref(false)
 
 async function loadStats() {
   try {
@@ -43,6 +54,15 @@ async function loadRecentPosts() {
   finally { postsLoading.value = false }
 }
 
+async function loadBoards() {
+  try {
+    const res = await authGet<Board[]>('/boards')
+    boards.value = res
+    if (res.length > 0) noticeForm.value.boardId = res[0].id
+  }
+  catch { boards.value = [] }
+}
+
 async function togglePin(post: PinnedPost) {
   try {
     const res = await authPatch<{ id: string; isPinned: boolean }>(`/posts/${post.id}/pin`, {})
@@ -51,8 +71,30 @@ async function togglePin(post: PinnedPost) {
   catch { alert('핀 변경에 실패했습니다') }
 }
 
+async function submitNotice() {
+  if (!noticeForm.value.boardId || !noticeForm.value.title.trim() || !noticeForm.value.content.trim()) return
+  noticeSubmitting.value = true
+  noticeSuccess.value = false
+  try {
+    const created = await authPost<{ id: string }>('/posts', {
+      boardId: noticeForm.value.boardId,
+      title: noticeForm.value.title.trim(),
+      content: noticeForm.value.content.trim(),
+      isPublished: true,
+    })
+    await authPatch(`/posts/${created.id}/pin`, {})
+    noticeForm.value.title = ''
+    noticeForm.value.content = ''
+    noticeSuccess.value = true
+    setTimeout(() => { noticeSuccess.value = false }, 3000)
+    await loadRecentPosts()
+  }
+  catch { alert('공지사항 등록에 실패했습니다') }
+  finally { noticeSubmitting.value = false }
+}
+
 onMounted(async () => {
-  await Promise.all([loadStats(), loadRecentPosts()])
+  await Promise.all([loadStats(), loadRecentPosts(), loadBoards()])
 })
 </script>
 
@@ -111,6 +153,46 @@ onMounted(async () => {
           <div class="text-center">
             <p class="text-2xl font-bold text-foreground">{{ stats.content.aiConversations.toLocaleString() }}</p>
             <p class="text-xs text-muted-foreground mt-1">AI 멘토링 대화</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 공지사항 작성 -->
+      <div class="bg-background rounded-xl border border-border p-5 mb-6">
+        <h2 class="text-sm font-semibold text-foreground mb-4">📢 공지사항 작성 <span class="text-xs text-muted-foreground font-normal ml-1">(작성 즉시 핀 고정)</span></h2>
+        <div class="space-y-3">
+          <div class="flex gap-3">
+            <select
+              v-model="noticeForm.boardId"
+              class="text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary shrink-0"
+            >
+              <option v-for="board in boards" :key="board.id" :value="board.id">{{ board.name }}</option>
+            </select>
+            <input
+              v-model="noticeForm.title"
+              type="text"
+              placeholder="공지사항 제목"
+              class="flex-1 text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          <textarea
+            v-model="noticeForm.content"
+            placeholder="공지사항 내용을 입력하세요"
+            rows="4"
+            class="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+          />
+          <div class="flex items-center justify-between">
+            <p v-if="noticeSuccess" class="text-xs text-emerald-500">✅ 공지사항이 등록되어 게시판 상단에 고정되었습니다.</p>
+            <span v-else />
+            <Button
+              size="sm"
+              :disabled="noticeSubmitting || !noticeForm.title.trim() || !noticeForm.content.trim()"
+              class="h-8 text-xs"
+              @click="submitNotice"
+            >
+              <Icon v-if="noticeSubmitting" icon="heroicons:arrow-path" class="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              {{ noticeSubmitting ? '등록 중...' : '공지 등록' }}
+            </Button>
           </div>
         </div>
       </div>
