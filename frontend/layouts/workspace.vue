@@ -52,11 +52,33 @@ const sidebarItems = computed(() => {
       icon: 'heroicons:bolt',
       to: `/workspaces/${workspaceId.value}/sprints`,
     },
-    ...(isStudy ? [{
-      label: 'TIL',
-      icon: 'heroicons:pencil-square',
-      to: `/workspaces/${workspaceId.value}/til`,
-    }] : []),
+    ...(isStudy ? [
+      {
+        label: '커리큘럼',
+        icon: 'heroicons:academic-cap',
+        to: `/workspaces/${workspaceId.value}/study/curriculum`,
+      },
+      {
+        label: '과제 현황',
+        icon: 'heroicons:clipboard-document-check',
+        to: `/workspaces/${workspaceId.value}/study/submissions`,
+      },
+      {
+        label: '자료 모음',
+        icon: 'heroicons:folder-open',
+        to: `/workspaces/${workspaceId.value}/study/resources`,
+      },
+      {
+        label: '벌금 관리',
+        icon: 'heroicons:banknotes',
+        to: `/workspaces/${workspaceId.value}/study/penalty`,
+      },
+      {
+        label: 'TIL',
+        icon: 'heroicons:pencil-square',
+        to: `/workspaces/${workspaceId.value}/til`,
+      },
+    ] : []),
     {
       label: '멤버',
       icon: 'heroicons:users',
