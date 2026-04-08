@@ -8,9 +8,7 @@ const currentYear = props.year ?? new Date().getFullYear()
 
 // 52주 × 7일 그리드 생성
 const weeks = computed(() => {
-  // 해당 연도 1월 1일
   const startOfYear = new Date(currentYear, 0, 1)
-  // 그리드 시작: 1월 1일 주의 일요일
   const gridStart = new Date(startOfYear)
   gridStart.setDate(gridStart.getDate() - gridStart.getDay())
 
@@ -25,7 +23,7 @@ const weeks = computed(() => {
 
     week.push({
       date: key,
-      count: isCurrentYear ? (props.heatmap[key] ?? 0) : -1, // -1 = 해당 연도 외
+      count: isCurrentYear ? (props.heatmap[key] ?? 0) : -1,
     })
 
     if (week.length === 7) {
@@ -36,19 +34,20 @@ const weeks = computed(() => {
   return result
 })
 
-const months = computed(() => {
-  const labels: { label: string; col: number }[] = []
+// 월 시작 week index → 레이블 Map
+const monthMap = computed(() => {
+  const map = new Map<number, string>()
   let lastMonth = -1
   weeks.value.forEach((week, i) => {
     const firstDay = week.find(d => d.count !== -1)
     if (!firstDay) return
     const m = new Date(firstDay.date).getMonth()
     if (m !== lastMonth) {
-      labels.push({ label: ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'][m], col: i })
+      map.set(i, ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'][m])
       lastMonth = m
     }
   })
-  return labels
+  return map
 })
 
 function cellColor(count: number): string {
@@ -68,36 +67,41 @@ function showTooltip(e: MouseEvent, date: string, count: number) {
 </script>
 
 <template>
-  <div class="relative overflow-x-auto">
-    <!-- 월 레이블 -->
-    <div class="flex mb-1 text-xs text-muted-foreground" style="padding-left: 18px;">
-      <div
-        v-for="m in months" :key="m.col"
-        class="absolute text-xs text-muted-foreground"
-        :style="`left: ${18 + m.col * 14}px`"
-      >{{ m.label }}</div>
-    </div>
-
-    <div class="flex gap-[2px] mt-5">
-      <!-- 요일 레이블 -->
-      <div class="flex flex-col gap-[2px] mr-1 text-xs text-muted-foreground w-3">
-        <span class="h-3 leading-3"> </span>
-        <span class="h-3 leading-3">월</span>
-        <span class="h-3 leading-3"> </span>
-        <span class="h-3 leading-3">수</span>
-        <span class="h-3 leading-3"> </span>
-        <span class="h-3 leading-3">금</span>
-        <span class="h-3 leading-3"> </span>
+  <div class="overflow-x-auto">
+    <div class="inline-flex flex-col" style="min-width: max-content">
+      <!-- 월 레이블 행: 그리드와 동일한 flex 구조로 함께 스크롤 -->
+      <div class="flex gap-[2px] mb-1" style="padding-left: 18px;">
+        <div
+          v-for="(week, wi) in weeks"
+          :key="wi"
+          class="w-3 text-xs text-muted-foreground overflow-visible whitespace-nowrap"
+        >
+          {{ monthMap.get(wi) ?? '' }}
+        </div>
       </div>
 
-      <!-- 주별 컬럼 -->
-      <div v-for="(week, wi) in weeks" :key="wi" class="flex flex-col gap-[2px]">
-        <div
-          v-for="day in week" :key="day.date"
-          :class="['w-3 h-3 rounded-sm cursor-pointer transition-opacity hover:opacity-80', cellColor(day.count)]"
-          @mouseenter="showTooltip($event, day.date, day.count)"
-          @mouseleave="tooltip = null"
-        />
+      <!-- 그리드 행 -->
+      <div class="flex gap-[2px]">
+        <!-- 요일 레이블 -->
+        <div class="flex flex-col gap-[2px] mr-1 text-xs text-muted-foreground w-3">
+          <span class="h-3 leading-3"> </span>
+          <span class="h-3 leading-3">월</span>
+          <span class="h-3 leading-3"> </span>
+          <span class="h-3 leading-3">수</span>
+          <span class="h-3 leading-3"> </span>
+          <span class="h-3 leading-3">금</span>
+          <span class="h-3 leading-3"> </span>
+        </div>
+
+        <!-- 주별 컬럼 -->
+        <div v-for="(week, wi) in weeks" :key="wi" class="flex flex-col gap-[2px]">
+          <div
+            v-for="day in week" :key="day.date"
+            :class="['w-3 h-3 rounded-sm cursor-pointer transition-opacity hover:opacity-80', cellColor(day.count)]"
+            @mouseenter="showTooltip($event, day.date, day.count)"
+            @mouseleave="tooltip = null"
+          />
+        </div>
       </div>
     </div>
 
