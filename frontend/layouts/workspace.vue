@@ -30,69 +30,77 @@ watch(workspaceId, async (id) => {
 
 const sidebarItems = computed(() => {
   const isStudy = workspace.value?.type === 'STUDY'
+  const base = `/workspaces/${workspaceId.value}`
   const items = [
     {
       label: '대시보드',
       icon: 'heroicons:chart-bar',
-      to: `/workspaces/${workspaceId.value}/dashboard`,
+      to: `${base}/dashboard`,
     },
-    {
-      label: '칸반 보드',
-      icon: 'heroicons:view-columns',
-      to: `/workspaces/${workspaceId.value}`,
-      exact: true,
-    },
-    {
-      label: '태스크 목록',
-      icon: 'heroicons:list-bullet',
-      to: `/workspaces/${workspaceId.value}/tasks`,
-    },
-    {
-      label: '스프린트',
-      icon: 'heroicons:bolt',
-      to: `/workspaces/${workspaceId.value}/sprints`,
-    },
+    // ── PROJECT 전용 ──────────────────────────
+    ...(!isStudy ? [
+      {
+        label: '칸반 보드',
+        icon: 'heroicons:view-columns',
+        to: base,
+        exact: true,
+      },
+      {
+        label: '태스크 목록',
+        icon: 'heroicons:list-bullet',
+        to: `${base}/tasks`,
+      },
+      {
+        label: '스프린트',
+        icon: 'heroicons:bolt',
+        to: `${base}/sprints`,
+      },
+    ] : []),
+    // ── STUDY 전용 ────────────────────────────
     ...(isStudy ? [
       {
         label: '커리큘럼',
         icon: 'heroicons:academic-cap',
-        to: `/workspaces/${workspaceId.value}/study/curriculum`,
+        to: `${base}/study/curriculum`,
       },
       {
         label: '과제 현황',
         icon: 'heroicons:clipboard-document-check',
-        to: `/workspaces/${workspaceId.value}/study/submissions`,
+        to: `${base}/study/submissions`,
       },
       {
         label: '자료 모음',
         icon: 'heroicons:folder-open',
-        to: `/workspaces/${workspaceId.value}/study/resources`,
+        to: `${base}/study/resources`,
       },
       {
         label: '벌금 관리',
         icon: 'heroicons:banknotes',
-        to: `/workspaces/${workspaceId.value}/study/penalty`,
+        to: `${base}/study/penalty`,
       },
       {
         label: 'TIL',
         icon: 'heroicons:pencil-square',
-        to: `/workspaces/${workspaceId.value}/til`,
+        to: `${base}/til`,
       },
     ] : []),
+    // ── 공통 ──────────────────────────────────
     {
       label: '멤버',
       icon: 'heroicons:users',
-      to: `/workspaces/${workspaceId.value}/members`,
+      to: `${base}/members`,
     },
-    {
-      label: '산출문서',
-      icon: 'heroicons:folder-open',
-      to: `/workspaces/${workspaceId.value}/documents`,
-    },
+    ...(!isStudy ? [
+      {
+        label: '산출문서',
+        icon: 'heroicons:folder-open',
+        to: `${base}/documents`,
+      },
+    ] : []),
     {
       label: '설정',
       icon: 'heroicons:cog-6-tooth',
-      to: `/workspaces/${workspaceId.value}/settings`,
+      to: `${base}/settings`,
     },
   ]
   return items
@@ -178,7 +186,7 @@ async function handleLogout() {
               {{ workspace.name }}
             </p>
             <span
-              v-if="isVerified"
+              v-if="isVerified && workspace?.type !== 'STUDY'"
               class="flex-shrink-0 flex items-center gap-0.5 text-[10px] px-1 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
             >
               <Icon icon="heroicons:check-badge" class="w-3 h-3" />
@@ -208,10 +216,10 @@ async function handleLogout() {
         </NuxtLink>
       </nav>
 
-      <!-- Bottom: 내 Task + AI 멘토 + User Profile -->
+      <!-- Bottom: 내 Task(PROJECT) + AI 멘토 + User Profile -->
       <div class="absolute bottom-0 left-0 right-0 border-t border-border">
-        <!-- 내 Task -->
-        <div class="px-3 pt-3">
+        <!-- 내 Task: PROJECT 전용 -->
+        <div v-if="workspace?.type !== 'STUDY'" class="px-3 pt-3">
           <NuxtLink
             :to="myTasksItem.to"
             class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full"
