@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import MarkdownViewer from '@/components/post/MarkdownViewer.client.vue'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
-useHead({ title: 'AI 멘토 대화 - FLOWIT' })
+useHead({ title: 'FLOWIT AI - FLOWIT' })
 
 const route = useRoute()
 const conversationId = route.params.id as string

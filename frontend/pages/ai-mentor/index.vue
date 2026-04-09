@@ -3,7 +3,7 @@ import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
-useHead({ title: 'AI 멘토 - FLOWIT' })
+useHead({ title: 'FLOWIT AI - FLOWIT' })
 
 const { get: authGet, delete: authDelete } = useAuthFetch()
 
@@ -60,7 +60,7 @@ onMounted(() => { loadConversations() })
       <div>
         <h1 class="text-2xl font-bold text-foreground flex items-center gap-2">
           <Icon icon="heroicons:sparkles" class="w-6 h-6 text-violet-500" />
-          AI 멘토
+          FLOWIT AI
         </h1>
         <p class="text-sm text-muted-foreground mt-1">
           코드, 설계, 문서 등 다양한 질문을 AI에게 물어보세요
@@ -128,7 +128,7 @@ onMounted(() => { loadConversations() })
         <Icon icon="heroicons:sparkles" class="w-8 h-8 text-violet-500" />
       </div>
       <h2 class="text-lg font-semibold text-foreground mb-2">
-        아직 AI 멘토링 기록이 없어요
+        아직 FLOWIT AI 대화 기록이 없어요
       </h2>
       <p class="text-sm text-muted-foreground mb-6">
         태스크가 막힐 때 AI 멘토에게 질문해보세요
