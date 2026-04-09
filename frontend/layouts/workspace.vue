@@ -108,7 +108,6 @@ const sidebarItems = computed(() => {
 
 const myTasksItem = { label: '내 Task', icon: 'heroicons:clipboard-document-check', to: '/workspaces/my-tasks' }
 
-const aiMentorItem = computed(() => ({ label: 'FLOWIT AI', icon: 'heroicons:sparkles', to: `/workspaces/${workspaceId.value}/ai` }))
 
 function isActive(item: (typeof sidebarItems.value)[0]) {
   if (item.exact) return route.path === item.to
@@ -216,7 +215,7 @@ async function handleLogout() {
         </NuxtLink>
       </nav>
 
-      <!-- Bottom: 내 Task(PROJECT) + AI 멘토 + User Profile -->
+      <!-- Bottom: 내 Task(PROJECT) + User Profile -->
       <div class="absolute bottom-0 left-0 right-0 border-t border-border">
         <!-- 내 Task: PROJECT 전용 -->
         <div v-if="workspace?.type !== 'STUDY'" class="px-3 pt-3">
@@ -227,17 +226,6 @@ async function handleLogout() {
           >
             <Icon :icon="myTasksItem.icon" class="h-4 w-4 flex-shrink-0" />
             <span v-if="!isSidebarCollapsed">{{ myTasksItem.label }}</span>
-          </NuxtLink>
-        </div>
-        <!-- FLOWIT AI -->
-        <div class="p-3 border-b border-border">
-          <NuxtLink
-            :to="aiMentorItem.to"
-            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full"
-            :class="$route.path === aiMentorItem.to || $route.path.startsWith(aiMentorItem.to + '/') ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 font-medium' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'"
-          >
-            <Icon :icon="aiMentorItem.icon" class="h-4 w-4 flex-shrink-0 text-violet-500" />
-            <span v-if="!isSidebarCollapsed">{{ aiMentorItem.label }}</span>
           </NuxtLink>
         </div>
       <div class="p-3">
