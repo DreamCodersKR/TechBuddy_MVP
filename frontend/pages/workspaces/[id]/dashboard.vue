@@ -33,10 +33,27 @@ interface TilItem {
   author: { id: string, name: string, nickname: string | null, avatarUrl: string | null }
 }
 
+interface Assignment {
+  id: string
+  title: string
+  dueDate: string | null
+  submissions: { userId: string, status: string, submittedAt: string }[]
+}
+
+interface StudyWeek {
+  id: string
+  weekNumber: number
+  title: string
+  startDate: string | null
+  endDate: string | null
+  assignments: Assignment[]
+}
+
 const workspaceType = ref<'PROJECT' | 'STUDY' | null>(null)
 const tasks = ref<Task[]>([])
 const members = ref<Member[]>([])
 const recentTils = ref<TilItem[]>([])
+const studyWeeks = ref<StudyWeek[]>([])
 const loading = ref(true)
 
 async function loadData() {
@@ -54,12 +71,14 @@ async function loadData() {
       members.value = memberRes
     }
     else {
-      const [memberRes, tilRes] = await Promise.all([
+      const [memberRes, tilRes, weeksRes] = await Promise.all([
         authGet<Member[]>(`/workspaces/${workspaceId}/members`),
-        authGet<{ items: TilItem[] }>(`/tils?workspaceId=${workspaceId}&limit=5`).catch(() => ({ items: [] })),
+        authGet<{ items: TilItem[] }>(`/tils?workspaceId=${workspaceId}&limit=30`).catch(() => ({ items: [] })),
+        authGet<StudyWeek[]>(`/workspaces/${workspaceId}/study/weeks`).catch(() => []),
       ])
       members.value = memberRes
       recentTils.value = tilRes.items ?? []
+      studyWeeks.value = weeksRes ?? []
     }
   }
   catch {}
@@ -115,7 +134,61 @@ const PRIORITY_COLOR: Record<TaskPriority, string> = {
   LOW: 'text-slate-400',
 }
 
-// ─── STUDY 전용 ─────────────────────────────────────────
+// ─── STUDY 전용 computed ──────────────────────────────────
+function todayStr() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const studyStats = computed(() => {
+  const today = todayStr()
+
+  // 오늘 TIL 작성자 수
+  const todayTilAuthors = new Set(
+    recentTils.value
+      .filter(t => t.date.slice(0, 10) === today)
+      .map(t => t.author.id),
+  )
+
+  // 현재 진행 주차 (오늘 날짜가 startDate~endDate 사이)
+  const now = Date.now()
+  const currentWeek = studyWeeks.value.find((w) => {
+    if (!w.startDate || !w.endDate) return false
+    return new Date(w.startDate).getTime() <= now && now <= new Date(w.endDate).getTime()
+  }) ?? studyWeeks.value[studyWeeks.value.length - 1] ?? null
+
+  // 최근 주차 과제 제출률
+  let submissionRate = 0
+  let submissionLabel = '-'
+  if (currentWeek && currentWeek.assignments.length > 0 && members.value.length > 0) {
+    const totalExpected = currentWeek.assignments.length * members.value.length
+    const totalSubmitted = currentWeek.assignments.reduce((acc, a) => acc + a.submissions.length, 0)
+    submissionRate = Math.round((totalSubmitted / totalExpected) * 100)
+    submissionLabel = `${submissionRate}%`
+  }
+
+  return {
+    memberCount: members.value.length,
+    todayTilCount: todayTilAuthors.size,
+    totalWeeks: studyWeeks.value.length,
+    currentWeek,
+    submissionRate,
+    submissionLabel,
+  }
+})
+
+// 이번 주 과제별 제출 현황
+const currentWeekAssignments = computed(() => {
+  const w = studyStats.value.currentWeek
+  if (!w) return []
+  return w.assignments.map((a) => {
+    const submittedCount = a.submissions.length
+    const totalMembers = members.value.length
+    const rate = totalMembers > 0 ? Math.round((submittedCount / totalMembers) * 100) : 0
+    return { ...a, submittedCount, totalMembers, rate }
+  })
+})
+
 const studyQuickLinks = computed(() => [
   { label: '커리큘럼', icon: 'heroicons:academic-cap', to: `/workspaces/${workspaceId}/study/curriculum` },
   { label: '과제 현황', icon: 'heroicons:clipboard-document-check', to: `/workspaces/${workspaceId}/study/submissions` },
@@ -134,9 +207,7 @@ onMounted(() => { loadData() })
 
 <template>
   <div class="space-y-6">
-    <h2 class="text-xl font-bold text-foreground">
-      대시보드
-    </h2>
+    <h2 class="text-xl font-bold text-foreground">대시보드</h2>
 
     <!-- 로딩 -->
     <template v-if="loading">
@@ -148,7 +219,7 @@ onMounted(() => { loadData() })
       </div>
     </template>
 
-    <!-- ── PROJECT 대시보드 ─────────────────────────────── -->
+    <!-- ── PROJECT 대시보드 ───────────────────────────────── -->
     <template v-else-if="workspaceType === 'PROJECT'">
       <!-- 통계 카드 -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -202,9 +273,7 @@ onMounted(() => { loadData() })
               {{ helpTasks.length }}
             </span>
           </div>
-          <div v-if="helpTasks.length === 0" class="text-xs text-muted-foreground py-4 text-center">
-            도움 요청이 없습니다 🎉
-          </div>
+          <div v-if="helpTasks.length === 0" class="text-xs text-muted-foreground py-4 text-center">도움 요청이 없습니다 🎉</div>
           <div v-else class="space-y-2">
             <div
               v-for="task in helpTasks.slice(0, 5)"
@@ -306,23 +375,101 @@ onMounted(() => { loadData() })
       </div>
     </template>
 
-    <!-- ── STUDY 대시보드 ──────────────────────────────────── -->
+    <!-- ── STUDY 대시보드 ─────────────────────────────────── -->
     <template v-else-if="workspaceType === 'STUDY'">
-      <!-- 빠른 이동 -->
-      <div>
-        <p class="text-sm font-semibold text-foreground mb-3">빠른 이동</p>
-        <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
-          <NuxtLink
-            v-for="link in studyQuickLinks"
-            :key="link.to"
-            :to="link.to"
-            class="flex flex-col items-center gap-2 p-3 border border-border rounded-xl bg-card hover:border-primary/40 hover:bg-accent/30 transition-colors"
+      <!-- 지표 카드 4개 -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <!-- 멤버 수 -->
+        <div class="border border-border rounded-xl p-4 bg-card">
+          <div class="flex items-center gap-1.5 mb-2">
+            <Icon icon="heroicons:users" class="w-4 h-4 text-muted-foreground" />
+            <p class="text-xs text-muted-foreground">멤버</p>
+          </div>
+          <p class="text-2xl font-bold text-foreground">{{ studyStats.memberCount }}<span class="text-sm font-normal text-muted-foreground ml-1">명</span></p>
+        </div>
+
+        <!-- 오늘 TIL 작성자 -->
+        <div
+          class="border border-border rounded-xl p-4 bg-card"
+          :class="studyStats.todayTilCount === studyStats.memberCount && studyStats.memberCount > 0 ? 'ring-1 ring-green-500/40' : ''"
+        >
+          <div class="flex items-center gap-1.5 mb-2">
+            <Icon icon="heroicons:pencil-square" class="w-4 h-4 text-muted-foreground" />
+            <p class="text-xs text-muted-foreground">오늘 TIL</p>
+          </div>
+          <p class="text-2xl font-bold" :class="studyStats.todayTilCount > 0 ? 'text-green-500' : 'text-foreground'">
+            {{ studyStats.todayTilCount }}
+            <span class="text-sm font-normal text-muted-foreground">/{{ studyStats.memberCount }}명</span>
+          </p>
+        </div>
+
+        <!-- 총 주차 -->
+        <div class="border border-border rounded-xl p-4 bg-card">
+          <div class="flex items-center gap-1.5 mb-2">
+            <Icon icon="heroicons:academic-cap" class="w-4 h-4 text-muted-foreground" />
+            <p class="text-xs text-muted-foreground">총 주차</p>
+          </div>
+          <p class="text-2xl font-bold text-foreground">
+            {{ studyStats.totalWeeks }}<span class="text-sm font-normal text-muted-foreground ml-1">주</span>
+          </p>
+          <p v-if="studyStats.currentWeek" class="text-xs text-primary mt-1">
+            현재 {{ studyStats.currentWeek.weekNumber }}주차 진행 중
+          </p>
+        </div>
+
+        <!-- 이번 주 제출률 -->
+        <div class="border border-border rounded-xl p-4 bg-card">
+          <div class="flex items-center gap-1.5 mb-2">
+            <Icon icon="heroicons:clipboard-document-check" class="w-4 h-4 text-muted-foreground" />
+            <p class="text-xs text-muted-foreground">이번 주 제출률</p>
+          </div>
+          <p
+            class="text-2xl font-bold"
+            :class="studyStats.submissionRate >= 80 ? 'text-green-500' : studyStats.submissionRate >= 50 ? 'text-amber-500' : 'text-foreground'"
           >
-            <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Icon :icon="link.icon" class="w-5 h-5 text-primary" />
-            </div>
-            <span class="text-xs font-medium text-foreground">{{ link.label }}</span>
+            {{ studyStats.submissionLabel }}
+          </p>
+        </div>
+      </div>
+
+      <!-- 이번 주 과제 현황 -->
+      <div v-if="studyStats.currentWeek" class="border border-border rounded-xl p-5 bg-card">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <Icon icon="heroicons:clipboard-document-list" class="w-4 h-4 text-muted-foreground" />
+            <p class="text-sm font-semibold text-foreground">
+              {{ studyStats.currentWeek.weekNumber }}주차 과제 현황
+            </p>
+            <span class="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+              {{ studyStats.currentWeek.title }}
+            </span>
+          </div>
+          <NuxtLink
+            :to="`/workspaces/${workspaceId}/study/submissions`"
+            class="text-xs text-primary hover:underline"
+          >
+            전체 보기
           </NuxtLink>
+        </div>
+        <div v-if="currentWeekAssignments.length === 0" class="text-xs text-muted-foreground py-3 text-center">
+          등록된 과제가 없습니다
+        </div>
+        <div v-else class="space-y-3">
+          <div v-for="a in currentWeekAssignments" :key="a.id">
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-xs font-medium text-foreground truncate flex-1 mr-2">{{ a.title }}</p>
+              <span class="text-xs text-muted-foreground flex-shrink-0">
+                {{ a.submittedCount }}/{{ a.totalMembers }}명 제출
+              </span>
+            </div>
+            <div class="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                :class="a.rate >= 80 ? 'bg-green-500' : a.rate >= 50 ? 'bg-amber-500' : 'bg-primary'"
+                :style="{ width: `${a.rate}%` }"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -359,10 +506,7 @@ onMounted(() => { loadData() })
               <Icon icon="heroicons:pencil-square" class="w-4 h-4 text-muted-foreground" />
               <p class="text-sm font-semibold text-foreground">최근 TIL</p>
             </div>
-            <NuxtLink
-              :to="`/workspaces/${workspaceId}/til`"
-              class="text-xs text-primary hover:underline"
-            >
+            <NuxtLink :to="`/workspaces/${workspaceId}/til`" class="text-xs text-primary hover:underline">
               전체 보기
             </NuxtLink>
           </div>
@@ -371,7 +515,7 @@ onMounted(() => { loadData() })
           </div>
           <div v-else class="space-y-2">
             <NuxtLink
-              v-for="til in recentTils"
+              v-for="til in recentTils.slice(0, 5)"
               :key="til.id"
               :to="`/workspaces/${workspaceId}/til/${til.id}`"
               class="flex items-start gap-2 p-2 rounded-lg hover:bg-accent/30 transition-colors"
@@ -388,6 +532,24 @@ onMounted(() => { loadData() })
               </div>
             </NuxtLink>
           </div>
+        </div>
+      </div>
+
+      <!-- 빠른 이동 -->
+      <div>
+        <p class="text-sm font-semibold text-foreground mb-3">빠른 이동</p>
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+          <NuxtLink
+            v-for="link in studyQuickLinks"
+            :key="link.to"
+            :to="link.to"
+            class="flex flex-col items-center gap-2 p-3 border border-border rounded-xl bg-card hover:border-primary/40 hover:bg-accent/30 transition-colors"
+          >
+            <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Icon :icon="link.icon" class="w-5 h-5 text-primary" />
+            </div>
+            <span class="text-xs font-medium text-foreground">{{ link.label }}</span>
+          </NuxtLink>
         </div>
       </div>
     </template>

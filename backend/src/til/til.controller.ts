@@ -35,13 +35,15 @@ export class TilController {
   @ApiQuery({ name: 'authorId', required: false })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'workspaceId', required: false, description: '워크스페이스 TIL 조회 (WORKSPACE+PUBLIC)' })
   findAll(
     @CurrentUser() user: any,
     @Query('authorId') authorId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('workspaceId') workspaceId?: string,
   ) {
-    return this.tilService.findAll(user.id, authorId, Number(page) || 1, Number(limit) || 20);
+    return this.tilService.findAll(user.id, authorId, Number(page) || 1, Number(limit) || 20, workspaceId);
   }
 
   @Get('heatmap')

@@ -80,11 +80,15 @@ export class TilService {
    * - 본인 조회: 전체 공개 범위 반환
    * - 타인 조회: PUBLIC만 반환
    */
-  async findAll(requesterId?: string, authorId?: string, page = 1, limit = 20) {
+  async findAll(requesterId?: string, authorId?: string, page = 1, limit = 20, workspaceId?: string) {
     const skip = (page - 1) * limit;
 
     let where: any = {};
-    if (authorId) {
+    if (workspaceId) {
+      // 워크스페이스 TIL: WORKSPACE + PUBLIC (멤버 여부는 컨트롤러에서 검증)
+      where.workspaceId = workspaceId;
+      where.visibility = { in: [TilVisibility.WORKSPACE, TilVisibility.PUBLIC] };
+    } else if (authorId) {
       where.authorId = authorId;
       // 본인이 아니면 PUBLIC만 노출
       if (requesterId !== authorId) {
