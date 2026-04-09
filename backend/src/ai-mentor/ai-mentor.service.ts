@@ -48,15 +48,22 @@ export class AiMentorService {
     private readonly quest: QuestService,
   ) {}
 
-  // ─── 대화 제목 생성 ──────────────────────────────────────────
-  private generateTitle(content: string): string {
-    // 인사말 제거
+  // ─── 대화 제목 생성 (Gemini Flash-Lite) ─────────────────────
+  private async generateTitle(content: string): Promise<string> {
+    try {
+      const genAI = new GoogleGenerativeAI(this.config.get<string>('GEMINI_API_KEY')!);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+      const result = await model.generateContent(
+        `다음 사용자 메시지를 보고 대화 제목을 한국어 15자 이내로 생성해줘. 제목만 출력하고 따옴표나 부가 설명 없이 핵심 주제만 담아줘.\n\n메시지: ${content.slice(0, 300)}`,
+      );
+      const title = result.response.text().trim().replace(/^["'""']|["'""']$/g, '');
+      if (title && title.length <= 30) return title;
+    } catch { /* AI 실패 시 폴백 */ }
+
+    // 폴백: 텍스트 기반 제목 생성
     let text = content.replace(GREETING_PATTERNS, '').trim();
-    // 줄바꿈 기준 첫 줄
     text = text.split(/[\n\r]/)[0]?.trim() || '';
-    // 빈 문자열이면 폴백
     if (!text) return '새 대화';
-    // 20자 제한
     return text.length > 20 ? text.slice(0, 20) + '…' : text;
   }
 
@@ -299,7 +306,7 @@ export class AiMentorService {
       const conv = await this.prisma.aIConversation.create({
         data: {
           userId,
-          title: this.generateTitle(dto.content),
+          title: await this.generateTitle(dto.content),
           taskId: dto.taskId,
           contextType,
           contextId,
@@ -418,7 +425,7 @@ export class AiMentorService {
       const conv = await this.prisma.aIConversation.create({
         data: {
           userId,
-          title: this.generateTitle(dto.content),
+          title: await this.generateTitle(dto.content),
           taskId: dto.taskId,
           contextType,
           contextId,
