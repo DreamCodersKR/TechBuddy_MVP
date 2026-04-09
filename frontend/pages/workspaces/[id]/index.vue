@@ -396,7 +396,15 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const ws = await authGet<{ type: string }>(`/workspaces/${workspaceId}`)
+    if (ws.type === 'STUDY') {
+      navigateTo(`/workspaces/${workspaceId}/dashboard`, { replace: true })
+      return
+    }
+  }
+  catch {}
   loadData()
   document.addEventListener('keydown', onKeydown)
 })
