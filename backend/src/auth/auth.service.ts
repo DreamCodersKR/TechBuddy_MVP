@@ -109,11 +109,16 @@ export class AuthService {
     });
     if (!user) return;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // KST(UTC+9) 기준 오늘 날짜
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const today = new Date(kstNow.toISOString().split('T')[0]);
 
-    const lastActive = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
-    if (lastActive) lastActive.setHours(0, 0, 0, 0);
+    const lastActive = user.lastActiveDate
+      ? (() => {
+          const kst = new Date(new Date(user.lastActiveDate).getTime() + 9 * 60 * 60 * 1000);
+          return new Date(kst.toISOString().split('T')[0]);
+        })()
+      : null;
 
     // 오늘 이미 접속했으면 무시
     if (lastActive && lastActive.getTime() === today.getTime()) return;

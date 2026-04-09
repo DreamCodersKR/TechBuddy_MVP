@@ -151,9 +151,9 @@ export class QuestService implements OnModuleInit {
     }
   }
 
+  /** KST(UTC+9) 기준 오늘 날짜 반환 */
   private today(): Date {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    return new Date(kst.toISOString().split('T')[0]);
   }
 }

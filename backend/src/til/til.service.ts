@@ -23,9 +23,13 @@ export class TilService {
    * TIL 작성 (하루 1개 제한)
    */
   async create(authorId: string, dto: CreateTilDto) {
+    // KST(UTC+9) 기준 날짜 사용 - 클라이언트에서 date를 보내지 않는 경우
     const date = dto.date
       ? new Date(dto.date)
-      : new Date(new Date().toDateString());
+      : (() => {
+          const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+          return new Date(kst.toISOString().split('T')[0]);
+        })();
 
     // 워크스페이스 멤버 검증
     if (dto.workspaceId) {

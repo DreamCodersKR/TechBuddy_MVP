@@ -238,6 +238,7 @@ model User {
   assignedTasks      Task[]          @relation("TaskAssignee")
   createdTasks       Task[]          @relation("TaskCreator")
   taskComments       TaskComment[]
+  createdSprints     Sprint[]        @relation("SprintCreator")
 
   // Relations - 팀원모집
   recruits            Recruit[]
@@ -329,6 +330,7 @@ model Post {
   @@index([boardId])
   @@index([authorId])
   @@index([title])
+  @@index([boardId, createdAt(sort: Desc)])
   @@map("posts")
 }
 
@@ -500,11 +502,13 @@ model Sprint {
   updatedAt DateTime @updatedAt
 
   // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks   Task[]
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("SprintCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  tasks     Task[]
 
   @@index([projectId])
   @@index([status])
+  @@index([createdById])
   @@map("sprints")
 }
 
@@ -530,12 +534,13 @@ model Task {
   updatedAt DateTime @updatedAt
 
   // Relations
-  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  sprint    Sprint?       @relation(fields: [sprintId], references: [id], onDelete: SetNull)
-  assignee  User?         @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  createdBy User          @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  labels    TaskLabel[]
-  comments  TaskComment[]
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sprint          Sprint?          @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  assignee        User?            @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy       User             @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  labels          TaskLabel[]
+  comments        TaskComment[]
+  aiConversations AIConversation[]
 
   @@index([projectId])
   @@index([sprintId])
@@ -753,6 +758,7 @@ model Recruit {
   @@index([authorId])
   @@index([type])
   @@index([isClosed])
+  @@index([deadline])
   @@map("recruits")
 }
 
@@ -799,6 +805,7 @@ model Agora {
   @@index([authorId])
   @@index([status])
   @@index([bounty])
+  @@index([createdAt(sort: Desc)])
   @@map("agoras")
 }
 
@@ -872,6 +879,7 @@ model AIConversation {
 
   // Relations
   user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task     Task?       @relation(fields: [taskId], references: [id], onDelete: SetNull)
   messages AIMessage[]
 
   @@index([userId])
@@ -894,6 +902,7 @@ model AIMessage {
   conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
+  @@index([createdAt(sort: Desc)])
   @@map("ai_messages")
 }
 
@@ -920,6 +929,7 @@ model Notification {
   @@index([recipientId])
   @@index([senderId])
   @@index([isRead])
+  @@index([recipientId, createdAt(sort: Desc)])
   @@map("notifications")
 }
 
