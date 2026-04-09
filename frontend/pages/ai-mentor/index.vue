@@ -269,6 +269,7 @@ onUnmounted(() => {
               <!-- 메뉴 항목 -->
               <div class="py-1">
                 <button
+                  v-if="userPlan !== 'PREMIUM'"
                   class="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
                   @click="showProfileMenu = false; navigateTo('/pricing')"
                 >

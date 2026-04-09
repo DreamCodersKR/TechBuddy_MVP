@@ -3,12 +3,31 @@ import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 
 definePageMeta({ layout: 'default' })
-useHead({ title: '플랜 업그레이드 - FLOWIT' })
+useHead({ title: '플랜 선택 - FLOWIT' })
 
 const route = useRoute()
 const authStore = useAuthStore()
 const isLoggedIn = computed(() => authStore.isAuthenticated)
 const currentPlan = computed(() => authStore.currentUser?.plan ?? 'FREE')
+
+// 플랜 순위: FREE < PRO < PREMIUM
+const PLAN_RANK: Record<string, number> = { FREE: 0, PRO: 1, PREMIUM: 2 }
+
+function planCtaLabel(planName: string): string {
+  if (!isLoggedIn.value) return planName === 'FREE' ? '무료로 시작하기' : '시작하기'
+  if (currentPlan.value === planName) return '현재 사용 중'
+  if (planName === 'FREE') return '다운그레이드'
+  const rank = PLAN_RANK[planName] ?? 0
+  const currentRank = PLAN_RANK[currentPlan.value] ?? 0
+  return rank > currentRank ? '업그레이드' : '다운그레이드'
+}
+
+function isCtaDisabled(planName: string): boolean {
+  // 비로그인: 활성
+  if (!isLoggedIn.value) return false
+  // 현재 플랜: 비활성
+  return currentPlan.value === planName
+}
 
 // pricing-gate에서 넘겨준 redirect 경로 (비로그인 진입 시)
 const redirectAfterLogin = computed(() => route.query.redirect as string || '/workspaces')
@@ -112,7 +131,7 @@ function handleCta(planName: string) {
     <div class="text-center mb-12">
       <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-xs font-medium mb-4">
         <Icon icon="heroicons:sparkles" class="w-3.5 h-3.5" />
-        플랜 업그레이드
+        {{ isLoggedIn && currentPlan === 'PREMIUM' ? '플랜 관리' : '플랜 업그레이드' }}
       </div>
       <h1 class="text-3xl font-bold text-foreground mb-3">
         당신의 성장에 맞는 플랜을 선택하세요
@@ -179,23 +198,15 @@ function handleCta(planName: string) {
         <Button
           :variant="plan.highlight ? 'default' : 'outline'"
           class="w-full"
-          :disabled="isLoggedIn && currentPlan === plan.name"
+          :disabled="isCtaDisabled(plan.name)"
           @click="handleCta(plan.name)"
         >
           <Icon
-            v-if="!isLoggedIn || (plan.name !== 'FREE' && currentPlan !== plan.name)"
-            :icon="!isLoggedIn ? 'heroicons:arrow-right' : 'heroicons:sparkles'"
+            v-if="!isCtaDisabled(plan.name)"
+            :icon="!isLoggedIn ? 'heroicons:arrow-right' : planCtaLabel(plan.name) === '업그레이드' ? 'heroicons:sparkles' : 'heroicons:arrow-down'"
             class="w-4 h-4 mr-2"
           />
-          {{
-            !isLoggedIn
-              ? (plan.name === 'FREE' ? '무료로 시작하기' : '시작하기')
-              : isLoggedIn && currentPlan === plan.name
-                ? '현재 사용 중'
-                : plan.name === 'FREE'
-                  ? '무료로 시작'
-                  : '업그레이드'
-          }}
+          {{ planCtaLabel(plan.name) }}
         </Button>
       </div>
     </div>
