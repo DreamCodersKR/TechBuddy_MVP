@@ -25,6 +25,9 @@ const MODEL_MATRIX: Record<string, Record<number, string>> = {
   OTHER:    { 1: 'gemini-2.5-flash-lite',    2: 'gemini-2.5-flash',  3: 'gemini-2.5-pro' },
 };
 
+// 등급 이름 매핑
+const TIER_LABEL: Record<number, string> = { 1: '일반', 2: '심화', 3: '전문가' };
+
 // 플랜별 허용 등급
 const PLAN_MAX_TIER = {
   [UserPlan.FREE]:    MentoringTier.BASIC,
@@ -280,7 +283,7 @@ export class AiMentorService {
           userId,
           amount: -cost,
           type: CreditTransactionType.SPEND,
-          description: `AI멘토링 (${dto.taskType} ${dto.tier}등급)`,
+          description: `AI멘토링 (${dto.taskType} ${TIER_LABEL[dto.tier] ?? dto.tier})`,
           relatedId: convId,
         },
       });
@@ -396,7 +399,7 @@ export class AiMentorService {
           userId,
           amount: -cost,
           type: CreditTransactionType.SPEND,
-          description: `AI멘토링 (${dto.taskType} ${dto.tier}등급)`,
+          description: `AI멘토링 (${dto.taskType} ${TIER_LABEL[dto.tier] ?? dto.tier})`,
           relatedId: convId,
         },
       });

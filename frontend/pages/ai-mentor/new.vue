@@ -27,7 +27,7 @@ const TASK_TYPES = [
 ]
 
 const TIERS = [
-  { value: 1, label: '기본', cost: 1, desc: '빠른 답변' },
+  { value: 1, label: '일반', cost: 1, desc: '빠른 답변' },
   { value: 2, label: '심화', cost: 10, desc: '더 정확한 분석' },
   { value: 3, label: '전문가', cost: 50, desc: '최고 품질 답변' },
 ]
