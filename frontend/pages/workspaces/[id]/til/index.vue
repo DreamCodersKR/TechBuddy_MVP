@@ -57,7 +57,7 @@ async function loadTils() {
 onMounted(() => loadTils())
 
 function goWrite() {
-  router.push(`/til/write?workspaceId=${workspaceId}`)
+  router.push(`/workspaces/${workspaceId}/til/write`)
 }
 </script>
 
