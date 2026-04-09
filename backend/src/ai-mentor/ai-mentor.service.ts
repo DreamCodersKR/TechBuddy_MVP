@@ -280,7 +280,7 @@ export class AiMentorService {
           userId,
           amount: -cost,
           type: CreditTransactionType.SPEND,
-          description: `AI멘토링 (${modelUsed}, ${dto.taskType} ${dto.tier}등급)`,
+          description: `AI멘토링 (${dto.taskType} ${dto.tier}등급)`,
           relatedId: convId,
         },
       });
@@ -396,7 +396,7 @@ export class AiMentorService {
           userId,
           amount: -cost,
           type: CreditTransactionType.SPEND,
-          description: `AI멘토링 스트리밍 (${modelUsed}, ${dto.taskType} ${dto.tier}등급)`,
+          description: `AI멘토링 (${dto.taskType} ${dto.tier}등급)`,
           relatedId: convId,
         },
       });
