@@ -16,6 +16,7 @@ const prefillTitle = route.query.title as string | undefined
 const prefillDesc = route.query.description as string | undefined
 const prefillTaskType = (route.query.taskType as string | undefined) || 'CODE'
 const prefillDirect = route.query.prefill as string | undefined // from ai-mentor index quick-start
+const workspaceId = route.query.workspaceId as string | undefined
 
 // ─── 타입 정의 ───────────────────────────────────────────
 const TASK_TYPES = [
@@ -62,6 +63,53 @@ const selectedTierData = computed(() => TIERS.find(t => t.value === selectedTier
 
 const userPlan = computed(() => authStore.currentUser?.plan ?? 'FREE')
 
+// ─── Task 컨텍스트 선택 ───────────────────────────────────
+const { get: authGet } = useAuthFetch()
+
+interface WorkspaceTask {
+  id: string
+  title: string
+  status: string
+  issueNumber: number | null
+}
+
+const workspaceTasks = ref<WorkspaceTask[]>([])
+const selectedContext = ref<{ type: string; id: string; label: string } | null>(null)
+const showTaskPicker = ref(false)
+const taskSearch = ref('')
+
+const filteredTasks = computed(() => {
+  if (!taskSearch.value.trim()) return workspaceTasks.value
+  const q = taskSearch.value.toLowerCase()
+  return workspaceTasks.value.filter(t =>
+    t.title.toLowerCase().includes(q) || String(t.issueNumber).includes(q),
+  )
+})
+
+async function loadWorkspaceTasks() {
+  if (!workspaceId) return
+  try {
+    workspaceTasks.value = await authGet<WorkspaceTask[]>(`/workspaces/${workspaceId}/tasks`)
+  }
+  catch { workspaceTasks.value = [] }
+}
+
+function selectTask(task: WorkspaceTask) {
+  selectedContext.value = {
+    type: 'TASK',
+    id: task.id,
+    label: `#${task.issueNumber ?? ''} ${task.title}`,
+  }
+  showTaskPicker.value = false
+  taskSearch.value = ''
+}
+
+function clearContext() {
+  selectedContext.value = null
+}
+
+onMounted(() => { loadWorkspaceTasks() })
+
 async function sendMessage() {
   const text = inputContent.value.trim()
   if (!text || isSending.value) return
@@ -91,6 +139,10 @@ async function sendMessage() {
     tier: selectedTier.value,
   }
   if (taskId) body.taskId = taskId
+  if (selectedContext.value) {
+    body.contextType = selectedContext.value.type
+    body.contextId = selectedContext.value.id
+  }
 
   try {
     const response = await fetch(endpoint, {
@@ -154,6 +206,16 @@ async function sendMessage() {
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) sendMessage()
 }
+
+// Task picker 외부 클릭 닫기
+function handleOutsideTaskPicker(e: MouseEvent) {
+  if (showTaskPicker.value) {
+    const target = e.target as HTMLElement
+    if (!target.closest('[data-task-picker]')) showTaskPicker.value = false
+  }
+}
+onMounted(() => { document.addEventListener('click', handleOutsideTaskPicker) })
+onUnmounted(() => { document.removeEventListener('click', handleOutsideTaskPicker) })
 </script>
 
 <template>
@@ -300,6 +362,17 @@ function handleKeydown(e: KeyboardEvent) {
 
     <!-- 입력창 -->
     <div class="mt-auto">
+      <!-- 컨텍스트 뱃지 -->
+      <div v-if="selectedContext" class="mb-2 flex items-center gap-2">
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 text-sm">
+          <Icon icon="heroicons:link" class="w-3.5 h-3.5 text-violet-500" />
+          <span class="text-violet-700 dark:text-violet-300 truncate max-w-[300px]">{{ selectedContext.label }}</span>
+          <button class="ml-1 text-violet-400 hover:text-violet-600" @click="clearContext">
+            <Icon icon="heroicons:x-mark" class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
       <div class="border border-border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-ring bg-background">
         <textarea
           v-model="inputContent"
@@ -309,9 +382,58 @@ function handleKeydown(e: KeyboardEvent) {
           @keydown="handleKeydown"
         />
         <div class="flex items-center justify-between px-4 py-2 border-t border-border bg-muted/30">
-          <span class="text-xs text-muted-foreground">
-            Cmd+Enter로 전송 · 소요 크레딧: <span class="font-medium text-foreground">{{ selectedTierData.cost }}cr</span>
-          </span>
+          <div class="flex items-center gap-3">
+            <!-- Task 연결 버튼 (워크스페이스 context가 있을 때만) -->
+            <div v-if="workspaceId && !hasStarted" class="relative" data-task-picker>
+              <button
+                class="flex items-center gap-1 text-xs text-muted-foreground hover:text-violet-600 transition-colors"
+                @click.stop="showTaskPicker = !showTaskPicker"
+              >
+                <Icon icon="heroicons:link" class="w-3.5 h-3.5" />
+                Task 연결
+              </button>
+              <!-- Task 선택 드롭다운 -->
+              <div
+                v-if="showTaskPicker"
+                class="absolute bottom-full left-0 mb-2 w-72 bg-popover border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+              >
+                <div class="p-2 border-b border-border">
+                  <input
+                    v-model="taskSearch"
+                    type="text"
+                    placeholder="Task 검색..."
+                    class="w-full px-3 py-1.5 text-xs bg-muted rounded-lg border-0 outline-none focus:ring-1 focus:ring-ring"
+                  >
+                </div>
+                <div class="max-h-48 overflow-y-auto">
+                  <button
+                    v-for="task in filteredTasks"
+                    :key="task.id"
+                    class="w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent transition-colors"
+                    @click="selectTask(task)"
+                  >
+                    <span
+                      class="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                      :class="{
+                        'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': task.status === 'TODO',
+                        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': task.status === 'IN_PROGRESS',
+                        'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': task.status === 'REVIEW',
+                        'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': task.status === 'HELP',
+                        'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': task.status === 'DONE',
+                      }"
+                    >{{ task.status }}</span>
+                    <span class="truncate text-foreground">#{{ task.issueNumber }} {{ task.title }}</span>
+                  </button>
+                  <p v-if="filteredTasks.length === 0" class="px-3 py-4 text-xs text-muted-foreground text-center">
+                    Task가 없습니다
+                  </p>
+                </div>
+              </div>
+            </div>
+            <span class="text-xs text-muted-foreground">
+              Cmd+Enter로 전송 · 소요 크레딧: <span class="font-medium text-foreground">{{ selectedTierData.cost }}cr</span>
+            </span>
+          </div>
           <Button
             size="sm"
             :disabled="!inputContent.trim() || isSending"

@@ -12,6 +12,8 @@ interface Conversation {
   id: string
   title: string
   updatedAt: string
+  contextType: string | null
+  contextId: string | null
   _count: { messages: number }
 }
 
@@ -210,7 +212,8 @@ onUnmounted(() => {
           @click="navigateTo(`/ai-mentor/${conv.id}`)"
         >
           <div class="flex-1 min-w-0">
-            <p class="text-xs font-medium text-foreground truncate">
+            <p class="text-xs font-medium text-foreground truncate flex items-center gap-1">
+              <Icon v-if="conv.contextType" icon="heroicons:link" class="w-3 h-3 text-violet-500 flex-shrink-0" title="Task 참조" />
               {{ conv.title }}
             </p>
             <p class="text-[11px] text-muted-foreground mt-0.5">

@@ -1124,6 +1124,7 @@ onUnmounted(() => {
     <WorkspaceHelpActionModal
       v-if="helpModalTask"
       :task="helpModalTask"
+      :workspace-id="(route.params.id as string)"
       @close="helpModalTask = null"
     />
   </div>

@@ -869,10 +869,12 @@ model UserBadge {
 // ============================================
 
 model AIConversation {
-  id     String  @id @default(uuid())
-  userId String
-  title  String?
-  taskId String? // Help 상태에서 연결된 Task ID
+  id          String  @id @default(uuid())
+  userId      String
+  title       String?
+  taskId      String? // Help 상태에서 연결된 Task ID
+  contextType String? // 'TASK' (향후 'DOCUMENT' 등 확장)
+  contextId   String? // 참조 대상의 UUID
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

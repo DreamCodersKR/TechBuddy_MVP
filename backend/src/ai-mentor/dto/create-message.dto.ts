@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsInt, IsIn, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskType } from '@prisma/client';
 
@@ -32,4 +32,15 @@ export class CreateMessageDto {
   @IsString()
   @IsOptional()
   taskId?: string;
+
+  @ApiPropertyOptional({ description: '컨텍스트 타입 (TASK)', example: 'TASK' })
+  @IsString()
+  @IsIn(['TASK'])
+  @IsOptional()
+  contextType?: string;
+
+  @ApiPropertyOptional({ description: '컨텍스트 대상 ID (Task UUID)' })
+  @IsString()
+  @IsOptional()
+  contextId?: string;
 }

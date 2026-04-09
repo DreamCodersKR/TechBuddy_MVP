@@ -37,6 +37,9 @@ const PLAN_MAX_TIER = {
 
 type HistoryMessage = { role: AIMessageRole; content: string };
 
+// 인사말 패턴 (제목에서 제거)
+const GREETING_PATTERNS = /^(안녕하세요[!.]?\s*|안녕[!.]?\s*|반갑습니다[!.]?\s*|질문이\s*있(어요|습니다)[!.]?\s*|도움이?\s*필요합니다[!.]?\s*|문의\s*드립니다[!.]?\s*|hi[!.]?\s*|hello[!.]?\s*)/i;
+
 @Injectable()
 export class AiMentorService {
   constructor(
@@ -45,14 +48,71 @@ export class AiMentorService {
     private readonly quest: QuestService,
   ) {}
 
+  // ─── 대화 제목 생성 ──────────────────────────────────────────
+  private generateTitle(content: string): string {
+    // 인사말 제거
+    let text = content.replace(GREETING_PATTERNS, '').trim();
+    // 줄바꿈 기준 첫 줄
+    text = text.split(/[\n\r]/)[0]?.trim() || '';
+    // 빈 문자열이면 폴백
+    if (!text) return '새 대화';
+    // 20자 제한
+    return text.length > 20 ? text.slice(0, 20) + '…' : text;
+  }
+
+  // ─── Task 컨텍스트 프롬프트 빌드 ─────────────────────────────
+  private async buildContextPrompt(contextType: string, contextId: string): Promise<string> {
+    if (contextType !== 'TASK') return '';
+
+    const task = await this.prisma.task.findUnique({
+      where: { id: contextId },
+      include: {
+        project: { select: { issuePrefix: true } },
+        comments: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          include: { author: { select: { nickname: true } } },
+        },
+      },
+    });
+
+    if (!task) return '';
+
+    const prefix = task.project?.issuePrefix ?? 'TASK';
+    const lines = [
+      `\n\n=== 참조 Task ===`,
+      `[${prefix}-${task.issueNumber}] ${task.title}`,
+      `상태: ${task.status} | 우선순위: ${task.priority}${task.taskType ? ` | 유형: ${task.taskType}` : ''}`,
+    ];
+
+    if (task.tags?.length) lines.push(`태그: ${task.tags.join(', ')}`);
+
+    if (task.description) {
+      const desc = task.description.length > 2000 ? task.description.slice(0, 2000) + '…' : task.description;
+      lines.push(`설명:\n${desc}`);
+    }
+
+    if (task.comments.length > 0) {
+      lines.push(`--- 코멘트 (${task.comments.length}개) ---`);
+      for (const c of task.comments.reverse()) {
+        lines.push(`${c.author.nickname}: ${c.content}`);
+      }
+    }
+
+    lines.push(`=================`);
+    lines.push(`위 Task 정보를 참고하여 질문에 답변해주세요.`);
+
+    return lines.join('\n');
+  }
+
   // ─── AI 스트리밍 호출 (AsyncGenerator) ───────────────────────
-  private async *callAIStream(modelId: string, history: HistoryMessage[]): AsyncGenerator<string> {
+  private async *callAIStream(modelId: string, history: HistoryMessage[], systemPrompt: string = SYSTEM_PROMPT): AsyncGenerator<string> {
     if (modelId.startsWith('claude-')) {
       const client = new Anthropic({ apiKey: this.config.get<string>('ANTHROPIC_API_KEY')! });
       const stream = await client.messages.stream({
         model: modelId,
         max_tokens: 2048,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         messages: history.map(m => ({
           role: m.role === AIMessageRole.USER ? 'user' : 'assistant',
           content: m.content,
@@ -77,7 +137,7 @@ export class AiMentorService {
         model: modelId,
         stream: true,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           ...history.map(m => ({
             role: (m.role === AIMessageRole.USER ? 'user' : 'assistant') as 'user' | 'assistant',
             content: m.content,
@@ -93,7 +153,7 @@ export class AiMentorService {
 
     if (modelId.startsWith('gemini-')) {
       const genAI = new GoogleGenerativeAI(this.config.get<string>('GEMINI_API_KEY')!);
-      const model = genAI.getGenerativeModel({ model: modelId, systemInstruction: SYSTEM_PROMPT });
+      const model = genAI.getGenerativeModel({ model: modelId, systemInstruction: systemPrompt });
       const chatHistory = history.slice(0, -1).map(m => ({
         role: m.role === AIMessageRole.USER ? 'user' : 'model',
         parts: [{ text: m.content }],
@@ -111,13 +171,13 @@ export class AiMentorService {
   }
 
   // ─── AI 호출 (provider 자동 분기) ─────────────────────────────
-  private async callAI(modelId: string, history: HistoryMessage[]): Promise<string> {
+  private async callAI(modelId: string, history: HistoryMessage[], systemPrompt: string = SYSTEM_PROMPT): Promise<string> {
     if (modelId.startsWith('claude-')) {
       const client = new Anthropic({ apiKey: this.config.get<string>('ANTHROPIC_API_KEY')! });
       const response = await client.messages.create({
         model: modelId,
         max_tokens: 2048,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         messages: history.map(m => ({
           role: m.role === AIMessageRole.USER ? 'user' : 'assistant',
           content: m.content,
@@ -132,7 +192,7 @@ export class AiMentorService {
       const response = await client.chat.completions.create({
         model: modelId,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           ...history.map(m => ({
             role: (m.role === AIMessageRole.USER ? 'user' : 'assistant') as 'user' | 'assistant',
             content: m.content,
@@ -144,7 +204,7 @@ export class AiMentorService {
 
     if (modelId.startsWith('gemini-')) {
       const genAI = new GoogleGenerativeAI(this.config.get<string>('GEMINI_API_KEY')!);
-      const model = genAI.getGenerativeModel({ model: modelId, systemInstruction: SYSTEM_PROMPT });
+      const model = genAI.getGenerativeModel({ model: modelId, systemInstruction: systemPrompt });
       const chatHistory = history.slice(0, -1).map(m => ({
         role: m.role === AIMessageRole.USER ? 'user' : 'model',
         parts: [{ text: m.content }],
@@ -162,7 +222,7 @@ export class AiMentorService {
       const response = await client.chat.completions.create({
         model: modelId,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           ...history.map(m => ({
             role: (m.role === AIMessageRole.USER ? 'user' : 'assistant') as 'user' | 'assistant',
             content: m.content,
@@ -224,17 +284,37 @@ export class AiMentorService {
 
     const modelUsed = MODEL_MATRIX[dto.taskType]?.[dto.tier] ?? 'claude-haiku-4-5-20251001';
 
+    // 컨텍스트 프롬프트 빌드
+    let systemPrompt = SYSTEM_PROMPT;
+    const contextType = dto.contextType ?? null;
+    const contextId = dto.contextId ?? null;
+    if (contextType && contextId) {
+      const contextBlock = await this.buildContextPrompt(contextType, contextId);
+      if (contextBlock) systemPrompt += contextBlock;
+    }
+
     // 대화 세션 생성 or 기존 사용
     let convId = conversationId;
     if (!convId) {
       const conv = await this.prisma.aIConversation.create({
-        data: { userId, title: dto.content.slice(0, 50), taskId: dto.taskId },
+        data: {
+          userId,
+          title: this.generateTitle(dto.content),
+          taskId: dto.taskId,
+          contextType,
+          contextId,
+        },
       });
       convId = conv.id;
     } else {
       const existing = await this.prisma.aIConversation.findUnique({ where: { id: convId } });
       if (!existing || existing.userId !== userId)
         throw new NotFoundException('대화를 찾을 수 없습니다');
+      // 기존 대화의 컨텍스트 재사용
+      if (existing.contextType && existing.contextId) {
+        const contextBlock = await this.buildContextPrompt(existing.contextType, existing.contextId);
+        if (contextBlock) systemPrompt = SYSTEM_PROMPT + contextBlock;
+      }
     }
 
     // 유저 메시지 저장
@@ -260,7 +340,7 @@ export class AiMentorService {
     // 실제 AI 호출 (트랜잭션 외부 - 외부 API 호출)
     let aiResponse: string;
     try {
-      aiResponse = await this.callAI(modelUsed, historyRows);
+      aiResponse = await this.callAI(modelUsed, historyRows, systemPrompt);
     } catch (err) {
       throw new InternalServerErrorException(`AI 응답 실패: ${(err as Error).message}`);
     }
@@ -323,11 +403,26 @@ export class AiMentorService {
 
     const modelUsed = MODEL_MATRIX[dto.taskType]?.[dto.tier] ?? 'claude-haiku-4-5-20251001';
 
+    // 컨텍스트 프롬프트 빌드
+    let systemPrompt = SYSTEM_PROMPT;
+    const contextType = dto.contextType ?? null;
+    const contextId = dto.contextId ?? null;
+    if (contextType && contextId) {
+      const contextBlock = await this.buildContextPrompt(contextType, contextId);
+      if (contextBlock) systemPrompt += contextBlock;
+    }
+
     // 대화 세션 생성 or 기존 사용
     let convId = conversationId;
     if (!convId) {
       const conv = await this.prisma.aIConversation.create({
-        data: { userId, title: dto.content.slice(0, 50), taskId: dto.taskId },
+        data: {
+          userId,
+          title: this.generateTitle(dto.content),
+          taskId: dto.taskId,
+          contextType,
+          contextId,
+        },
       });
       convId = conv.id;
     } else {
@@ -335,6 +430,11 @@ export class AiMentorService {
       if (!existing || existing.userId !== userId) {
         res.status(404).json({ message: '대화를 찾을 수 없습니다' });
         return;
+      }
+      // 기존 대화의 컨텍스트 재사용
+      if (existing.contextType && existing.contextId) {
+        const contextBlock = await this.buildContextPrompt(existing.contextType, existing.contextId);
+        if (contextBlock) systemPrompt = SYSTEM_PROMPT + contextBlock;
       }
     }
 
@@ -371,7 +471,7 @@ export class AiMentorService {
     // 스트리밍 AI 호출
     let fullText = '';
     try {
-      for await (const token of this.callAIStream(modelUsed, historyRows)) {
+      for await (const token of this.callAIStream(modelUsed, historyRows, systemPrompt)) {
         fullText += token;
         res.write(`data: ${JSON.stringify({ type: 'token', text: token })}\n\n`);
       }

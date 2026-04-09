@@ -9,7 +9,7 @@ interface Task {
   taskType?: string | null
 }
 
-const props = defineProps<{ task: Task }>()
+const props = defineProps<{ task: Task; workspaceId?: string }>()
 const emit = defineEmits<{ close: [] }>()
 
 function goAiMentor() {
@@ -18,6 +18,7 @@ function goAiMentor() {
   params.set('title', props.task.title)
   if (props.task.description) params.set('description', props.task.description)
   if (props.task.taskType) params.set('taskType', props.task.taskType)
+  if (props.workspaceId) params.set('workspaceId', props.workspaceId)
   navigateTo(`/ai-mentor/new?${params}`)
   emit('close')
 }

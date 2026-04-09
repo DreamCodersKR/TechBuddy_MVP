@@ -33,6 +33,8 @@ interface Message {
 interface Conversation {
   id: string
   title: string
+  contextType: string | null
+  contextId: string | null
   messages: Message[]
 }
 
@@ -181,9 +183,15 @@ onMounted(() => { loadConversation() })
       >
         <Icon icon="heroicons:arrow-left" class="w-5 h-5 text-muted-foreground" />
       </button>
-      <h1 class="text-lg font-bold text-foreground truncate flex-1">
-        {{ conversation?.title || 'AI 멘토 대화' }}
-      </h1>
+      <div class="flex-1 min-w-0">
+        <h1 class="text-lg font-bold text-foreground truncate">
+          {{ conversation?.title || 'AI 멘토 대화' }}
+        </h1>
+        <div v-if="conversation?.contextType" class="flex items-center gap-1 mt-0.5">
+          <Icon icon="heroicons:link" class="w-3 h-3 text-violet-500" />
+          <span class="text-xs text-violet-600 dark:text-violet-400">Task 참조 대화</span>
+        </div>
+      </div>
       <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
         <Icon icon="heroicons:bolt" class="w-4 h-4 text-amber-500" />
         {{ userCredit }}cr
