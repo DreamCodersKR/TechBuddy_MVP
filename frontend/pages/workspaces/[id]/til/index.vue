@@ -84,11 +84,11 @@ function goWrite() {
       <NuxtLink
         v-for="til in tils"
         :key="til.id"
-        :to="`/til/${til.id}`"
+        :to="`/workspaces/${workspaceId}/til/${til.id}`"
         class="block bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors"
       >
         <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
+          <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2 mb-1">
               <span
                 class="text-xs px-1.5 py-0.5 rounded font-medium"
@@ -97,18 +97,20 @@ function goWrite() {
                 {{ VISIBILITY_LABEL[til.visibility] }}
               </span>
               <span class="text-xs text-muted-foreground">{{ til.date.slice(0, 10) }}</span>
-              <span v-if="til.author.id !== currentUserId" class="text-xs text-muted-foreground">
-                · {{ til.author.nickname ?? til.author.name }}
-              </span>
             </div>
             <p class="text-sm font-medium text-foreground line-clamp-1">{{ til.title }}</p>
-            <div v-if="til.tags.length > 0" class="flex flex-wrap gap-1 mt-1.5">
-              <span
-                v-for="tag in til.tags.slice(0, 3)"
-                :key="tag"
-                class="text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
-              >
-                #{{ tag }}
+            <div class="flex items-center justify-between mt-1.5">
+              <div v-if="til.tags.length > 0" class="flex flex-wrap gap-1">
+                <span
+                  v-for="tag in til.tags.slice(0, 3)"
+                  :key="tag"
+                  class="text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
+                >
+                  #{{ tag }}
+                </span>
+              </div>
+              <span class="text-xs text-muted-foreground ml-auto">
+                {{ til.author.nickname ?? til.author.name }}
               </span>
             </div>
           </div>
