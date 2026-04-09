@@ -10,7 +10,11 @@ import { NotificationService } from '../notification/notification.service';
 import { QuestService, QUEST_KEYS } from '../quest/quest.service';
 import { CreateAgoraDto } from './dto/create-agora.dto';
 import { CreateAgoraAnswerDto } from './dto/create-agora-answer.dto';
-import { AgoraStatus, CreditTransactionType, NotificationType } from '@prisma/client';
+import { AgoraStatus, CreditTransactionType, NotificationType, UserPlan } from '@prisma/client';
+
+const AGORA_MONTHLY_LIMITS: Partial<Record<UserPlan, number>> = {
+  [UserPlan.FREE]: 3,
+};
 
 @Injectable()
 export class AgoraService {
@@ -87,6 +91,21 @@ export class AgoraService {
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다');
     if (user.credit < dto.bounty)
       throw new BadRequestException('크레딧이 부족합니다');
+
+    // 플랜별 월 질문 횟수 제한
+    const monthlyLimit = AGORA_MONTHLY_LIMITS[user.plan];
+    if (monthlyLimit !== undefined) {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const count = await this.prisma.agora.count({
+        where: { authorId: userId, createdAt: { gte: startOfMonth } },
+      });
+      if (count >= monthlyLimit) {
+        throw new ForbiddenException(
+          `무료 플랜은 아고라 질문을 월 ${monthlyLimit}회까지 작성할 수 있습니다. Pro 플랜으로 업그레이드하세요.`,
+        );
+      }
+    }
 
     // 트랜잭션: 질문 생성 + 크레딧 차감 + 거래내역
     const agora = await this.prisma.$transaction(async (tx) => {

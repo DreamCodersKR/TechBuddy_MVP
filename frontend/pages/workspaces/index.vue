@@ -2,7 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 
-definePageMeta({ layout: 'default', middleware: 'auth' })
+definePageMeta({ layout: 'default', middleware: 'pricing-gate' })
 useHead({ title: '워크스페이스 - FLOWIT' })
 
 const { get: authGet } = useAuthFetch()

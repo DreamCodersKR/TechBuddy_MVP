@@ -5,7 +5,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateRecruitDto } from './dto/create-recruit.dto';
 import { ApplyRecruitDto } from './dto/apply-recruit.dto';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
-import { ApplicationStatus, ProjectRole } from '@prisma/client';
+import { ApplicationStatus, ProjectRole, UserPlan } from '@prisma/client';
+
+const RECRUIT_MONTHLY_LIMITS: Partial<Record<UserPlan, number>> = {
+  [UserPlan.FREE]: 1,
+};
 
 @Injectable()
 export class RecruitService {
@@ -70,6 +74,24 @@ export class RecruitService {
     });
     if (!member || member.role !== ProjectRole.ADMIN)
       throw new ForbiddenException('워크스페이스 관리자만 모집글을 작성할 수 있습니다');
+
+    // 플랜별 월 모집글 횟수 제한
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { plan: true } });
+    if (!user) throw new ForbiddenException('사용자를 찾을 수 없습니다');
+
+    const monthlyLimit = RECRUIT_MONTHLY_LIMITS[user.plan];
+    if (monthlyLimit !== undefined) {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const count = await this.prisma.recruit.count({
+        where: { authorId: userId, createdAt: { gte: startOfMonth } },
+      });
+      if (count >= monthlyLimit) {
+        throw new ForbiddenException(
+          `무료 플랜은 팀원 모집글을 월 ${monthlyLimit}회까지 작성할 수 있습니다. Pro 플랜으로 업그레이드하세요.`,
+        );
+      }
+    }
 
     const { deadline, ...rest } = dto;
     return this.prisma.recruit.create({

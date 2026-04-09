@@ -11,6 +11,7 @@ import { UserModule } from '../user/user.module';
 import { XpModule } from '../xp/xp.module';
 import { ReferralModule } from '../referral/referral.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { CreditModule } from '../credit/credit.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     XpModule,
     ReferralModule,
     PrismaModule,
+    CreditModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

@@ -12,7 +12,13 @@ import {
   InviteMemberDto,
   UpdateMemberRoleDto,
 } from './dto';
-import { ProjectRole } from '@prisma/client';
+import { ProjectRole, UserPlan } from '@prisma/client';
+
+const WORKSPACE_LIMITS: Record<UserPlan, number> = {
+  [UserPlan.FREE]: 1,
+  [UserPlan.PRO]: Infinity,
+  [UserPlan.PREMIUM]: Infinity,
+};
 
 @Injectable()
 export class ProjectService {
@@ -24,6 +30,22 @@ export class ProjectService {
    */
   async create(createdById: string, createProjectDto: CreateProjectDto) {
     const { startDate, endDate, ...rest } = createProjectDto;
+
+    // 플랜별 워크스페이스 개수 제한
+    const user = await this.prisma.user.findUnique({ where: { id: createdById }, select: { plan: true } });
+    if (!user) throw new ForbiddenException('사용자를 찾을 수 없습니다');
+
+    const limit = WORKSPACE_LIMITS[user.plan];
+    if (isFinite(limit)) {
+      const count = await this.prisma.project.count({
+        where: { createdById, deletedAt: null },
+      });
+      if (count >= limit) {
+        throw new ForbiddenException(
+          `무료 플랜은 워크스페이스를 ${limit}개까지 생성할 수 있습니다. Pro 플랜으로 업그레이드하세요.`,
+        );
+      }
+    }
 
     return this.prisma.project.create({
       data: {

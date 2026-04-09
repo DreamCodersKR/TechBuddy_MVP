@@ -6,6 +6,7 @@ import { createHash, randomUUID } from 'crypto';
 import { UserService } from '../user/user.service';
 import { XpService } from '../xp/xp.service';
 import { ReferralService } from '../referral/referral.service';
+import { CreditSchedulerService } from '../credit/credit.scheduler';
 import { CreateUserDto, LoginDto, UserResponseDto } from '../user/dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadgeType } from '@prisma/client';
@@ -23,6 +24,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly xp: XpService,
     private readonly referral: ReferralService,
+    private readonly creditScheduler: CreditSchedulerService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
@@ -38,6 +40,9 @@ export class AuthService {
 
     // 신규 가입 뱃지 부여
     await this.xp.awardBadge(user.id, BadgeType.NEW_MEMBER);
+
+    // 초기 크레딧 지급 (Free 플랜 100cr)
+    await this.creditScheduler.grantInitialCredits(user.id);
 
     // 친구 초대 코드 처리
     if (referralCode) {

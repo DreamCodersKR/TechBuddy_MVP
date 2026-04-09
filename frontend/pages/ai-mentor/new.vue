@@ -15,6 +15,7 @@ const taskId = route.query.taskId as string | undefined
 const prefillTitle = route.query.title as string | undefined
 const prefillDesc = route.query.description as string | undefined
 const prefillTaskType = (route.query.taskType as string | undefined) || 'CODE'
+const prefillDirect = route.query.prefill as string | undefined // from ai-mentor index quick-start
 
 // ─── 타입 정의 ───────────────────────────────────────────
 const TASK_TYPES = [
@@ -35,9 +36,13 @@ const TIERS = [
 // ─── 폼 상태 ─────────────────────────────────────────────
 const selectedTaskType = ref(prefillTaskType)
 const selectedTier = ref(1)
-const content = ref(prefillTitle
-  ? `${prefillTitle}${prefillDesc ? `\n\n${prefillDesc}` : ''}\n\n어떤 부분에서 막히셨나요?`
-  : '')
+const content = ref(
+  prefillDirect
+    ? prefillDirect
+    : prefillTitle
+      ? `${prefillTitle}${prefillDesc ? `\n\n${prefillDesc}` : ''}\n\n어떤 부분에서 막히셨나요?`
+      : '',
+)
 
 interface ChatMessage {
   role: 'USER' | 'ASSISTANT'
@@ -213,13 +218,13 @@ function handleKeydown(e: KeyboardEvent) {
               selectedTier === tier.value
                 ? 'border-primary bg-primary/10'
                 : 'border-border hover:border-primary/50',
-              (tier.value > 1 && userPlan === 'FREE') ? 'opacity-50 cursor-not-allowed' : '',
+              ((tier.value > 1 && userPlan === 'FREE') || (tier.value > 2 && userPlan === 'PRO')) ? 'opacity-50 cursor-not-allowed' : '',
             ]"
-            :disabled="tier.value > 1 && userPlan === 'FREE'"
-            @click="tier.value > 1 && userPlan === 'FREE' ? null : selectedTier = tier.value"
+            :disabled="(tier.value > 1 && userPlan === 'FREE') || (tier.value > 2 && userPlan === 'PRO')"
+            @click="((tier.value > 1 && userPlan === 'FREE') || (tier.value > 2 && userPlan === 'PRO')) ? null : selectedTier = tier.value"
           >
             <Icon
-              v-if="tier.value > 1 && userPlan === 'FREE'"
+              v-if="(tier.value > 1 && userPlan === 'FREE') || (tier.value > 2 && userPlan === 'PRO')"
               icon="heroicons:lock-closed"
               class="w-3 h-3 absolute top-2 right-2 text-muted-foreground"
             />
