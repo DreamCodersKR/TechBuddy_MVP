@@ -196,8 +196,8 @@ onMounted(() => { loadWorkspace() })
           </div>
         </div>
 
-        <!-- 이슈 접두어 (PREFIX) -->
-        <div class="space-y-2">
+        <!-- 이슈 접두어 (PROJECT 전용) -->
+        <div v-if="workspace.type === 'PROJECT'" class="space-y-2">
           <Label>이슈 번호 접두어 <span class="text-xs text-muted-foreground">(영문 대문자 2~5자, 예: FLOW)</span></Label>
           <div class="flex items-center gap-2">
             <Input
@@ -235,7 +235,7 @@ onMounted(() => { loadWorkspace() })
               공개 워크스페이스
             </p>
             <p class="text-xs text-muted-foreground">
-              팀원모집 시 팀원들에게 프로젝트가 공개됩니다
+              {{ workspace.type === 'STUDY' ? '스터디원 모집 시 외부에 스터디가 공개됩니다' : '팀원모집 시 외부에 프로젝트가 공개됩니다' }}
             </p>
           </div>
           <button
@@ -314,7 +314,9 @@ onMounted(() => { loadWorkspace() })
                 워크스페이스 삭제
               </p>
               <p class="text-xs text-muted-foreground mt-0.5">
-                모든 태스크, 스프린트, 멤버 정보가 영구 삭제됩니다
+                {{ workspace.type === 'STUDY'
+                  ? '모든 커리큘럼, 과제, TIL, 멤버 정보가 영구 삭제됩니다'
+                  : '모든 태스크, 스프린트, 멤버 정보가 영구 삭제됩니다' }}
               </p>
             </div>
             <Button
