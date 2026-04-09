@@ -41,6 +41,33 @@ const form = reactive({
   issuePrefix: '',
 })
 
+const techInput = ref('')
+
+function toggleTechPreset(t: string) {
+  const idx = form.techStack.indexOf(t)
+  if (idx === -1) form.techStack.push(t)
+  else form.techStack.splice(idx, 1)
+}
+
+function addCustomTech() {
+  const val = techInput.value.trim()
+  if (val && !form.techStack.includes(val)) {
+    form.techStack.push(val)
+  }
+  techInput.value = ''
+}
+
+function removeTech(t: string) {
+  form.techStack = form.techStack.filter(x => x !== t)
+}
+
+function onTechKey(e: KeyboardEvent) {
+  if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addCustomTech() }
+  if (e.key === 'Backspace' && !techInput.value && form.techStack.length) {
+    form.techStack.pop()
+  }
+}
+
 async function loadWorkspace() {
   loading.value = true
   try {
@@ -59,11 +86,6 @@ async function loadWorkspace() {
   finally { loading.value = false }
 }
 
-function toggleTech(t: string) {
-  const idx = form.techStack.indexOf(t)
-  if (idx === -1) form.techStack.push(t)
-  else form.techStack.splice(idx, 1)
-}
 
 // ─── 저장 ────────────────────────────────────────────────
 const isSaving = ref(false)
@@ -179,19 +201,51 @@ onMounted(() => { loadWorkspace() })
         <!-- 기술 스택 -->
         <div class="space-y-2">
           <Label>기술 스택</Label>
-          <div class="flex flex-wrap gap-2">
+
+          <!-- 선택된 태그 + 직접 입력 -->
+          <div
+            class="flex flex-wrap gap-1.5 min-h-[42px] w-full px-3 py-2 border border-border rounded-md bg-background focus-within:ring-2 focus-within:ring-ring"
+            :class="myRole !== 'ADMIN' ? 'opacity-50 pointer-events-none' : ''"
+          >
+            <span
+              v-for="tech in form.techStack"
+              :key="tech"
+              class="flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary border border-primary/30"
+            >
+              {{ tech }}
+              <button
+                type="button"
+                class="hover:text-destructive transition-colors"
+                @click="removeTech(tech)"
+              >
+                <Icon icon="heroicons:x-mark" class="w-3 h-3" />
+              </button>
+            </span>
+            <input
+              v-model="techInput"
+              type="text"
+              placeholder="직접 입력 후 Enter"
+              class="flex-1 min-w-[120px] text-xs bg-transparent outline-none placeholder:text-muted-foreground"
+              :disabled="myRole !== 'ADMIN'"
+              @keydown="onTechKey"
+              @blur="addCustomTech"
+            >
+          </div>
+
+          <!-- 프리셋 빠른 선택 -->
+          <div class="flex flex-wrap gap-1.5">
             <button
               v-for="tech in TECH_PRESETS"
               :key="tech"
               type="button"
               :disabled="myRole !== 'ADMIN'"
-              class="px-3 py-1.5 text-xs font-medium rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              class="px-2.5 py-1 text-xs rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               :class="form.techStack.includes(tech)
-                ? 'bg-primary text-primary-foreground border-primary'
+                ? 'bg-primary/10 text-primary border-primary/30 opacity-50'
                 : 'border-border text-muted-foreground hover:text-foreground hover:bg-accent'"
-              @click="toggleTech(tech)"
+              @click="toggleTechPreset(tech)"
             >
-              {{ tech }}
+              {{ form.techStack.includes(tech) ? '✓ ' : '+ ' }}{{ tech }}
             </button>
           </div>
         </div>
