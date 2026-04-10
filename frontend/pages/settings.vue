@@ -243,16 +243,7 @@ async function toggleEmailPref(key: keyof EmailPrefs) {
   catch { emailPrefs[key] = !emailPrefs[key] }
 }
 
-// ─── 온보딩 투어 다시보기 ────────────────────────────────
-const { startTour } = useOnboardingTour()
 
-async function restartOnboarding() {
-  if (authStore.currentUser) {
-    authStore.currentUser.onboardingCompleted = false
-  }
-  await navigateTo('/')
-  setTimeout(() => startTour(), 800)
-}
 </script>
 
 <template>
@@ -476,18 +467,6 @@ async function restartOnboarding() {
           </div>
         </label>
       </div>
-    </div>
-
-    <!-- 기타 설정 -->
-    <div class="bg-card border border-border rounded-xl p-6 mb-6">
-      <h2 class="text-sm font-semibold text-foreground mb-4">기타</h2>
-      <button
-        class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        @click="restartOnboarding"
-      >
-        <Icon icon="heroicons:arrow-path" class="w-4 h-4" />
-        온보딩 투어 다시 보기
-      </button>
     </div>
 
     <!-- 비밀번호 변경 -->

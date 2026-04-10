@@ -68,7 +68,11 @@ const menuItems = [
   { label: '커뮤니티', to: '/community', onboarding: 'nav-community' },
   { label: '프로젝트', to: '/workspaces', onboarding: 'nav-project' },
   { label: 'FLOWIT AI', to: '/ai-mentor', onboarding: 'nav-ai' },
+  { label: '고객지원', to: '/support', onboarding: '' },
 ]
+
+// 온보딩 투어
+const { startTour } = useOnboardingTour()
 
 // 현재 경로가 메뉴 아이템과 일치하는지 확인
 function isActive(path: string) {
@@ -159,12 +163,10 @@ const userInitials = computed(() => {
           <Icon icon="heroicons:magnifying-glass" class="h-5 w-5" />
         </Button>
 
-        <!-- Support Button (문의하기) -->
-        <NuxtLink to="/support">
-          <Button variant="ghost" size="icon" title="문의하기">
-            <Icon icon="heroicons:question-mark-circle" class="h-5 w-5" />
-          </Button>
-        </NuxtLink>
+        <!-- Onboarding Tour Button -->
+        <Button variant="ghost" size="icon" title="가이드 투어" @click="startTour()">
+          <Icon icon="heroicons:question-mark-circle" class="h-5 w-5" />
+        </Button>
 
         <!-- Dark Mode Toggle -->
         <Button variant="ghost" size="icon" @click="toggleDark">
