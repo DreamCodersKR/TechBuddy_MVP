@@ -33,14 +33,14 @@ export function useOnboardingTour() {
           element: '[data-onboarding="nav-project"]',
           popover: {
             title: '프로젝트',
-            description: '팀원 모집, 칸반보드, 스프린트 등 PM 도구를 무료로 사용하세요.',
+            description: '팀원 모집부터 칸반보드, 스프린트, 스터디룸까지 팀 협업에 필요한 모든 도구를 제공해요.',
           },
         },
         {
           element: '[data-onboarding="nav-ai"]',
           popover: {
             title: 'FLOWIT AI',
-            description: 'Claude, GPT, Gemini 등 다양한 AI 멘토에게 코드, 설계, 기획을 질문해보세요.',
+            description: 'AI 멘토에게 코드 리뷰, 설계, 기획 등 개발 관련 질문을 자유롭게 해보세요.',
           },
         },
         {
