@@ -9,6 +9,7 @@ export interface User {
   role: 'USER' | 'ADMIN'
   techStack: string[]
   credit: number
+  onboardingCompleted: boolean
   createdAt: string
   updatedAt: string
 }

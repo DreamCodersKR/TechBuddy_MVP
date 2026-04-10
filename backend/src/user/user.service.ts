@@ -107,6 +107,39 @@ export class UserService {
     return new UserResponseDto(user);
   }
 
+  // ─── 이메일 수신 설정 ─────────────────────────────────────
+  async getEmailPreferences(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { emailPreferences: true },
+    });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다');
+    return user.emailPreferences as Record<string, boolean>;
+  }
+
+  async updateEmailPreferences(userId: string, prefs: Record<string, boolean>) {
+    const VALID_KEYS = ['marketing', 'commentReply', 'projectActivity', 'weeklySummary'];
+    const current = await this.getEmailPreferences(userId);
+    const updated = { ...current };
+    for (const key of VALID_KEYS) {
+      if (typeof prefs[key] === 'boolean') updated[key] = prefs[key];
+    }
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { emailPreferences: updated },
+    });
+    return updated;
+  }
+
+  // ─── 온보딩 ─────────────────────────────────────────────
+  async completeOnboarding(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { onboardingCompleted: true },
+    });
+    return { onboardingCompleted: true };
+  }
+
   /**
    * 스트릭 정보 조회
    */

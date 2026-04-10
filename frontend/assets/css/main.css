@@ -85,3 +85,26 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* driver.js 온보딩 투어 다크모드 */
+.dark .flowit-onboarding {
+  background-color: hsl(222.2 84% 4.9%);
+  color: hsl(210 40% 98%);
+}
+.dark .flowit-onboarding .driver-popover-title {
+  color: hsl(210 40% 98%);
+}
+.dark .flowit-onboarding .driver-popover-description {
+  color: hsl(215 20.2% 65.1%);
+}
+.dark .flowit-onboarding .driver-popover-progress-text {
+  color: hsl(215 20.2% 65.1%);
+}
+.dark .flowit-onboarding .driver-popover-next-btn,
+.dark .flowit-onboarding .driver-popover-done-btn {
+  background-color: hsl(217.2 91.2% 59.8%);
+  color: hsl(222.2 47.4% 11.2%);
+}
+.dark .flowit-onboarding .driver-popover-prev-btn {
+  color: hsl(210 40% 98%);
+}

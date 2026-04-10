@@ -65,9 +65,9 @@ function toggleDark() {
 
 // 메인 메뉴 아이템
 const menuItems = [
-  { label: '커뮤니티', to: '/community' },
-  { label: '프로젝트', to: '/workspaces' },
-  { label: 'FLOWIT AI', to: '/ai-mentor' },
+  { label: '커뮤니티', to: '/community', onboarding: 'nav-community' },
+  { label: '프로젝트', to: '/workspaces', onboarding: 'nav-project' },
+  { label: 'FLOWIT AI', to: '/ai-mentor', onboarding: 'nav-ai' },
 ]
 
 // 현재 경로가 메뉴 아이템과 일치하는지 확인
@@ -124,6 +124,7 @@ const userInitials = computed(() => {
             v-for="item in menuItems"
             :key="item.to"
             :to="item.to"
+            :data-onboarding="item.onboarding"
             class="text-sm font-medium transition-colors hover:text-primary"
             :class="isActive(item.to) ? 'text-foreground' : 'text-muted-foreground'"
           >
@@ -247,7 +248,7 @@ const userInitials = computed(() => {
             <!-- Profile Dropdown -->
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
-                <Button variant="ghost" class="relative h-8 w-8 rounded-full">
+                <Button variant="ghost" class="relative h-8 w-8 rounded-full" data-onboarding="nav-profile">
                   <Avatar class="h-8 w-8">
                     <AvatarImage :src="authStore.currentUser?.avatarUrl ?? undefined" :alt="authStore.currentUser?.nickname ?? undefined" />
                     <AvatarFallback v-if="!authStore.currentUser?.avatarUrl">{{ userInitials }}</AvatarFallback>

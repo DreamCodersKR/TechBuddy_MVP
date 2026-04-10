@@ -202,6 +202,57 @@ function copyPortfolioLink() {
   navigator.clipboard.writeText(link)
   alert('링크가 복사되었습니다!')
 }
+
+// ─── 이메일 수신 설정 ────────────────────────────────────
+interface EmailPrefs {
+  marketing: boolean
+  commentReply: boolean
+  projectActivity: boolean
+  weeklySummary: boolean
+}
+
+const EMAIL_PREF_LABELS: Record<keyof EmailPrefs, { label: string; desc: string }> = {
+  marketing: { label: '마케팅/뉴스레터', desc: '서비스 업데이트, 새 기능 안내' },
+  commentReply: { label: '댓글/답변 알림', desc: '내 게시글 댓글, 아고라 답변' },
+  projectActivity: { label: '프로젝트 활동', desc: '태스크 배정, 스프린트 변경' },
+  weeklySummary: { label: '주간 활동 요약', desc: '매주 활동 정리 리포트' },
+}
+
+const emailPrefs = reactive<EmailPrefs>({
+  marketing: true,
+  commentReply: true,
+  projectActivity: true,
+  weeklySummary: true,
+})
+const emailPrefsLoading = ref(true)
+
+onMounted(async () => {
+  try {
+    const data = await authGet<EmailPrefs>('/users/me/email-preferences')
+    Object.assign(emailPrefs, data)
+  }
+  catch { /* 기본값 유지 */ }
+  finally { emailPrefsLoading.value = false }
+})
+
+async function toggleEmailPref(key: keyof EmailPrefs) {
+  emailPrefs[key] = !emailPrefs[key]
+  try {
+    await authPatch('/users/me/email-preferences', { [key]: emailPrefs[key] })
+  }
+  catch { emailPrefs[key] = !emailPrefs[key] }
+}
+
+// ─── 온보딩 투어 다시보기 ────────────────────────────────
+const { startTour } = useOnboardingTour()
+
+async function restartOnboarding() {
+  if (authStore.currentUser) {
+    authStore.currentUser.onboardingCompleted = false
+  }
+  await navigateTo('/')
+  setTimeout(() => startTour(), 800)
+}
 </script>
 
 <template>
@@ -395,6 +446,48 @@ function copyPortfolioLink() {
           저장하기
         </Button>
       </div>
+    </div>
+
+    <!-- 이메일 수신 설정 -->
+    <div class="bg-card border border-border rounded-xl p-6 mb-6">
+      <h2 class="text-sm font-semibold text-foreground mb-1">이메일 수신 설정</h2>
+      <p class="text-xs text-muted-foreground mb-4">받고 싶은 이메일 알림을 선택하세요</p>
+
+      <div v-if="emailPrefsLoading" class="text-xs text-muted-foreground py-4 text-center">불러오는 중...</div>
+      <div v-else class="space-y-3">
+        <label
+          v-for="(meta, key) in EMAIL_PREF_LABELS"
+          :key="key"
+          class="flex items-center justify-between cursor-pointer"
+        >
+          <div>
+            <p class="text-sm font-medium text-foreground">{{ meta.label }}</p>
+            <p class="text-xs text-muted-foreground">{{ meta.desc }}</p>
+          </div>
+          <div
+            class="relative w-10 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0"
+            :class="emailPrefs[key as keyof EmailPrefs] ? 'bg-primary' : 'bg-muted'"
+            @click="toggleEmailPref(key as keyof EmailPrefs)"
+          >
+            <div
+              class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+              :class="emailPrefs[key as keyof EmailPrefs] ? 'translate-x-5' : 'translate-x-0.5'"
+            />
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- 기타 설정 -->
+    <div class="bg-card border border-border rounded-xl p-6 mb-6">
+      <h2 class="text-sm font-semibold text-foreground mb-4">기타</h2>
+      <button
+        class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        @click="restartOnboarding"
+      >
+        <Icon icon="heroicons:arrow-path" class="w-4 h-4" />
+        온보딩 투어 다시 보기
+      </button>
     </div>
 
     <!-- 비밀번호 변경 -->

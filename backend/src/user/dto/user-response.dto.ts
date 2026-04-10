@@ -95,6 +95,9 @@ export class UserResponseDto {
   })
   portfolioUrl: string | null;
 
+  @ApiProperty({ description: '온보딩 완료 여부', example: false })
+  onboardingCompleted: boolean;
+
   @ApiProperty({
     description: '계정 생성일',
     example: '2025-11-27T00:00:00.000Z',

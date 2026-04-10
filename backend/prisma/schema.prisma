@@ -220,6 +220,12 @@ model User {
   longestStreak  Int       @default(0)
   lastActiveDate DateTime?
 
+  // 이메일 수신 설정
+  emailPreferences Json @default("{\"marketing\":true,\"commentReply\":true,\"projectActivity\":true,\"weeklySummary\":true}")
+
+  // 온보딩
+  onboardingCompleted Boolean @default(false)
+
   isBanned Boolean   @default(false)
   bannedAt DateTime?
 

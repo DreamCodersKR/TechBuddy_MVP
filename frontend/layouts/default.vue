@@ -3,6 +3,17 @@
 // 커뮤니티, Q&A, 팀원모집 등 메인 페이지에서 사용
 
 const route = useRoute()
+const authStore = useAuthStore()
+const { startTour, shouldShowTour } = useOnboardingTour()
+
+// 온보딩 투어: 첫 방문 사용자에게 자동 표시
+onMounted(() => {
+  setTimeout(() => {
+    if (authStore.isAuthenticated && shouldShowTour()) {
+      startTour()
+    }
+  }, 800)
+})
 
 // 현재 경로가 서브 네비게이션을 보여줘야 하는지 확인
 const shouldShowSubNav = computed(() => {

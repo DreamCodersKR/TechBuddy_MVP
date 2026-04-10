@@ -110,6 +110,32 @@ export class UserController {
     return this.userService.getActivityHeatmap(user.id, targetYear);
   }
 
+  // ─── 이메일 수신 설정 ─────────────────────────────────────
+  @Get('me/email-preferences')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '이메일 수신 설정 조회' })
+  async getEmailPreferences(@CurrentUser() user: any) {
+    return this.userService.getEmailPreferences(user.id);
+  }
+
+  @Patch('me/email-preferences')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '이메일 수신 설정 변경' })
+  async updateEmailPreferences(@CurrentUser() user: any, @Body() body: Record<string, boolean>) {
+    return this.userService.updateEmailPreferences(user.id, body);
+  }
+
+  // ─── 온보딩 ─────────────────────────────────────────────
+  @Patch('me/onboarding')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '온보딩 완료 처리' })
+  async completeOnboarding(@CurrentUser() user: any) {
+    return this.userService.completeOnboarding(user.id);
+  }
+
   /**
    * 현재 로그인한 사용자 프로필 수정
    */
