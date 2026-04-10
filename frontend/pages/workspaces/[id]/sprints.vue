@@ -245,22 +245,30 @@ onMounted(() => { loadData() })
               </span>
             </div>
           </div>
-          <div
-            v-if="myRole === 'ADMIN'"
-            class="flex items-center gap-1 flex-shrink-0"
-          >
-            <button
-              class="p-1.5 rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              @click="openEditModal(sprint)"
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <!-- 회고 버튼: 완료된 스프린트에만 표시 -->
+            <NuxtLink
+              v-if="sprint.status === 'COMPLETED'"
+              :to="`/workspaces/${workspaceId}/retrospective/${sprint.id}`"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
             >
-              <Icon icon="heroicons:pencil" class="w-4 h-4" />
-            </button>
-            <button
-              class="p-1.5 rounded text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
-              @click="handleDelete(sprint)"
-            >
-              <Icon icon="heroicons:trash" class="w-4 h-4" />
-            </button>
+              <Icon icon="heroicons:light-bulb" class="w-3.5 h-3.5" />
+              회고
+            </NuxtLink>
+            <template v-if="myRole === 'ADMIN'">
+              <button
+                class="p-1.5 rounded text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                @click="openEditModal(sprint)"
+              >
+                <Icon icon="heroicons:pencil" class="w-4 h-4" />
+              </button>
+              <button
+                class="p-1.5 rounded text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
+                @click="handleDelete(sprint)"
+              >
+                <Icon icon="heroicons:trash" class="w-4 h-4" />
+              </button>
+            </template>
           </div>
         </div>
       </div>

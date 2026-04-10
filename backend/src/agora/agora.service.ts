@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
 import { NotificationService } from '../notification/notification.service';
 import { QuestService, QUEST_KEYS } from '../quest/quest.service';
+import { ModerationService } from '../moderation/moderation.service';
 import { CreateAgoraDto } from './dto/create-agora.dto';
 import { CreateAgoraAnswerDto } from './dto/create-agora-answer.dto';
 import { AgoraStatus, CreditTransactionType, NotificationType, UserPlan } from '@prisma/client';
@@ -23,6 +24,7 @@ export class AgoraService {
     private readonly xp: XpService,
     private readonly notification: NotificationService,
     private readonly quest: QuestService,
+    private readonly moderation: ModerationService,
   ) {}
 
   // ========================
@@ -131,6 +133,9 @@ export class AgoraService {
     // XP 부여: 질문 등록 +10
     await this.xp.grantXP(userId, 10);
 
+    // AI 콘텐츠 검열 (fire-and-forget)
+    this.moderation.moderateAgora(agora.id).catch(() => {});
+
     return agora;
   }
 
@@ -199,6 +204,9 @@ export class AgoraService {
 
     // 퀘스트 체크: 아고라 답변
     await this.quest.checkAndComplete(userId, QUEST_KEYS.AGORA_ANSWER);
+
+    // AI 콘텐츠 검열 (fire-and-forget)
+    this.moderation.moderateAgoraAnswer(answer.id).catch(() => {});
 
     return answer;
   }

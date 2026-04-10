@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TaskService } from './task.service';
-import { CreateTaskDto, UpdateTaskDto, CreateCommentDto, UpdateCommentDto, ReorderTaskDto } from './dto';
+import { CreateTaskDto, UpdateTaskDto, CreateTaskCommentDto, UpdateCommentDto, ReorderTaskDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators';
 
@@ -87,7 +87,7 @@ export class TaskController {
     @Param('workspaceId') workspaceId: string,
     @Param('taskId') taskId: string,
     @CurrentUser() user: any,
-    @Body() dto: CreateCommentDto,
+    @Body() dto: CreateTaskCommentDto,
   ) {
     return this.taskService.createComment(workspaceId, taskId, user.id, dto);
   }

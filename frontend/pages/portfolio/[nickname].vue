@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { Button } from '@/components/ui/button'
 
 // SSR 페이지 — layout 없이 독립형
 definePageMeta({ layout: false })
@@ -9,6 +10,7 @@ const config = useRuntimeConfig()
 const nickname = route.params.nickname as string
 
 interface PortfolioUser {
+  id: string
   nickname: string
   name: string
   bio: string | null
@@ -43,6 +45,19 @@ if (error.value || !data.value) {
 }
 
 const portfolio = data.value!
+
+// 커피챗 요청 모달
+const authStore = useAuthStore()
+const coffeeChatOpen = ref(false)
+
+const isOwnProfile = computed(() => {
+  return authStore.currentUser?.nickname === portfolio.user.nickname
+})
+
+function handleCoffeeChatSuccess() {
+  coffeeChatOpen.value = false
+  alert('커피챗 요청이 전송되었습니다!')
+}
 
 // SSR OG 메타태그
 useHead({
@@ -134,6 +149,18 @@ function formatDate(dateStr: string) {
               포트폴리오
             </a>
           </div>
+          <!-- 커피챗 요청 버튼 (로그인 상태 + 타인 프로필일 때만 표시) -->
+          <ClientOnly>
+            <Button
+              v-if="authStore.isAuthenticated && !isOwnProfile"
+              size="sm"
+              class="mt-3"
+              @click="coffeeChatOpen = true"
+            >
+              <Icon icon="heroicons:chat-bubble-left-right" class="w-4 h-4 mr-1.5" />
+              커피챗 요청
+            </Button>
+          </ClientOnly>
         </div>
       </section>
 
@@ -272,5 +299,17 @@ function formatDate(dateStr: string) {
         </p>
       </footer>
     </main>
+
+    <!-- 커피챗 요청 모달 -->
+    <ClientOnly>
+      <CoffeeChatRequestModal
+        v-if="authStore.isAuthenticated && !isOwnProfile"
+        :receiver-id="portfolio.user.id"
+        :receiver-nickname="portfolio.user.nickname"
+        :open="coffeeChatOpen"
+        @close="coffeeChatOpen = false"
+        @success="handleCoffeeChatSuccess"
+      />
+    </ClientOnly>
   </div>
 </template>

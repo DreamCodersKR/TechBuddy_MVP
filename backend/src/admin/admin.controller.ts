@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UserRole, UserPlan } from '@prisma/client';
 import { AdminService } from './admin.service';
@@ -67,5 +67,17 @@ export class AdminController {
   @ApiOperation({ summary: '계정 정지 해제' })
   unbanUser(@Param('id') id: string) {
     return this.adminService.banUser(id, false);
+  }
+
+  @Get('moderation')
+  @ApiOperation({ summary: '숨겨진 콘텐츠 목록 (AI 검열)' })
+  getModerationList(@Query('type') type?: string) {
+    return this.adminService.getModerationList(type);
+  }
+
+  @Patch('moderation/:type/:id/restore')
+  @ApiOperation({ summary: '숨겨진 콘텐츠 복원' })
+  restoreContent(@Param('type') type: string, @Param('id') id: string) {
+    return this.adminService.restoreContent(type, id);
   }
 }

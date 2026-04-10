@@ -9,6 +9,7 @@ const navItems = [
   { label: '유저 관리', icon: 'heroicons:users', path: '/admin/users' },
   { label: '문의 처리', icon: 'heroicons:inbox', path: '/admin/inquiries' },
   { label: '신고 처리', icon: 'heroicons:flag', path: '/admin/reports' },
+  { label: '콘텐츠 관리', icon: 'heroicons:shield-check', path: '/admin/moderation' },
 ]
 
 function isActive(path: string) {

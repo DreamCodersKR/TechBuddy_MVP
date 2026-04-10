@@ -86,6 +86,17 @@ enum NotificationType {
   AGORA_ACCEPTED
   CREDIT_RECEIVED
   PROJECT_VERIFIED
+  CONTENT_MODERATED
+  COFFEE_CHAT_REQUESTED
+  COFFEE_CHAT_ACCEPTED
+  COFFEE_CHAT_DECLINED
+}
+
+enum CoffeeChatStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
 }
 
 enum AgoraStatus {
@@ -284,6 +295,13 @@ model User {
   studyPenaltyConsents  StudyPenaltyConsent[]
   studyPenaltyHistories StudyPenaltyHistory[]
   uploadedStudyResources StudyResource[]
+
+  // Relations - 커피챗
+  sentCoffeeChats     CoffeeChat[] @relation("CoffeeChatRequester")
+  receivedCoffeeChats CoffeeChat[] @relation("CoffeeChatReceiver")
+
+  // Relations - KPT 회고
+  kptRetrospectives KptRetrospective[]
 
   // 포트폴리오 공개 설정
   portfolioPublic    Boolean @default(true)
@@ -511,6 +529,10 @@ model Sprint {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdBy User    @relation("SprintCreator", fields: [createdById], references: [id], onDelete: Restrict)
   tasks     Task[]
+
+  // Relations - KPT 회고
+  kptRetrospectives KptRetrospective[]
+  kptSummary        KptSummary?
 
   @@index([projectId])
   @@index([status])
@@ -800,6 +822,7 @@ model Agora {
   bounty    Int         @default(1) // 크레딧 현상금
   status    AgoraStatus @default(OPEN)
   viewCount Int         @default(0)
+  isHidden  Boolean     @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -821,6 +844,7 @@ model AgoraAnswer {
   authorId   String
   content    String  @db.Text
   isAccepted Boolean @default(false)
+  isHidden   Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1137,4 +1161,67 @@ model ReferralUsage {
 
   @@index([referralCodeId])
   @@map("referral_usages")
+}
+
+// ============================================
+// 커피챗
+// ============================================
+
+model CoffeeChat {
+  id          String           @id @default(uuid())
+  requesterId String
+  receiverId  String
+  message     String
+  status      CoffeeChatStatus @default(PENDING)
+  meetingUrl  String?
+  creditCost  Int              @default(10)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  requester User @relation("CoffeeChatRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiver  User @relation("CoffeeChatReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([requesterId])
+  @@index([receiverId])
+  @@index([status])
+  @@map("coffee_chats")
+}
+
+// ============================================
+// KPT 회고
+// ============================================
+
+model KptRetrospective {
+  id       String   @id @default(uuid())
+  sprintId String
+  userId   String
+  keeps    String[]
+  problems String[]
+  tries    String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sprint Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sprintId, userId])
+  @@index([sprintId])
+  @@map("kpt_retrospectives")
+}
+
+model KptSummary {
+  id       String @id @default(uuid())
+  sprintId String @unique
+  summary  String
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  sprint Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+
+  @@map("kpt_summaries")
 }

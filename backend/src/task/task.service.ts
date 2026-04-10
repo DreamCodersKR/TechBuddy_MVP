@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateTaskDto, UpdateTaskDto, CreateCommentDto, UpdateCommentDto } from './dto';
+import { CreateTaskDto, UpdateTaskDto, CreateTaskCommentDto, UpdateCommentDto } from './dto';
 import { ProjectRole, TaskStatus } from '@prisma/client';
 
 const TASK_INCLUDE = {
@@ -163,7 +163,7 @@ export class TaskService {
     return task;
   }
 
-  async createComment(workspaceId: string, taskId: string, userId: string, dto: CreateCommentDto) {
+  async createComment(workspaceId: string, taskId: string, userId: string, dto: CreateTaskCommentDto) {
     await this.checkMember(workspaceId, userId);
     await this.checkTask(workspaceId, taskId);
 

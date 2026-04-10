@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
 import { NotificationService } from '../notification/notification.service';
 import { QuestService, QUEST_KEYS } from '../quest/quest.service';
+import { ModerationService } from '../moderation/moderation.service';
 import { NotificationType } from '@prisma/client';
 import { CreateCommentDto, UpdateCommentDto } from './dto';
 
@@ -13,6 +14,7 @@ export class CommentService {
     private readonly xp: XpService,
     private readonly notification: NotificationService,
     private readonly quest: QuestService,
+    private readonly moderation: ModerationService,
   ) {}
 
   /**
@@ -69,6 +71,9 @@ export class CommentService {
       message: `"${post.title}"에 댓글이 달렸습니다`,
       relatedId: postId,
     });
+
+    // AI 콘텐츠 검열 (fire-and-forget)
+    this.moderation.moderateComment(comment.id).catch(() => {});
 
     return comment;
   }

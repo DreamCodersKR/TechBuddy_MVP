@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, UserPlan, CreditTransactionType } from '@prisma/client';
 import { AdminUsersQueryDto, AdjustCreditsDto } from './dto';
@@ -205,5 +205,63 @@ export class AdminService {
         pendingReports,
       },
     };
+  }
+
+  // ── 콘텐츠 검열 (숨겨진 콘텐츠 관리) ──────────────────────────
+  async getModerationList(type?: string) {
+    const results: any[] = [];
+
+    if (!type || type === 'post') {
+      const posts = await this.prisma.post.findMany({
+        where: { isHidden: true },
+        include: { author: { select: { id: true, nickname: true, email: true } } },
+        orderBy: { updatedAt: 'desc' },
+      });
+      results.push(...posts.map((p) => ({ ...p, contentType: 'post' })));
+    }
+
+    if (!type || type === 'comment') {
+      const comments = await this.prisma.postComment.findMany({
+        where: { isHidden: true },
+        include: { author: { select: { id: true, nickname: true, email: true } } },
+        orderBy: { updatedAt: 'desc' },
+      });
+      results.push(...comments.map((c) => ({ ...c, contentType: 'comment' })));
+    }
+
+    if (!type || type === 'agora') {
+      const agoras = await this.prisma.agora.findMany({
+        where: { isHidden: true },
+        include: { author: { select: { id: true, nickname: true, email: true } } },
+        orderBy: { updatedAt: 'desc' },
+      });
+      results.push(...agoras.map((a) => ({ ...a, contentType: 'agora' })));
+    }
+
+    if (!type || type === 'agoraAnswer') {
+      const answers = await this.prisma.agoraAnswer.findMany({
+        where: { isHidden: true },
+        include: { author: { select: { id: true, nickname: true, email: true } } },
+        orderBy: { updatedAt: 'desc' },
+      });
+      results.push(...answers.map((a) => ({ ...a, contentType: 'agoraAnswer' })));
+    }
+
+    return results;
+  }
+
+  async restoreContent(type: string, id: string) {
+    switch (type) {
+      case 'post':
+        return this.prisma.post.update({ where: { id }, data: { isHidden: false } });
+      case 'comment':
+        return this.prisma.postComment.update({ where: { id }, data: { isHidden: false } });
+      case 'agora':
+        return this.prisma.agora.update({ where: { id }, data: { isHidden: false } });
+      case 'agoraAnswer':
+        return this.prisma.agoraAnswer.update({ where: { id }, data: { isHidden: false } });
+      default:
+        throw new BadRequestException('Invalid content type');
+    }
   }
 }

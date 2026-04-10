@@ -32,6 +32,9 @@ import { QuestModule } from './quest/quest.module';
 import { ReferralModule } from './referral/referral.module';
 import { StudyModule } from './study/study.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
+import { CoffeeChatModule } from './coffee-chat/coffee-chat.module';
+import { KptModule } from './kpt/kpt.module';
+import { ModerationModule } from './moderation/moderation.module';
 
 @Module({
   imports: [
@@ -73,6 +76,9 @@ import { PortfolioModule } from './portfolio/portfolio.module';
     ReferralModule,
     StudyModule,
     PortfolioModule,
+    CoffeeChatModule,
+    KptModule,
+    ModerationModule,
   ],
   controllers: [AppController],
   providers: [

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
 import { QuestService, QUEST_KEYS } from '../quest/quest.service';
+import { ModerationService } from '../moderation/moderation.service';
 import { CreatePostDto, UpdatePostDto } from './dto';
 import { Prisma } from '@prisma/client';
 
@@ -11,6 +12,7 @@ export class PostService {
     private readonly prisma: PrismaService,
     private readonly xp: XpService,
     private readonly quest: QuestService,
+    private readonly moderation: ModerationService,
   ) {}
 
   /**
@@ -51,6 +53,9 @@ export class PostService {
     await this.xp.grantXP(authorId, 20);
     // 퀘스트 체크: 게시글 작성
     await this.quest.checkAndComplete(authorId, QUEST_KEYS.POST_WRITE);
+
+    // AI 콘텐츠 검열 (fire-and-forget)
+    this.moderation.moderatePost(post.id).catch(() => {});
 
     return post;
   }

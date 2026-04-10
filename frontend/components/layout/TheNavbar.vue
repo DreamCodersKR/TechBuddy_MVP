@@ -288,6 +288,12 @@ const userInitials = computed(() => {
                   </NuxtLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem as-child>
+                  <NuxtLink to="/coffee-chat" class="cursor-pointer">
+                    <Icon icon="heroicons:chat-bubble-left-right" class="mr-2 h-4 w-4" />
+                    커피챗
+                  </NuxtLink>
+                </DropdownMenuItem>
+                <DropdownMenuItem as-child>
                   <NuxtLink to="/settings" class="cursor-pointer">
                     <Icon icon="heroicons:cog-6-tooth" class="mr-2 h-4 w-4" />
                     설정
@@ -416,6 +422,14 @@ const userInitials = computed(() => {
                     >
                       <Icon icon="heroicons:bookmark" class="h-4 w-4" />
                       북마크
+                    </NuxtLink>
+                    <NuxtLink
+                      to="/coffee-chat"
+                      class="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent"
+                      @click="isMobileMenuOpen = false"
+                    >
+                      <Icon icon="heroicons:chat-bubble-left-right" class="h-4 w-4" />
+                      커피챗
                     </NuxtLink>
                     <NuxtLink
                       to="/settings"
