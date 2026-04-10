@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { R2Service } from './r2.service';
+import { EmbeddingPipelineService } from '../embedding/embedding-pipeline.service';
 import { DocumentCategory } from '@prisma/client';
 import * as archiver from 'archiver';
 import { randomUUID } from 'crypto';
@@ -19,6 +20,7 @@ export class DocumentService {
   constructor(
     private prisma: PrismaService,
     private r2: R2Service,
+    private embeddingPipeline: EmbeddingPipelineService,
   ) {}
 
   async uploadDocument(
@@ -39,7 +41,7 @@ export class DocumentService {
     const r2Key = `${projectId}/${randomUUID()}-${file.originalname}`;
     const fileUrl = await this.r2.uploadFile(r2Key, file.buffer, file.mimetype);
 
-    return this.prisma.document.create({
+    const doc = await this.prisma.document.create({
       data: {
         projectId,
         uploadedById,
@@ -54,6 +56,13 @@ export class DocumentService {
         uploadedBy: { select: { id: true, name: true, avatarUrl: true } },
       },
     });
+
+    // Fire-and-forget: generate embeddings for RAG
+    this.embeddingPipeline.processDocument(doc.id).catch((err) => {
+      console.error('[Embedding] Pipeline failed:', err.message);
+    });
+
+    return doc;
   }
 
   async findAll(projectId: string, category?: DocumentCategory) {
@@ -121,5 +130,8 @@ export class DocumentService {
       where: { id: documentId },
       data: { deletedAt: new Date() },
     });
+
+    // Fire-and-forget: remove embeddings for deleted document
+    this.embeddingPipeline.removeEmbeddings(documentId).catch(() => {});
   }
 }

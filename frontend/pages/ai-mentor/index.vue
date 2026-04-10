@@ -95,6 +95,10 @@ function setPreset(text: string) {
   nextTick(() => handleStartChat())
 }
 
+function handleCurriculumChat(topic: string) {
+  navigateTo(`/ai-mentor/new?prefill=${encodeURIComponent(topic)}`)
+}
+
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
     e.preventDefault()
@@ -338,20 +342,25 @@ onUnmounted(() => {
       </div>
 
       <!-- 중앙 빈 상태 -->
-      <div class="flex-1 flex flex-col items-center justify-center px-6 pb-4">
+      <div class="flex-1 flex flex-col items-center justify-center px-6 pb-4 overflow-y-auto">
         <!-- 로고 -->
-        <div class="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-5">
+        <div class="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-5 flex-shrink-0">
           <Icon icon="heroicons:sparkles" class="w-8 h-8 text-violet-500" />
         </div>
-        <h1 class="text-2xl font-bold text-foreground mb-2">
+        <h1 class="text-2xl font-bold text-foreground mb-2 flex-shrink-0">
           FLOWIT AI
         </h1>
-        <p class="text-sm text-muted-foreground mb-8 text-center max-w-sm">
+        <p class="text-sm text-muted-foreground mb-6 text-center max-w-sm flex-shrink-0">
           코드, 설계, 문서 등 무엇이든 물어보세요
         </p>
 
+        <!-- 추천 학습 카드 -->
+        <div class="w-full max-w-lg mb-6 flex-shrink-0">
+          <AiMentorCurriculumCard @start-chat="handleCurriculumChat" />
+        </div>
+
         <!-- 빠른 시작 예시 카드 -->
-        <div class="grid grid-cols-2 gap-3 w-full max-w-lg">
+        <div class="grid grid-cols-2 gap-3 w-full max-w-lg flex-shrink-0">
           <button
             class="flex flex-col gap-1.5 p-4 text-left border border-border rounded-xl hover:bg-accent transition-colors"
             @click="setPreset('이 코드의 문제점을 분석하고 개선점을 알려주세요')"

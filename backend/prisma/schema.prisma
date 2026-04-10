@@ -303,6 +303,9 @@ model User {
   // Relations - KPT 회고
   kptRetrospectives KptRetrospective[]
 
+  // Relations - AI 커리큘럼
+  curriculumRecommendations CurriculumRecommendation[]
+
   // 포트폴리오 공개 설정
   portfolioPublic    Boolean @default(true)
   portfolioSections  Json?   // { stats: true, grass: true, projects: true, badges: true, recentTILs: true }
@@ -479,6 +482,7 @@ model Project {
   sprints          Sprint[]
   recruits         Recruit[]
   documents        Document[]
+  documentEmbeddings DocumentEmbedding[]
   tils             Til[]
 
   // Relations - 스터디룸
@@ -1009,6 +1013,7 @@ model Document {
   // Relations
   project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   uploadedBy User    @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  embeddings DocumentEmbedding[]
 
   @@index([projectId])
   @@index([uploadedById])
@@ -1224,4 +1229,45 @@ model KptSummary {
   sprint Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
 
   @@map("kpt_summaries")
+}
+
+// ============================================
+// RAG 임베딩 (DRE-178)
+// ============================================
+
+model DocumentEmbedding {
+  id         String @id @default(uuid())
+  documentId String
+  projectId  String
+  chunkIndex Int    @default(0)
+  content    String @db.Text
+  // embedding vector(1536)는 Prisma 미지원 → Raw SQL로만 접근
+  metadata   Json   @default("{}")
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@index([projectId])
+  @@map("document_embeddings")
+}
+
+// ============================================
+// AI 커리큘럼 추천 (DRE-179)
+// ============================================
+
+model CurriculumRecommendation {
+  id          String   @id @default(uuid())
+  userId      String
+  items       Json     @default("[]")
+  generatedAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, generatedAt(sort: Desc)])
+  @@map("curriculum_recommendations")
 }

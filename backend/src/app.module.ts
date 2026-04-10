@@ -35,6 +35,8 @@ import { PortfolioModule } from './portfolio/portfolio.module';
 import { CoffeeChatModule } from './coffee-chat/coffee-chat.module';
 import { KptModule } from './kpt/kpt.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { EmbeddingModule } from './embedding/embedding.module';
+import { CurriculumModule } from './curriculum/curriculum.module';
 
 @Module({
   imports: [
@@ -79,6 +81,8 @@ import { ModerationModule } from './moderation/moderation.module';
     CoffeeChatModule,
     KptModule,
     ModerationModule,
+    EmbeddingModule,
+    CurriculumModule,
   ],
   controllers: [AppController],
   providers: [

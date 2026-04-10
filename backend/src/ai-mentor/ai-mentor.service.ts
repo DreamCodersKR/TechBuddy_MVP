@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuestService, QUEST_KEYS } from '../quest/quest.service';
+import { RagService } from '../embedding/rag.service';
 import { CreateMessageDto, TIER_COST, MentoringTier } from './dto/create-message.dto';
 import { AIMessageRole, CreditTransactionType, UserPlan } from '@prisma/client';
 import Anthropic from '@anthropic-ai/sdk';
@@ -46,6 +47,7 @@ export class AiMentorService {
     private prisma: PrismaService,
     private config: ConfigService,
     private readonly quest: QuestService,
+    private readonly rag: RagService,
   ) {}
 
   // ─── 대화 제목 생성 (Gemini Flash-Lite) ─────────────────────
@@ -110,6 +112,47 @@ export class AiMentorService {
     lines.push(`위 Task 정보를 참고하여 질문에 답변해주세요.`);
 
     return lines.join('\n');
+  }
+
+  // ─── RAG 문서 컨텍스트 빌드 ─────────────────────────────────
+  private async buildRagContext(query: string, userId: string): Promise<string> {
+    try {
+      // 사용자가 속한 프로젝트 목록 조회
+      const memberships = await this.prisma.projectMember.findMany({
+        where: { userId },
+        select: { projectId: true },
+      });
+
+      if (!memberships.length) return '';
+
+      // 각 프로젝트에서 관련 문서 검색
+      const allResults: Array<{ documentId: string; fileName: string; chunkIndex: number; content: string; similarity: number }> = [];
+      for (const { projectId } of memberships) {
+        const results = await this.rag.search(query, projectId, 2, 0.7);
+        allResults.push(...results);
+      }
+
+      if (!allResults.length) return '';
+
+      // 유사도 내림차순 정렬 후 상위 3개
+      allResults.sort((a, b) => b.similarity - a.similarity);
+      const topResults = allResults.slice(0, 3);
+
+      const lines = ['\n\n=== 관련 문서 (자동 검색) ==='];
+      for (const r of topResults) {
+        const pct = Math.round(r.similarity * 100);
+        lines.push(`[${r.fileName}] (유사도 ${pct}%):`);
+        lines.push(r.content);
+        lines.push('');
+      }
+      lines.push('===========================');
+      lines.push('위 문서 내용을 참고하여 답변해주세요.');
+
+      return lines.join('\n');
+    } catch (err) {
+      console.error('[RAG] buildRagContext failed:', (err as Error).message);
+      return '';
+    }
   }
 
   // ─── AI 스트리밍 호출 (AsyncGenerator) ───────────────────────
@@ -300,6 +343,12 @@ export class AiMentorService {
       if (contextBlock) systemPrompt += contextBlock;
     }
 
+    // RAG: 프로젝트 문서 컨텍스트 자동 검색
+    const ragContext = await this.buildRagContext(dto.content, userId);
+    if (ragContext) {
+      systemPrompt += ragContext;
+    }
+
     // 대화 세션 생성 or 기존 사용
     let convId = conversationId;
     if (!convId) {
@@ -417,6 +466,12 @@ export class AiMentorService {
     if (contextType && contextId) {
       const contextBlock = await this.buildContextPrompt(contextType, contextId);
       if (contextBlock) systemPrompt += contextBlock;
+    }
+
+    // RAG: 프로젝트 문서 컨텍스트 자동 검색
+    const ragContext = await this.buildRagContext(dto.content, userId);
+    if (ragContext) {
+      systemPrompt += ragContext;
     }
 
     // 대화 세션 생성 or 기존 사용
