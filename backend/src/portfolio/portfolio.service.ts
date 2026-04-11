@@ -79,8 +79,8 @@ export class PortfolioService {
       recentTILs: true,
     };
 
-    // TIL 잔디 집계
-    const tilGrass = this.buildTilGrass(user.tils.map((t) => t.date));
+    // 활동 히트맵 집계 (TIL + DONE Task)
+    const activityHeatmap = await this.buildActivityHeatmap(user.id, user.tils.map((t) => t.date));
 
     // 아고라 채택 수
     const agoraAccepted = await this.prisma.agoraAnswer.count({
@@ -137,7 +137,7 @@ export class PortfolioService {
             projectCount: projects.length,
           }
         : null,
-      tilGrass: sections.grass ? tilGrass : null,
+      activityHeatmap: sections.grass ? activityHeatmap : null,
       projects: sections.projects ? projects : null,
       badges: sections.badges ? user.userBadges : null,
       recentTILs: sections.recentTILs ? recentTILs : null,
@@ -145,17 +145,39 @@ export class PortfolioService {
   }
 
   /**
-   * TIL 잔디 데이터 빌드 (최근 365일)
+   * 활동 히트맵 빌드 (TIL + DONE Task 합산, Record 형태)
    */
-  private buildTilGrass(dates: Date[]): Array<{ date: string; count: number }> {
-    const countMap = new Map<string, number>();
-    for (const d of dates) {
+  private async buildActivityHeatmap(
+    userId: string,
+    tilDates: Date[],
+  ): Promise<Record<string, number>> {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), 0, 1);
+    const endDate = new Date(now.getFullYear() + 1, 0, 1);
+
+    // DONE Task 날짜 조회
+    const doneTasks = await this.prisma.task.findMany({
+      where: {
+        assigneeId: userId,
+        status: 'DONE',
+        updatedAt: { gte: startDate, lt: endDate },
+      },
+      select: { updatedAt: true },
+    });
+
+    const heatmap: Record<string, number> = {};
+
+    for (const d of tilDates) {
       const key = d.toISOString().slice(0, 10);
-      countMap.set(key, (countMap.get(key) ?? 0) + 1);
+      heatmap[key] = (heatmap[key] ?? 0) + 1;
     }
-    return Array.from(countMap.entries())
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+
+    for (const task of doneTasks) {
+      const key = task.updatedAt.toISOString().slice(0, 10);
+      heatmap[key] = (heatmap[key] ?? 0) + 1;
+    }
+
+    return heatmap;
   }
 
   /**

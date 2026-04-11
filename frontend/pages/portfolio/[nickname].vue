@@ -27,7 +27,7 @@ interface PortfolioData {
   user: PortfolioUser
   sections: Record<string, boolean>
   stats: { totalTIL: number; streakDays: number; agoraAccepted: number; projectCount: number } | null
-  tilGrass: Array<{ date: string; count: number }> | null
+  activityHeatmap: Record<string, number> | null
   projects: Array<{
     id: string; name: string; description: string | null
     techStack: string[]; isVerified: boolean; memberCount: number; taskCompletedCount: number
@@ -79,10 +79,9 @@ useHead({
   ],
 })
 
-// 잔디 heatmap 변환 (Array → Record)
+// 활동 히트맵 (BE에서 Record 형태로 직접 받음)
 const heatmapData = computed<Record<string, number>>(() => {
-  if (!portfolio.tilGrass) return {}
-  return Object.fromEntries(portfolio.tilGrass.map(({ date, count }) => [date, count]))
+  return portfolio.activityHeatmap ?? {}
 })
 
 // 뱃지 아이콘 매핑
@@ -97,12 +96,14 @@ const formatDate = formatDateFull
 
 <template>
   <div class="min-h-screen bg-background text-foreground">
-    <!-- GNB 대체 간단한 헤더 -->
+    <!-- 헤더 -->
     <header class="border-b border-border sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-      <div class="max-w-3xl mx-auto px-4 h-12 flex items-center justify-between">
-        <NuxtLink to="/" class="text-sm font-bold text-primary tracking-tight">FLOWIT</NuxtLink>
-        <NuxtLink to="/auth/login" class="text-xs text-muted-foreground hover:text-foreground transition">
-          로그인
+      <div class="max-w-3xl mx-auto px-4 h-12 flex items-center">
+        <NuxtLink to="/" class="flex items-center gap-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
+            <Icon icon="heroicons:square-3-stack-3d" class="h-5 w-5 text-primary-foreground" />
+          </div>
+          <span class="font-bold text-lg">FLOWIT</span>
         </NuxtLink>
       </div>
     </header>
@@ -192,13 +193,13 @@ const formatDate = formatDateFull
         </div>
       </section>
 
-      <!-- TIL 잔디 -->
-      <section v-if="portfolio.sections.grass && portfolio.tilGrass">
+      <!-- 활동 기록 -->
+      <section v-if="portfolio.sections.grass && portfolio.activityHeatmap">
         <h2 class="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
           <Icon icon="heroicons:calendar-days" class="w-4 h-4 text-primary" />
-          TIL 잔디
+          활동 기록
         </h2>
-        <ActivityHeatmap :heatmap="heatmapData" />
+        <GamificationActivityHeatmap :heatmap="heatmapData" />
       </section>
 
       <!-- 프로젝트 -->
