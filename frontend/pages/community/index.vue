@@ -18,10 +18,38 @@ useHead({
 })
 
 const route = useRoute()
+const router = useRouter()
 const config = useRuntimeConfig()
 
 const { posts, meta, loading: postsLoading, fetchPosts } = usePostList()
 const { fetchBoards, findBoardBySlug } = useBoard()
+
+// ─── 작성자 필터 (미니프로필 → 작성 글 보기) ─────────────
+const authorNickname = computed(() => (route.query.author as string) || '')
+const authorId = ref<string | null>(null)
+const authorName = ref('')
+
+async function resolveAuthor() {
+  if (!authorNickname.value) {
+    authorId.value = null
+    authorName.value = ''
+    return
+  }
+  try {
+    const user = await $fetch<{ id: string; nickname: string; name: string }>(
+      `${config.public.apiBaseUrl}/users/by-nickname/${encodeURIComponent(authorNickname.value)}/mini`,
+    )
+    authorId.value = user.id
+    authorName.value = user.nickname || user.name
+  } catch {
+    authorId.value = null
+    authorName.value = authorNickname.value
+  }
+}
+
+function clearAuthorFilter() {
+  router.push({ path: '/community', query: { ...route.query, author: undefined } })
+}
 
 // ─── 현재 카테고리 ───────────────────────────────────────
 const selectedCategory = computed(() => (route.query.category as string) || 'all')
@@ -81,11 +109,18 @@ async function loadCategoryPosts(page = 1) {
     page,
     sortBy: selectedSort.value.sortBy,
     sortOrder: selectedSort.value.order,
-  })
+  }, authorId.value || undefined)
 }
 
 async function loadCurrentCategory() {
   selectedSort.value = sortOptions[0]!
+  await resolveAuthor()
+
+  if (authorId.value) {
+    // 작성자 필터가 있으면 카테고리 무시하고 해당 작성자 글만 표시
+    await fetchPosts(undefined, { page: 1 }, authorId.value)
+    return
+  }
 
   if (selectedCategory.value === 'all') {
     await Promise.all([
@@ -99,7 +134,9 @@ async function loadCurrentCategory() {
 }
 
 async function goToPage(page: number) {
-  if (selectedCategory.value === 'all') {
+  if (authorId.value) {
+    await fetchPosts(undefined, { page }, authorId.value)
+  } else if (selectedCategory.value === 'all') {
     await fetchPosts(undefined, { page })
   }
   else {
@@ -143,8 +180,8 @@ function openPopup(nickname: string | null | undefined, event: MouseEvent) {
   popupAnchor.value = event.currentTarget as HTMLElement
 }
 
-// ─── 마운트 + 카테고리 변경 감시 ──────────────────────────
-watch(selectedCategory, () => {
+// ─── 마운트 + 카테고리/작성자 변경 감시 ──────────────────
+watch([selectedCategory, authorNickname], () => {
   loadCurrentCategory()
 })
 
@@ -156,8 +193,23 @@ onMounted(async () => {
 
 <template>
   <div class="container py-6">
+    <!-- ── 작성자 필터 배너 ── -->
+    <div v-if="authorNickname" class="mb-6 flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/5 border border-primary/20">
+      <Icon icon="heroicons:funnel" class="w-5 h-5 text-primary shrink-0" />
+      <span class="text-sm text-foreground">
+        <strong class="text-primary">{{ authorName || authorNickname }}</strong>님의 게시글
+      </span>
+      <button
+        class="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        @click="clearAuthorFilter"
+      >
+        <Icon icon="heroicons:x-mark" class="w-4 h-4" />
+        필터 해제
+      </button>
+    </div>
+
     <!-- ── 전체 카테고리 ── -->
-    <template v-if="selectedCategory === 'all'">
+    <template v-if="!authorNickname && selectedCategory === 'all'">
       <!-- 실시간 인기글 -->
       <section class="mb-10">
         <h2 class="text-lg font-bold text-foreground mb-4">
@@ -321,8 +373,11 @@ onMounted(async () => {
     <template v-else>
       <!-- 헤더 + 정렬 -->
       <div class="flex items-center justify-between mb-4">
-        <h1 class="text-lg font-bold text-foreground">
+        <h1 v-if="!authorNickname" class="text-lg font-bold text-foreground">
           {{ currentCategoryLabel }}
+        </h1>
+        <h1 v-else class="text-lg font-bold text-foreground">
+          게시글 목록
         </h1>
         <div class="relative">
           <button
@@ -377,11 +432,15 @@ onMounted(async () => {
               class="flex items-center gap-4 px-4 py-3"
             >
               <span v-if="post.isPinned" class="text-sm shrink-0" title="공지사항">📌</span>
-              <span class="text-sm text-muted-foreground shrink-0">[{{ currentCategoryLabel }}]</span>
+              <span v-if="authorNickname && post.board" class="text-sm text-muted-foreground shrink-0">[{{ post.board.name }}]</span>
+              <span v-else-if="!authorNickname" class="text-sm text-muted-foreground shrink-0">[{{ currentCategoryLabel }}]</span>
               <span class="flex-1 text-sm text-foreground truncate" :class="post.isPinned ? 'font-medium' : ''">{{ post.title }}</span>
               <span v-if="isNew(post.createdAt)" class="text-xs font-bold text-destructive shrink-0">N</span>
               <div class="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
-                <span>{{ post.author.nickname || post.author.name }}</span>
+                <span
+                  :class="post.author.nickname ? 'cursor-pointer hover:underline hover:text-foreground' : ''"
+                  @click.prevent.stop="openPopup(post.author.nickname, $event)"
+                >{{ post.author.nickname || post.author.name }}</span>
                 <span>{{ formatDate(post.createdAt) }}</span>
                 <span class="flex items-center gap-1">
                   <Icon icon="heroicons:eye" class="w-4 h-4" />

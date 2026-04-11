@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { toast } from 'vue-sonner'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 // ─── Props ───────────────────────────────────────────────
 const props = defineProps<{
@@ -15,6 +24,7 @@ const emit = defineEmits<{
 // ─── 상태 ────────────────────────────────────────────────
 const config = useRuntimeConfig()
 const authStore = useAuthStore()
+const { authFetch } = useAuthFetch()
 
 interface MiniProfile {
   id: string
@@ -84,6 +94,8 @@ async function fetchProfile() {
 
 // ─── 외부 클릭 닫기 ──────────────────────────────────
 function onOutsideClick(e: MouseEvent) {
+  // 신고 모달이 열려있으면 외부 클릭 무시
+  if (reportDialogOpen.value) return
   if (popupRef.value && !popupRef.value.contains(e.target as Node)) {
     emit('close')
   }
@@ -112,10 +124,60 @@ function goPosts() {
   router.push(`/community?author=${props.nickname}`)
 }
 
-function report() {
-  emit('close')
-  // 신고 모달은 추후 구현
-  toast.info(`${props.nickname} 사용자를 신고했습니다.`)
+// ─── 신고 모달 ───────────────────────────────────────
+const reportDialogOpen = ref(false)
+const reportReason = ref('')
+const reportDetail = ref('')
+const reportLoading = ref(false)
+
+const REPORT_REASONS = [
+  { value: 'SPAM', label: '스팸/광고' },
+  { value: 'ABUSE', label: '욕설/비방' },
+  { value: 'INAPPROPRIATE', label: '부적절한 콘텐츠' },
+  { value: 'OTHER', label: '기타' },
+] as const
+
+function openReportDialog() {
+  if (!authStore.isAuthenticated) {
+    toast.error('로그인이 필요한 기능입니다.')
+    return
+  }
+  reportReason.value = ''
+  reportDetail.value = ''
+  reportDialogOpen.value = true
+}
+
+async function submitReport() {
+  if (!reportReason.value) {
+    toast.error('신고 사유를 선택해주세요.')
+    return
+  }
+  if (!reportDetail.value.trim()) {
+    toast.error('상세 사유를 입력해주세요.')
+    return
+  }
+  if (!profile.value) return
+
+  reportLoading.value = true
+  try {
+    await authFetch('/reports', {
+      method: 'POST',
+      body: {
+        targetType: 'USER',
+        targetId: profile.value.id,
+        reason: reportReason.value,
+        detail: reportDetail.value.trim(),
+      },
+    })
+    toast.success('신고가 접수되었습니다.')
+    reportDialogOpen.value = false
+    emit('close')
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.error(err?.data?.message || '신고에 실패했습니다.')
+  } finally {
+    reportLoading.value = false
+  }
 }
 
 // ─── 레벨 색상 ───────────────────────────────────────
@@ -230,11 +292,11 @@ function levelColor(level: number) {
             <span>작성 글 보기</span>
           </button>
 
-          <!-- 신고하기 (내 프로필이 아닐 때만) -->
+          <!-- 신고하기 (로그인 + 내 프로필이 아닐 때만) -->
           <button
             v-if="!isMe"
             class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-red-50 dark:hover:bg-red-950/30 text-red-500 transition-colors text-left"
-            @click="report"
+            @click="openReportDialog"
           >
             <Icon icon="heroicons:flag" class="w-4 h-4" />
             <span>신고하기</span>
@@ -242,5 +304,64 @@ function levelColor(level: number) {
         </div>
       </template>
     </div>
+
+    <!-- 신고 모달 -->
+    <Dialog :open="reportDialogOpen" @update:open="(v: boolean) => reportDialogOpen = v">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>사용자 신고</DialogTitle>
+          <DialogDescription>
+            {{ profile?.nickname ?? props.nickname }}님을 신고합니다. 사유를 선택하고 상세 내용을 입력해주세요.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-4">
+          <!-- 신고 사유 선택 -->
+          <div>
+            <label class="block text-sm font-medium mb-2">신고 사유 <span class="text-red-500">*</span></label>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="reason in REPORT_REASONS"
+                :key="reason.value"
+                class="px-3 py-2 text-sm border rounded-lg transition-colors text-left"
+                :class="reportReason === reason.value
+                  ? 'border-primary bg-primary/10 text-primary font-medium'
+                  : 'border-border hover:bg-muted/60 text-foreground'"
+                @click="reportReason = reason.value"
+              >
+                {{ reason.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 상세 사유 -->
+          <div>
+            <label class="block text-sm font-medium mb-2">상세 사유 <span class="text-red-500">*</span></label>
+            <textarea
+              v-model="reportDetail"
+              class="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              rows="3"
+              maxlength="500"
+              placeholder="구체적인 신고 사유를 입력해주세요 (최대 500자)"
+            />
+            <p class="text-xs text-muted-foreground mt-1 text-right">{{ reportDetail.length }}/500</p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" :disabled="reportLoading" @click="reportDialogOpen = false">
+            취소
+          </Button>
+          <Button
+            variant="destructive"
+            :disabled="reportLoading || !reportReason || !reportDetail.trim()"
+            @click="submitReport"
+          >
+            <Icon v-if="reportLoading" icon="heroicons:arrow-path" class="w-4 h-4 mr-2 animate-spin" />
+            신고하기
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </Teleport>
 </template>

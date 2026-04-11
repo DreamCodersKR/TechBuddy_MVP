@@ -22,7 +22,7 @@ export function usePostList() {
   })
 
   // 게시글 목록 조회
-  async function fetchPosts(boardId?: string, additionalQuery?: Partial<PostListQuery>) {
+  async function fetchPosts(boardId?: string, additionalQuery?: Partial<PostListQuery>, authorId?: string) {
     loading.value = true
     error.value = null
 
@@ -32,6 +32,11 @@ export function usePostList() {
       // boardId 설정
       if (boardId) {
         params.append('boardId', boardId)
+      }
+
+      // authorId 설정
+      if (authorId) {
+        params.append('authorId', authorId)
       }
 
       // 기존 쿼리 파라미터 병합
