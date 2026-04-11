@@ -145,7 +145,7 @@ export class PortfolioService {
   }
 
   /**
-   * 활동 히트맵 빌드 (TIL + DONE Task 합산, Record 형태)
+   * 활동 히트맵 빌드 (TIL + DONE Task + 게시글 + 댓글 + AI 세션 합산)
    */
   private async buildActivityHeatmap(
     userId: string,
@@ -155,27 +155,38 @@ export class PortfolioService {
     const startDate = new Date(now.getFullYear(), 0, 1);
     const endDate = new Date(now.getFullYear() + 1, 0, 1);
 
-    // DONE Task 날짜 조회
-    const doneTasks = await this.prisma.task.findMany({
-      where: {
-        assigneeId: userId,
-        status: 'DONE',
-        updatedAt: { gte: startDate, lt: endDate },
-      },
-      select: { updatedAt: true },
-    });
+    const dateRange = { gte: startDate, lt: endDate };
+
+    const [doneTasks, posts, comments, aiSessions] = await Promise.all([
+      this.prisma.task.findMany({
+        where: { assigneeId: userId, status: 'DONE', updatedAt: dateRange },
+        select: { updatedAt: true },
+      }),
+      this.prisma.post.findMany({
+        where: { authorId: userId, createdAt: dateRange },
+        select: { createdAt: true },
+      }),
+      this.prisma.postComment.findMany({
+        where: { authorId: userId, createdAt: dateRange },
+        select: { createdAt: true },
+      }),
+      this.prisma.aIConversation.findMany({
+        where: { userId, createdAt: dateRange },
+        select: { createdAt: true },
+      }),
+    ]);
 
     const heatmap: Record<string, number> = {};
-
-    for (const d of tilDates) {
+    const add = (d: Date) => {
       const key = d.toISOString().slice(0, 10);
       heatmap[key] = (heatmap[key] ?? 0) + 1;
-    }
+    };
 
-    for (const task of doneTasks) {
-      const key = task.updatedAt.toISOString().slice(0, 10);
-      heatmap[key] = (heatmap[key] ?? 0) + 1;
-    }
+    tilDates.forEach((d) => add(d));
+    doneTasks.forEach((t) => add(t.updatedAt));
+    posts.forEach((t) => add(t.createdAt));
+    comments.forEach((t) => add(t.createdAt));
+    aiSessions.forEach((t) => add(t.createdAt));
 
     return heatmap;
   }

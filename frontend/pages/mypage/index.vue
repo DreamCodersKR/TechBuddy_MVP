@@ -178,7 +178,7 @@ const BADGE_META: Record<string, { label: string; icon: string; color: string }>
     <!-- 활동 히트맵 -->
     <div class="bg-card border border-border rounded-xl p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold">활동 기록 (TIL + 완료 Task)</h2>
+        <h2 class="text-sm font-semibold">활동 기록</h2>
         <NuxtLink to="/workspaces" class="text-xs text-primary hover:underline">워크스페이스 →</NuxtLink>
       </div>
       <GamificationActivityHeatmap :heatmap="heatmap" />
