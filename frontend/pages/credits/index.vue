@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
+import { toast } from 'vue-sonner'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: '크레딧 내역 - FLOWIT' })
@@ -69,7 +70,7 @@ const TYPE_META: Record<string, { label: string; color: string; sign: string }> 
       <Button
         class="w-full mt-4"
         variant="outline"
-        @click="$toast?.('준비 중인 기능입니다.') || alert('크레딧 충전은 준비 중입니다.')"
+        @click="toast.info('크레딧 충전은 준비 중입니다.')"
       >
         <Icon icon="heroicons:plus-circle" class="w-4 h-4 mr-2" />
         크레딧 충전

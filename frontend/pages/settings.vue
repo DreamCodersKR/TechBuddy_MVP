@@ -3,6 +3,7 @@ import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { toast } from 'vue-sonner'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: '설정 - FLOWIT' })
@@ -63,8 +64,9 @@ async function handleAvatarUpload() {
     profileForm.avatarUrl = updated.avatarUrl
     avatarFile.value = null
   }
-  catch (e: any) {
-    avatarError.value = e?.data?.message || '업로드에 실패했습니다.'
+  catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    avatarError.value = err?.data?.message || '업로드에 실패했습니다.'
   }
   finally { avatarUploading.value = false }
 }
@@ -101,8 +103,9 @@ async function handleProfileSave() {
     profileSuccess.value = true
     setTimeout(() => { profileSuccess.value = false }, 3000)
   }
-  catch (e: any) {
-    profileError.value = e?.data?.message || '저장에 실패했습니다.'
+  catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    profileError.value = err?.data?.message || '저장에 실패했습니다.'
   }
   finally { profileLoading.value = false }
 }
@@ -140,8 +143,9 @@ async function handlePasswordChange() {
     pwForm.passwordConfirm = ''
     setTimeout(() => { pwSuccess.value = false }, 3000)
   }
-  catch (e: any) {
-    pwError.value = e?.data?.message || '비밀번호 변경에 실패했습니다.'
+  catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    pwError.value = err?.data?.message || '비밀번호 변경에 실패했습니다.'
   }
   finally { pwLoading.value = false }
 }
@@ -191,8 +195,9 @@ async function savePortfolioSettings() {
     portfolioSettingsSuccess.value = true
     setTimeout(() => { portfolioSettingsSuccess.value = false }, 3000)
   }
-  catch (e: any) {
-    alert(e?.data?.message || '저장 실패')
+  catch (e: unknown) {
+    const err = e as { data?: { message?: string } }
+    toast.error(err?.data?.message || '저장 실패')
   }
   finally { portfolioSettingsSaving.value = false }
 }
@@ -200,7 +205,7 @@ async function savePortfolioSettings() {
 function copyPortfolioLink() {
   const link = `${window.location.origin}/portfolio/${portfolioNickname.value}`
   navigator.clipboard.writeText(link)
-  alert('링크가 복사되었습니다!')
+  toast.success('링크가 복사되었습니다!')
 }
 
 // ─── 이메일 수신 설정 ────────────────────────────────────

@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { toast } from 'vue-sonner'
 
 // 인증 필요 페이지
 definePageMeta({
@@ -151,7 +152,7 @@ async function handleSubmit() {
       await router.push('/auth/login')
     }
     else {
-      alert(err?.data?.message || '게시글 작성에 실패했습니다. 다시 시도해주세요.')
+      toast.error(err?.data?.message || '게시글 작성에 실패했습니다. 다시 시도해주세요.')
     }
   }
   finally {

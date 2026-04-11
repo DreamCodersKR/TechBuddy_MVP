@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
+import { formatDateISO, truncateText } from '@/utils/formatters'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 useHead({ title: '콘텐츠 관리 - FLOWIT Admin' })
@@ -69,25 +71,14 @@ async function restoreItem(item: ModerationItem) {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '복원에 실패했습니다.')
+    toast.error(err?.data?.message || '복원에 실패했습니다.')
   }
   finally {
     restoringId.value = null
   }
 }
 
-function truncateText(text: string, maxLength: number = 80): string {
-  if (!text) return ''
-  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-}
+const formatDate = formatDateISO
 
 watch(typeFilter, () => {
   loadItems()

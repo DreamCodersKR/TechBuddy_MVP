@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { VueDraggableNext as Draggable } from 'vue-draggable-next'
@@ -237,7 +238,7 @@ async function handleCreate() {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '태스크 생성에 실패했습니다.')
+    toast.error(err?.data?.message || '태스크 생성에 실패했습니다.')
   }
   finally { isCreating.value = false }
 }
@@ -321,7 +322,7 @@ async function submitComment() {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '코멘트 작성에 실패했습니다.')
+    toast.error(err?.data?.message || '코멘트 작성에 실패했습니다.')
   }
   finally { isSubmittingComment.value = false }
 }
@@ -344,7 +345,7 @@ async function saveEditComment(commentId: string) {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '코멘트 수정에 실패했습니다.')
+    toast.error(err?.data?.message || '코멘트 수정에 실패했습니다.')
   }
 }
 
@@ -356,7 +357,7 @@ async function removeComment(commentId: string) {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '코멘트 삭제에 실패했습니다.')
+    toast.error(err?.data?.message || '코멘트 삭제에 실패했습니다.')
   }
 }
 
@@ -384,7 +385,7 @@ async function handleTaskUpdate() {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '수정에 실패했습니다.')
+    toast.error(err?.data?.message || '수정에 실패했습니다.')
   }
 }
 
@@ -521,6 +522,7 @@ onUnmounted(() => {
             </div>
             <button
               class="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              aria-label="태스크 추가"
               @click="openCreateModal(col.status)"
             >
               <Icon icon="heroicons:plus" class="w-4 h-4" />
@@ -670,6 +672,7 @@ onUnmounted(() => {
             </button>
             <button
               class="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-accent"
+              aria-label="태스크 상세 닫기"
               @click="selectedTask = null; showAiMentor = false"
             >
               <Icon icon="heroicons:x-mark" class="w-5 h-5" />
@@ -806,7 +809,7 @@ onUnmounted(() => {
                 class="inline-flex items-center gap-1 text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
               >
                 #{{ tag }}
-                <button class="hover:text-foreground" @click="removeEditTag(tag)">
+                <button class="hover:text-foreground" :aria-label="`태그 ${tag} 삭제`" @click="removeEditTag(tag)">
                   <Icon icon="heroicons:x-mark" class="w-3 h-3" />
                 </button>
               </span>
@@ -989,6 +992,7 @@ onUnmounted(() => {
           </h3>
           <button
             class="text-muted-foreground hover:text-foreground"
+            aria-label="모달 닫기"
             @click="showCreateModal = false"
           >
             <Icon icon="heroicons:x-mark" class="w-5 h-5" />
@@ -1093,7 +1097,7 @@ onUnmounted(() => {
                 class="inline-flex items-center gap-1 text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5"
               >
                 #{{ tag }}
-                <button class="hover:text-foreground" @click="removeCreateTag(tag)">
+                <button class="hover:text-foreground" :aria-label="`태그 ${tag} 삭제`" @click="removeCreateTag(tag)">
                   <Icon icon="heroicons:x-mark" class="w-3 h-3" />
                 </button>
               </span>

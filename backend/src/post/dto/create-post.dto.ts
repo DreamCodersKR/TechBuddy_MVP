@@ -33,6 +33,7 @@ export class CreatePostDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50000)
   content: string;
 
   @ApiPropertyOptional({
@@ -42,6 +43,7 @@ export class CreatePostDto {
   })
   @IsArray()
   @IsString({ each: true })
+  @MaxLength(50, { each: true })
   @IsOptional()
   tags?: string[];
 

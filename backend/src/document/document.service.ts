@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { R2Service } from './r2.service';
 import { EmbeddingPipelineService } from '../embedding/embedding-pipeline.service';
@@ -17,6 +17,8 @@ const MAX_DOC_SIZE = 50 * 1024 * 1024; // 50MB
 
 @Injectable()
 export class DocumentService {
+  private readonly logger = new Logger(DocumentService.name);
+
   constructor(
     private prisma: PrismaService,
     private r2: R2Service,
@@ -59,7 +61,7 @@ export class DocumentService {
 
     // Fire-and-forget: generate embeddings for RAG
     this.embeddingPipeline.processDocument(doc.id).catch((err) => {
-      console.error('[Embedding] Pipeline failed:', err.message);
+      this.logger.warn(`임베딩 파이프라인 실패 (doc ${doc.id}): ${err.message}`);
     });
 
     return doc;
@@ -132,6 +134,6 @@ export class DocumentService {
     });
 
     // Fire-and-forget: remove embeddings for deleted document
-    this.embeddingPipeline.removeEmbeddings(documentId).catch(() => {});
+    this.embeddingPipeline.removeEmbeddings(documentId).catch((err) => this.logger.warn(`임베딩 삭제 실패 (doc ${documentId}): ${err.message}`));
   }
 }

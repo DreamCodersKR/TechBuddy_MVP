@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsUUID, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsUUID, IsArray, MaxLength, ArrayMaxSize } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus, TaskPriority, TaskType } from '@prisma/client';
 
@@ -11,6 +11,7 @@ export class CreateTaskDto {
   @ApiPropertyOptional({ example: '회원가입/로그인 폼 컴포넌트 작성' })
   @IsString()
   @IsOptional()
+  @MaxLength(5000)
   description?: string;
 
   @ApiPropertyOptional({ enum: TaskStatus, example: TaskStatus.TODO })
@@ -46,11 +47,14 @@ export class CreateTaskDto {
   @ApiPropertyOptional({ example: '기술적으로 막히는 부분이 있어 도움이 필요합니다' })
   @IsString()
   @IsOptional()
+  @MaxLength(1000)
   helpReason?: string;
 
   @ApiPropertyOptional({ example: ['frontend', 'bug'] })
   @IsArray()
   @IsString({ each: true })
+  @MaxLength(50, { each: true })
+  @ArrayMaxSize(20)
   @IsOptional()
   tags?: string[];
 }

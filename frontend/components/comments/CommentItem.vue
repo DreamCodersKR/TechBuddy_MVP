@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { formatRelativeTime } from '@/utils/formatters'
 
 interface Author {
   id: string
@@ -88,19 +89,7 @@ function openPopup(nickname: string | null | undefined, event: MouseEvent) {
 }
 
 // ─── 날짜 포맷 ─────────────────────────────────────────
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMin = Math.floor((now.getTime() - date.getTime()) / 60000)
-  const diffHour = Math.floor(diffMin / 60)
-  const diffDay = Math.floor(diffHour / 24)
-
-  if (diffMin < 1) return '방금 전'
-  if (diffMin < 60) return `${diffMin}분 전`
-  if (diffHour < 24) return `${diffHour}시간 전`
-  if (diffDay < 7) return `${diffDay}일 전`
-  return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
-}
+const formatDate = formatRelativeTime
 </script>
 
 <template>

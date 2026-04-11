@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
+import { toast } from 'vue-sonner'
 
 definePageMeta({ layout: 'default' })
 useHead({ title: '플랜 선택 - FLOWIT' })
@@ -102,7 +103,7 @@ function handleCta(planName: string) {
   // 무료 플랜 → 이미 로그인 상태이면 해당 없음
   if (planName === 'FREE') return
   // TODO: 결제 모듈 연동 (토스페이먼츠)
-  alert('결제 서비스 준비 중입니다. 곧 오픈 예정이에요!')
+  toast.error('결제 서비스 준비 중입니다. 곧 오픈 예정이에요!')
 }
 </script>
 

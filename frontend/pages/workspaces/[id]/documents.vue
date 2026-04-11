@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
+import { formatDateISO } from '@/utils/formatters'
+
 definePageMeta({ layout: 'workspace', middleware: 'auth' })
 
 const route = useRoute()
@@ -110,11 +113,11 @@ function onFileChange(e: Event) {
 async function uploadFile(file: File) {
   const ext = '.' + file.name.split('.').pop()?.toLowerCase()
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
-    alert(`허용되지 않는 파일 형식입니다.\n허용: ${ALLOWED_EXTENSIONS.join(', ')}`)
+    toast.error(`허용되지 않는 파일 형식입니다. 허용: ${ALLOWED_EXTENSIONS.join(', ')}`)
     return
   }
   if (file.size > MAX_SIZE) {
-    alert('파일 크기는 최대 50MB까지 허용됩니다.')
+    toast.error('파일 크기는 최대 50MB까지 허용됩니다.')
     return
   }
 
@@ -146,8 +149,8 @@ async function uploadFile(file: File) {
 
     await loadDocuments()
     if (fileInputRef.value) fileInputRef.value.value = ''
-  } catch (e) {
-    alert('업로드 중 오류가 발생했습니다.')
+  } catch {
+    toast.error('업로드 중 오류가 발생했습니다.')
   } finally {
     isUploading.value = false
     uploadProgress.value = 0
@@ -170,7 +173,7 @@ async function downloadSingle(doc: DocumentItem) {
     a.click()
     URL.revokeObjectURL(url)
   } catch {
-    alert('다운로드 중 오류가 발생했습니다.')
+    toast.error('다운로드 중 오류가 발생했습니다.')
   }
 }
 
@@ -196,7 +199,7 @@ async function downloadZip() {
     a.click()
     URL.revokeObjectURL(url)
   } catch {
-    alert('ZIP 다운로드 중 오류가 발생했습니다.')
+    toast.error('ZIP 다운로드 중 오류가 발생했습니다.')
   } finally {
     isZipDownloading.value = false
   }
@@ -210,7 +213,7 @@ async function deleteDocument(id: string) {
     await loadDocuments()
     selectedIds.value.delete(id)
   } catch {
-    alert('삭제 중 오류가 발생했습니다.')
+    toast.error('삭제 중 오류가 발생했습니다.')
   }
 }
 
@@ -221,9 +224,7 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
-}
+const formatDate = formatDateISO
 </script>
 
 <template>

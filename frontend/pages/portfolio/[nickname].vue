@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
+import { toast } from 'vue-sonner'
+import { formatDateFull } from '@/utils/formatters'
 
 // SSR 페이지 — layout 없이 독립형
 definePageMeta({ layout: false })
@@ -56,7 +58,7 @@ const isOwnProfile = computed(() => {
 
 function handleCoffeeChatSuccess() {
   coffeeChatOpen.value = false
-  alert('커피챗 요청이 전송되었습니다!')
+  toast.info('커피챗 요청이 전송되었습니다!')
 }
 
 // SSR OG 메타태그
@@ -90,9 +92,7 @@ const BADGE_META: Record<string, { icon: string; label: string; color: string }>
   STREAK_7: { icon: 'heroicons:bolt', label: '7일 스트릭', color: 'text-yellow-500' },
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
-}
+const formatDate = formatDateFull
 </script>
 
 <template>

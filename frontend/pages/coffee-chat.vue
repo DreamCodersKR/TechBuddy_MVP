@@ -11,9 +11,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "vue-sonner";
+import { formatRelativeTime } from "@/utils/formatters";
 
 definePageMeta({ layout: "default", middleware: "auth" });
 useHead({ title: "커피챗 - FLOWIT" });
+
+interface CoffeeChatUser {
+  id: string;
+  nickname: string | null;
+  avatarUrl: string | null;
+  techStack: string[];
+}
+
+interface CoffeeChat {
+  id: string;
+  status: string;
+  message: string | null;
+  meetingUrl: string | null;
+  createdAt: string;
+  requester: CoffeeChatUser;
+  receiver: CoffeeChatUser;
+}
 
 const authStore = useAuthStore();
 const { listChats, acceptChat, declineChat, cancelChat } = useCoffeeChat();
@@ -23,7 +42,7 @@ type TabType = "received" | "sent";
 const activeTab = ref<TabType>("received");
 
 // ─── 데이터 ──────────────────────────────────────────────
-const chats = ref<any[]>([]);
+const chats = ref<CoffeeChat[]>([]);
 const loading = ref(false);
 const error = ref("");
 
@@ -32,9 +51,11 @@ async function fetchChats() {
   error.value = "";
   try {
     const res = await listChats(activeTab.value);
-    chats.value = (res as any)?.data ?? res ?? [];
-  } catch (e: any) {
-    error.value = e?.data?.message || "커피챗 목록을 불러오는데 실패했습니다.";
+    const data = (res as { data?: CoffeeChat[] })?.data ?? res ?? [];
+    chats.value = data as CoffeeChat[];
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } };
+    error.value = err?.data?.message || "커피챗 목록을 불러오는데 실패했습니다.";
   } finally {
     loading.value = false;
   }
@@ -61,8 +82,9 @@ async function handleAccept() {
     await acceptChat(acceptTargetId.value, acceptMeetingUrl.value || undefined);
     acceptDialogOpen.value = false;
     await fetchChats();
-  } catch (e: any) {
-    alert(e?.data?.message || "수락에 실패했습니다.");
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } };
+    toast.error(err?.data?.message || "수락에 실패했습니다.");
   } finally {
     acceptLoading.value = false;
   }
@@ -76,8 +98,9 @@ async function handleDecline(chatId: string) {
   try {
     await declineChat(chatId);
     await fetchChats();
-  } catch (e: any) {
-    alert(e?.data?.message || "거절에 실패했습니다.");
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } };
+    toast.error(err?.data?.message || "거절에 실패했습니다.");
   } finally {
     actionLoading.value = null;
   }
@@ -89,24 +112,15 @@ async function handleCancel(chatId: string) {
   try {
     await cancelChat(chatId);
     await fetchChats();
-  } catch (e: any) {
-    alert(e?.data?.message || "취소에 실패했습니다.");
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string } };
+    toast.error(err?.data?.message || "취소에 실패했습니다.");
   } finally {
     actionLoading.value = null;
   }
 }
 
 // ─── 유틸리티 ───────────────────────────────────────────
-function formatRelativeTime(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "방금 전";
-  if (minutes < 60) return `${minutes}분 전`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  return `${Math.floor(hours / 24)}일 전`;
-}
-
 function getStatusLabel(status: string) {
   const labels: Record<string, string> = {
     PENDING: "대기중",
@@ -134,11 +148,11 @@ function getStatusClasses(status: string) {
 /**
  * 현재 탭 기준 상대방 정보를 반환
  */
-function getOtherUser(chat: any) {
+function getOtherUser(chat: CoffeeChat): CoffeeChatUser {
   return activeTab.value === "received" ? chat.requester : chat.receiver;
 }
 
-function getUserInitials(user: any) {
+function getUserInitials(user: CoffeeChatUser): string {
   if (!user?.nickname) return "?";
   return user.nickname.slice(0, 2).toUpperCase();
 }

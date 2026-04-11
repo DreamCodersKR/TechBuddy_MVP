@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
+import { toast } from 'vue-sonner'
+import { formatDateFull } from '@/utils/formatters'
 
 definePageMeta({ layout: 'default' })
 
@@ -88,7 +90,7 @@ async function handleClose() {
   }
   catch (error: unknown) {
     const err = error as { data?: { message?: string } }
-    alert(err?.data?.message || '마감 처리에 실패했습니다.')
+    toast.error(err?.data?.message || '마감 처리에 실패했습니다.')
   }
   finally {
     isClosing.value = false
@@ -107,7 +109,7 @@ async function updateApplicationStatus(appId: string, status: 'ACCEPTED' | 'REJE
   }
   catch (error: unknown) {
     const err = error as { data?: { message?: string } }
-    alert(err?.data?.message || '처리에 실패했습니다.')
+    toast.error(err?.data?.message || '처리에 실패했습니다.')
   }
   finally {
     updatingApp.value = null
@@ -141,7 +143,7 @@ async function handleApply() {
       await router.push('/auth/login')
     }
     else {
-      alert(err?.data?.message || '지원에 실패했습니다.')
+      toast.error(err?.data?.message || '지원에 실패했습니다.')
     }
   }
   finally {
@@ -152,7 +154,7 @@ async function handleApply() {
 // ─── 유틸 ────────────────────────────────────────────────
 function formatDate(dateStr: string | null) {
   if (!dateStr) return null
-  return new Date(dateStr).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+  return formatDateFull(dateStr)
 }
 
 const statusLabel: Record<string, { label: string; class: string }> = {

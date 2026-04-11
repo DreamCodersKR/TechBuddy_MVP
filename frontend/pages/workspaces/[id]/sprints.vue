@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { formatDateShort } from '@/utils/formatters'
 
 definePageMeta({ layout: 'workspace', middleware: 'auth' })
 useHead({ title: '스프린트 - FLOWIT' })
@@ -94,7 +96,7 @@ async function handleCreate() {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '스프린트 생성에 실패했습니다.')
+    toast.error(err?.data?.message || '스프린트 생성에 실패했습니다.')
   }
   finally { isCreating.value = false }
 }
@@ -140,7 +142,7 @@ async function handleEdit() {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '수정에 실패했습니다.')
+    toast.error(err?.data?.message || '수정에 실패했습니다.')
   }
   finally { isSaving.value = false }
 }
@@ -154,13 +156,13 @@ async function handleDelete(sprint: Sprint) {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '삭제에 실패했습니다.')
+    toast.error(err?.data?.message || '삭제에 실패했습니다.')
   }
 }
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+  return formatDateShort(dateStr)
 }
 
 onMounted(() => { loadData() })

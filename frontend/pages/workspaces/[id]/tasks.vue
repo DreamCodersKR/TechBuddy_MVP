@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
 
 definePageMeta({ layout: 'workspace', middleware: 'auth' })
@@ -98,7 +99,7 @@ async function handleDelete(task: Task) {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '삭제에 실패했습니다.')
+    toast.error(err?.data?.message || '삭제에 실패했습니다.')
   }
 }
 

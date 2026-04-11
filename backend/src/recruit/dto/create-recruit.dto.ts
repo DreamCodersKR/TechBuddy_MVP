@@ -1,5 +1,5 @@
 import {
-  IsString, IsNotEmpty, IsEnum, IsArray, IsInt, Min, IsDateString,
+  IsString, IsNotEmpty, IsEnum, IsArray, IsInt, Min, Max, IsDateString, MaxLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { RecruitType } from '@prisma/client';
@@ -17,21 +17,25 @@ export class CreateRecruitDto {
   @ApiProperty({ example: '풀스택 개발자 모집' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(200)
   title: string;
 
   @ApiProperty({ example: '포트폴리오 프로젝트 팀원을 모집합니다...' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(10000)
   description: string;
 
   @ApiProperty({ example: ['프론트엔드', '백엔드'], type: [String] })
   @IsArray()
   @IsString({ each: true })
+  @MaxLength(50, { each: true })
   positions: string[];
 
   @ApiProperty({ example: 4 })
   @IsInt()
   @Min(1)
+  @Max(50)
   maxMembers: number;
 
   @ApiProperty({ example: '2025-04-30' })

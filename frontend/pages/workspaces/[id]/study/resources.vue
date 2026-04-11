@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({ layout: 'workspace' })
 
@@ -57,7 +58,7 @@ watch(selectedCategory, load)
 async function addResource() {
   if (!form.value.title.trim()) return
   if (form.value.category === 'LINK' && !form.value.url.trim()) {
-    alert('링크 URL을 입력하세요')
+    toast.info('링크 URL을 입력하세요')
     return
   }
   saving.value = true
@@ -71,7 +72,7 @@ async function addResource() {
     form.value = { title: '', url: '', category: 'LINK' }
     await load()
   }
-  catch (e: any) { alert(e.message || '추가 실패') }
+  catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.error(err?.data?.message || '추가 실패') }
   finally { saving.value = false }
 }
 

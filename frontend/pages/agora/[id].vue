@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import {
@@ -149,7 +150,7 @@ async function acceptAnswer(answerId: string) {
   }
   catch (error: unknown) {
     const err = error as { data?: { message?: string } }
-    alert(err?.data?.message || '채택에 실패했습니다.')
+    toast.error(err?.data?.message || '채택에 실패했습니다.')
   }
   finally {
     isAccepting.value = false
@@ -165,7 +166,7 @@ async function deleteAgora() {
   }
   catch (error: unknown) {
     const err = error as { data?: { message?: string } }
-    alert(err?.data?.message || '삭제에 실패했습니다.')
+    toast.error(err?.data?.message || '삭제에 실패했습니다.')
     showDeleteDialog.value = false
   }
   finally {
@@ -190,7 +191,7 @@ async function deleteAnswer() {
   }
   catch (error: unknown) {
     const err = error as { data?: { message?: string } }
-    alert(err?.data?.message || '답변 삭제에 실패했습니다.')
+    toast.error(err?.data?.message || '답변 삭제에 실패했습니다.')
   }
   finally {
     isDeletingAnswer.value = false

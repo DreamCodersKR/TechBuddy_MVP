@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { formatDateShort } from '@/utils/formatters'
 
 definePageMeta({ layout: 'workspace', middleware: 'auth' })
 useHead({ title: '대시보드 - FLOWIT' })
@@ -198,9 +199,7 @@ const studyQuickLinks = computed(() => [
   { label: '멤버', icon: 'heroicons:users', to: `/workspaces/${workspaceId}/members` },
 ])
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
-}
+const formatDate = formatDateShort
 
 onMounted(() => { loadData() })
 </script>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import MarkdownViewer from '@/components/post/MarkdownViewer.client.vue'
+import { toast } from 'vue-sonner'
 
 interface Task {
   id: string
@@ -74,7 +75,7 @@ async function sendMessage() {
 
   const cost = selectedTierData.value.cost
   if (userCredit.value < cost) {
-    alert(`크레딧이 부족합니다. 필요: ${cost}cr, 보유: ${userCredit.value}cr`)
+    toast.error(`크레딧이 부족합니다. 필요: ${cost}cr, 보유: ${userCredit.value}cr`)
     return
   }
 
@@ -152,7 +153,7 @@ async function sendMessage() {
     messages.value.splice(streamingIdx, 1)
     messages.value.pop()
     inputContent.value = text
-    alert((e as Error).message || '전송에 실패했습니다.')
+    toast.error((e as Error).message || '전송에 실패했습니다.')
   }
   finally { isSending.value = false }
 }

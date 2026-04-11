@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import MarkdownViewer from '@/components/post/MarkdownViewer.client.vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: 'FLOWIT AI - FLOWIT' })
@@ -143,7 +144,7 @@ async function sendMessage() {
     conversation.value!.messages.splice(streamingIdx, 1)
     conversation.value!.messages.pop()
     inputContent.value = text
-    alert((e as Error).message || '전송에 실패했습니다.')
+    toast.error((e as Error).message || '전송에 실패했습니다.')
   }
   finally { isSending.value = false }
 }
@@ -179,6 +180,7 @@ onMounted(() => { loadConversation() })
     <div class="flex items-center gap-3 mb-6">
       <button
         class="p-2 rounded-lg hover:bg-accent transition-colors"
+        aria-label="대화 목록으로 돌아가기"
         @click="navigateTo('/ai-mentor')"
       >
         <Icon icon="heroicons:arrow-left" class="w-5 h-5 text-muted-foreground" />
@@ -237,6 +239,7 @@ onMounted(() => { loadConversation() })
                   class="p-1 rounded transition-colors"
                   :class="msg.rating === 1 ? 'text-emerald-500' : 'text-muted-foreground hover:text-emerald-500'"
                   title="좋아요"
+                  aria-label="좋아요"
                   @click="rateMessage(msg, 1)"
                 >
                   <Icon icon="heroicons:hand-thumb-up" class="w-3.5 h-3.5" />
@@ -245,6 +248,7 @@ onMounted(() => { loadConversation() })
                   class="p-1 rounded transition-colors"
                   :class="msg.rating === -1 ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'"
                   title="싫어요"
+                  aria-label="싫어요"
                   @click="rateMessage(msg, -1)"
                 >
                   <Icon icon="heroicons:hand-thumb-down" class="w-3.5 h-3.5" />

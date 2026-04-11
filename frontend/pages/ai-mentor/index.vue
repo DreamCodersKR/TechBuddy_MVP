@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
+import { toast } from 'vue-sonner'
+import { formatRelativeTime } from '@/utils/formatters'
 
 definePageMeta({ layout: 'default', middleware: 'pricing-gate' })
 useHead({ title: 'FLOWIT AI - FLOWIT' })
@@ -64,22 +66,10 @@ async function handleDelete(id: string, e: Event) {
     await authDelete(`/ai-mentor/conversations/${id}`)
     conversations.value = conversations.value.filter(c => c.id !== id)
   }
-  catch { alert('삭제에 실패했습니다.') }
+  catch { toast.error('삭제에 실패했습니다.') }
 }
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr)
-  const now = new Date()
-  const diff = now.getTime() - d.getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return '방금 전'
-  if (mins < 60) return `${mins}분 전`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}시간 전`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}일 전`
-  return d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
-}
+const formatDate = formatRelativeTime
 
 function handleStartChat() {
   const text = inputContent.value.trim()

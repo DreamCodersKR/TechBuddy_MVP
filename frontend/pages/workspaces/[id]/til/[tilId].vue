@@ -3,6 +3,7 @@ import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { formatDateFull } from '@/utils/formatters'
 
 definePageMeta({ layout: 'workspace', middleware: 'auth' })
 
@@ -45,9 +46,7 @@ async function deleteTil() {
   router.push(`/workspaces/${workspaceId}/til`)
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
-}
+const formatDate = formatDateFull
 </script>
 
 <template>

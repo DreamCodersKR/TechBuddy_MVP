@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -139,7 +140,7 @@ function removeTry(index: number) {
 // ─── 저장 ────────────────────────────────────────────────
 async function handleSave() {
   if (keeps.value.length === 0 && problems.value.length === 0 && tries.value.length === 0) {
-    alert('최소 하나의 항목을 입력해주세요.')
+    toast.info('최소 하나의 항목을 입력해주세요.')
     return
   }
   isSaving.value = true
@@ -159,7 +160,7 @@ async function handleSave() {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '회고 저장에 실패했습니다.')
+    toast.error(err?.data?.message || '회고 저장에 실패했습니다.')
   }
   finally {
     isSaving.value = false
@@ -177,7 +178,7 @@ async function generateSummary() {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || 'AI 요약 생성에 실패했습니다.')
+    toast.error(err?.data?.message || 'AI 요약 생성에 실패했습니다.')
   }
   finally {
     isSummarizing.value = false

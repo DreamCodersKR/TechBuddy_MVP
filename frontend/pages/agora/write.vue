@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -101,7 +102,7 @@ async function handleSubmit() {
       await router.push('/auth/login')
     }
     else {
-      alert(err?.data?.message || '질문 작성에 실패했습니다.')
+      toast.error(err?.data?.message || '질문 작성에 실패했습니다.')
     }
   }
   finally {

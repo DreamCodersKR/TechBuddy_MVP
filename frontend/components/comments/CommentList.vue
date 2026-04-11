@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Comment } from './CommentItem.vue'
+import { toast } from 'vue-sonner'
 
 const props = defineProps<{
   postId: string
@@ -30,7 +31,7 @@ async function handleSubmit(content: string) {
     emit('countChange', 1)
   }
   catch {
-    alert('댓글 등록에 실패했습니다.')
+    toast.error('댓글 등록에 실패했습니다.')
   }
   finally {
     submitting.value = false
@@ -47,7 +48,7 @@ async function handleUpdate(id: string, content: string) {
     }
   }
   catch {
-    alert('댓글 수정에 실패했습니다.')
+    toast.error('댓글 수정에 실패했습니다.')
   }
 }
 
@@ -59,7 +60,7 @@ async function handleDelete(id: string) {
     emit('countChange', -1)
   }
   catch {
-    alert('댓글 삭제에 실패했습니다.')
+    toast.error('댓글 삭제에 실패했습니다.')
   }
 }
 </script>

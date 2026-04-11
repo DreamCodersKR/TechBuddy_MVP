@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 
@@ -68,7 +69,7 @@ async function togglePin(post: PinnedPost) {
     const res = await authPatch<{ id: string; isPinned: boolean }>(`/posts/${post.id}/pin`, {})
     post.isPinned = res.isPinned
   }
-  catch { alert('핀 변경에 실패했습니다') }
+  catch { toast.error('핀 변경에 실패했습니다') }
 }
 
 async function submitNotice() {
@@ -89,7 +90,7 @@ async function submitNotice() {
     setTimeout(() => { noticeSuccess.value = false }, 3000)
     await loadRecentPosts()
   }
-  catch { alert('공지사항 등록에 실패했습니다') }
+  catch { toast.error('공지사항 등록에 실패했습니다') }
   finally { noticeSubmitting.value = false }
 }
 

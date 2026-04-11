@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import MarkdownViewer from '@/components/post/MarkdownViewer.client.vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: 'FLOWIT AI - FLOWIT' })
@@ -116,7 +117,7 @@ async function sendMessage() {
 
   const cost = selectedTierData.value.cost
   if (userCredit.value < cost) {
-    alert(`크레딧이 부족합니다. 필요: ${cost}cr, 보유: ${userCredit.value}cr`)
+    toast.error(`크레딧이 부족합니다. 필요: ${cost}cr, 보유: ${userCredit.value}cr`)
     return
   }
 
@@ -198,7 +199,7 @@ async function sendMessage() {
     messages.value.pop() // USER 메시지 제거
     inputContent.value = text
     hasStarted.value = messages.value.length > 0
-    alert((e as Error).message || '전송에 실패했습니다.')
+    toast.error((e as Error).message || '전송에 실패했습니다.')
   }
   finally { isSending.value = false }
 }

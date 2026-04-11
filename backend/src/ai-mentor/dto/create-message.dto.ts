@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsInt, IsIn, Min, Max } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsInt, IsIn, Min, Max, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskType } from '@prisma/client';
 
@@ -16,6 +16,7 @@ export class CreateMessageDto {
   @ApiProperty({ example: '이 코드에서 메모리 누수가 발생하는 이유가 뭔가요?' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(10000)
   content: string;
 
   @ApiProperty({ enum: TaskType, example: TaskType.CODE })

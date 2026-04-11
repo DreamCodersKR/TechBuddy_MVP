@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -59,7 +60,7 @@ async function handleInvite() {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '초대에 실패했습니다.')
+    toast.error(err?.data?.message || '초대에 실패했습니다.')
   }
   finally { isInviting.value = false }
 }
@@ -73,7 +74,7 @@ async function handleRoleChange(memberId: string, role: string) {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '역할 변경에 실패했습니다.')
+    toast.error(err?.data?.message || '역할 변경에 실패했습니다.')
   }
 }
 
@@ -86,7 +87,7 @@ async function handleRemove(memberId: string, userName: string) {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '멤버 제거에 실패했습니다.')
+    toast.error(err?.data?.message || '멤버 제거에 실패했습니다.')
   }
 }
 

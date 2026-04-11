@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
 import { NotificationService } from '../notification/notification.service';
@@ -9,6 +9,8 @@ import { CreateCommentDto, UpdateCommentDto } from './dto';
 
 @Injectable()
 export class CommentService {
+  private readonly logger = new Logger(CommentService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly xp: XpService,
@@ -73,7 +75,7 @@ export class CommentService {
     });
 
     // AI 콘텐츠 검열 (fire-and-forget)
-    this.moderation.moderateComment(comment.id).catch(() => {});
+    this.moderation.moderateComment(comment.id).catch((err) => this.logger.warn(`모더레이션 실패 (comment ${comment.id}): ${err.message}`));
 
     return comment;
   }

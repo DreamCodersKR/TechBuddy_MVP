@@ -3,6 +3,7 @@ import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { formatDateFull } from '@/utils/formatters'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: 'TIL - FLOWIT' })
@@ -41,9 +42,7 @@ async function loadTils() {
 onMounted(() => loadTils())
 watch([myOnly], () => { page.value = 1; loadTils() })
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
-}
+const formatDate = formatDateFull
 function excerpt(content: string, len = 120) {
   const text = content.replace(/[#*`>\-]/g, '').trim()
   return text.length > len ? text.slice(0, len) + '…' : text

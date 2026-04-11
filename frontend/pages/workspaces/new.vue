@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -56,7 +57,7 @@ async function handleSubmit() {
   }
   catch (error: unknown) {
     const err = error as { statusCode?: number, data?: { message?: string } }
-    alert(err?.data?.message || '워크스페이스 생성에 실패했습니다.')
+    toast.error(err?.data?.message || '워크스페이스 생성에 실패했습니다.')
   }
   finally { isSubmitting.value = false }
 }

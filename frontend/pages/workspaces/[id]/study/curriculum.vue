@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
+import { formatDateShort } from '@/utils/formatters'
 
 definePageMeta({ layout: 'workspace' })
 
@@ -148,7 +150,7 @@ async function saveWeek() {
     showWeekModal.value = false
     await loadWeeks()
   }
-  catch (e: any) { alert(e.message || '저장 실패') }
+  catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.error(err?.data?.message || '저장 실패') }
   finally { weekLoading.value = false }
 }
 
@@ -195,7 +197,7 @@ async function saveAssignment() {
     showAssignModal.value = false
     await loadWeeks()
   }
-  catch (e: any) { alert(e.message || '저장 실패') }
+  catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.error(err?.data?.message || '저장 실패') }
   finally { assignLoading.value = false }
 }
 
@@ -230,7 +232,7 @@ async function submitAssignment() {
     showSubmitModal.value = false
     await loadWeeks()
   }
-  catch (e: any) { alert(e.message || '제출 실패') }
+  catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.error(err?.data?.message || '제출 실패') }
   finally { submitLoading.value = false }
 }
 
@@ -238,7 +240,7 @@ async function submitAssignment() {
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+  return formatDateShort(dateStr)
 }
 
 function toggleWeek(id: string) {

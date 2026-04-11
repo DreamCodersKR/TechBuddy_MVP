@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { formatDateTime } from '@/utils/formatters'
 
 definePageMeta({ layout: 'workspace' })
 
@@ -88,7 +89,7 @@ function submissionPct(assign: Assignment) {
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return formatDateTime(dateStr)
 }
 
 function isOverdue(dueDate: string | null) {

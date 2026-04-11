@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { formatDateShort } from '@/utils/formatters'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: '친구 초대 - FLOWIT' })
@@ -48,9 +49,7 @@ async function copyLink() {
   setTimeout(() => copied.value = false, 2000)
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
-}
+const formatDate = formatDateShort
 </script>
 
 <template>

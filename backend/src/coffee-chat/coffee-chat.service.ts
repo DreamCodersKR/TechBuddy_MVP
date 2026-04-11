@@ -3,6 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
@@ -21,6 +22,8 @@ const USER_SELECT = {
 
 @Injectable()
 export class CoffeeChatService {
+  private readonly logger = new Logger(CoffeeChatService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly notification: NotificationService,
@@ -108,7 +111,7 @@ export class CoffeeChatService {
       title: '커피챗 요청',
       message: `${requester.nickname ?? '사용자'}님이 커피챗을 요청했습니다`,
       relatedId: coffeeChat.id,
-    }).catch(() => {});
+    }).catch((err) => this.logger.warn(`알림 발송 실패 (커피챗 요청): ${err.message}`));
 
     return coffeeChat;
   }
@@ -182,7 +185,7 @@ export class CoffeeChatService {
       title: '커피챗 수락',
       message: `${coffeeChat.receiver.nickname ?? '사용자'}님이 커피챗을 수락했습니다`,
       relatedId: id,
-    }).catch(() => {});
+    }).catch((err) => this.logger.warn(`알림 발송 실패 (커피챗 수락): ${err.message}`));
 
     return updated;
   }
@@ -248,7 +251,7 @@ export class CoffeeChatService {
       title: '커피챗 거절',
       message: `${coffeeChat.receiver.nickname ?? '사용자'}님이 커피챗을 거절했습니다. 크레딧이 환불되었습니다.`,
       relatedId: id,
-    }).catch(() => {});
+    }).catch((err) => this.logger.warn(`알림 발송 실패 (커피챗 거절): ${err.message}`));
 
     return updated;
   }

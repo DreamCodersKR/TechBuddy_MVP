@@ -3,6 +3,7 @@ import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { toast } from 'vue-sonner'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -150,10 +151,10 @@ async function handleSubmit() {
       await router.push('/auth/login')
     }
     else if (err?.statusCode === 403) {
-      alert(err?.data?.message || '워크스페이스 관리자만 모집글을 작성할 수 있습니다.')
+      toast.error(err?.data?.message || '워크스페이스 관리자만 모집글을 작성할 수 있습니다.')
     }
     else {
-      alert(err?.data?.message || '모집글 작성에 실패했습니다.')
+      toast.error(err?.data?.message || '모집글 작성에 실패했습니다.')
     }
   }
   finally {

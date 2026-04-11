@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Icon } from '@iconify/vue'
+import { formatRelativeTime, truncateText } from '@/utils/formatters'
 
 interface Props {
   post: PostListItem
@@ -11,29 +12,10 @@ interface Props {
 
 defineProps<Props>()
 
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return '방금 전'
-  if (diffMins < 60) return `${diffMins}분 전`
-  if (diffHours < 24) return `${diffHours}시간 전`
-  if (diffDays < 7) return `${diffDays}일 전`
-
-  return date.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
-}
+const formatDate = formatRelativeTime
 
 function truncateContent(content: string, maxLength: number = 150): string {
-  if (content.length <= maxLength) return content
-  return content.slice(0, maxLength) + '...'
+  return truncateText(content, maxLength)
 }
 
 function getInitials(name: string): string {

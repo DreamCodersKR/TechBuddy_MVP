@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
 
 definePageMeta({ layout: 'workspace' })
 
@@ -89,7 +90,7 @@ async function saveRule() {
     showForm.value = false
     await load()
   }
-  catch (e: any) { alert(e.message || '저장 실패') }
+  catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.error(err?.data?.message || '저장 실패') }
   finally { saving.value = false }
 }
 
@@ -106,7 +107,7 @@ async function toggleConsent() {
     }
     await load()
   }
-  catch (e: any) { alert(e.message || '처리 실패') }
+  catch (e: unknown) { const err = e as { data?: { message?: string } }; toast.error(err?.data?.message || '처리 실패') }
   finally { consenting.value = false }
 }
 

@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import type { PostListItem } from '~/types/post'
+import { formatRelativeTime } from '@/utils/formatters'
 
 definePageMeta({
   layout: 'default',
@@ -124,19 +125,7 @@ const pageNumbers = computed<(number | '...')[]>(() => {
 })
 
 // ─── 날짜 포맷 ───────────────────────────────────────────
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMin = Math.floor((now.getTime() - date.getTime()) / 60000)
-  const diffHour = Math.floor(diffMin / 60)
-  const diffDay = Math.floor(diffHour / 24)
-
-  if (diffMin < 1) return '방금 전'
-  if (diffMin < 60) return `${diffMin}분 전`
-  if (diffHour < 24) return `${diffHour}시간 전`
-  if (diffDay < 7) return `${diffDay}일 전`
-  return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
-}
+const formatDate = formatRelativeTime
 
 function isNew(dateStr: string): boolean {
   return Date.now() - new Date(dateStr).getTime() < 24 * 60 * 60 * 1000
@@ -297,6 +286,7 @@ onMounted(async () => {
           <Button
             variant="ghost"
             size="sm"
+            aria-label="이전 페이지"
             :disabled="meta.page <= 1"
             @click="goToPage(meta.page - 1)"
           >
@@ -317,6 +307,7 @@ onMounted(async () => {
           <Button
             variant="ghost"
             size="sm"
+            aria-label="다음 페이지"
             :disabled="meta.page >= meta.totalPages"
             @click="goToPage(meta.page + 1)"
           >
@@ -415,6 +406,7 @@ onMounted(async () => {
         <Button
           variant="ghost"
           size="sm"
+          aria-label="이전 페이지"
           :disabled="meta.page <= 1"
           @click="goToPage(meta.page - 1)"
         >
@@ -435,6 +427,7 @@ onMounted(async () => {
         <Button
           variant="ghost"
           size="sm"
+          aria-label="다음 페이지"
           :disabled="meta.page >= meta.totalPages"
           @click="goToPage(meta.page + 1)"
         >

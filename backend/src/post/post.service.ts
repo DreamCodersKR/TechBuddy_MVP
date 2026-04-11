@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
 import { QuestService, QUEST_KEYS } from '../quest/quest.service';
@@ -8,6 +8,8 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class PostService {
+  private readonly logger = new Logger(PostService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly xp: XpService,
@@ -55,7 +57,7 @@ export class PostService {
     await this.quest.checkAndComplete(authorId, QUEST_KEYS.POST_WRITE);
 
     // AI 콘텐츠 검열 (fire-and-forget)
-    this.moderation.moderatePost(post.id).catch(() => {});
+    this.moderation.moderatePost(post.id).catch((err) => this.logger.warn(`모더레이션 실패 (post ${post.id}): ${err.message}`));
 
     return post;
   }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -113,7 +114,7 @@ async function handleSave() {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '저장에 실패했습니다.')
+    toast.error(err?.data?.message || '저장에 실패했습니다.')
   }
   finally { isSaving.value = false }
 }
@@ -132,7 +133,7 @@ async function handleDelete() {
   }
   catch (e: unknown) {
     const err = e as { data?: { message?: string } }
-    alert(err?.data?.message || '삭제에 실패했습니다.')
+    toast.error(err?.data?.message || '삭제에 실패했습니다.')
     isDeleting.value = false
   }
 }

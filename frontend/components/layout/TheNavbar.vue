@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { formatRelativeTime } from '@/utils/formatters'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -47,16 +48,6 @@ async function handleNotifClick(n: any) {
   await markAsRead(n.id)
   isNotifOpen.value = false
   router.push(getRoute(n.type, n.relatedId))
-}
-
-function formatRelativeTime(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return '방금 전'
-  if (minutes < 60) return `${minutes}분 전`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}시간 전`
-  return `${Math.floor(hours / 24)}일 전`
 }
 
 function toggleDark() {
@@ -159,17 +150,17 @@ const userInitials = computed(() => {
         </form>
 
         <!-- Search Button (Mobile) -->
-        <Button variant="ghost" size="icon" class="md:hidden">
+        <Button variant="ghost" size="icon" class="md:hidden" aria-label="검색">
           <Icon icon="heroicons:magnifying-glass" class="h-5 w-5" />
         </Button>
 
         <!-- Onboarding Tour Button -->
-        <Button variant="ghost" size="icon" title="가이드 투어" @click="startTour()">
+        <Button variant="ghost" size="icon" title="가이드 투어" aria-label="가이드 투어" @click="startTour()">
           <Icon icon="heroicons:question-mark-circle" class="h-5 w-5" />
         </Button>
 
         <!-- Dark Mode Toggle -->
-        <Button variant="ghost" size="icon" @click="toggleDark">
+        <Button variant="ghost" size="icon" aria-label="다크 모드 전환" @click="toggleDark">
           <Icon v-if="colorMode.value === 'dark'" icon="heroicons:sun" class="h-5 w-5" />
           <Icon v-else icon="heroicons:moon" class="h-5 w-5" />
         </Button>
@@ -177,7 +168,7 @@ const userInitials = computed(() => {
         <!-- Notification Bell -->
         <ClientOnly>
           <div v-if="authStore.isAuthenticated" class="relative">
-            <Button variant="ghost" size="icon" @click="openNotifications">
+            <Button variant="ghost" size="icon" aria-label="알림" @click="openNotifications">
               <Icon icon="heroicons:bell" class="h-5 w-5" />
               <span
                 v-if="unreadCount > 0"
@@ -333,7 +324,7 @@ const userInitials = computed(() => {
         <!-- Mobile Menu Button -->
         <Sheet v-model:open="isMobileMenuOpen">
           <SheetTrigger as-child>
-            <Button variant="ghost" size="icon" class="md:hidden">
+            <Button variant="ghost" size="icon" class="md:hidden" aria-label="메뉴 열기">
               <Icon icon="heroicons:bars-3" class="h-5 w-5" />
             </Button>
           </SheetTrigger>

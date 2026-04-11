@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
+import { formatDateFull } from '@/utils/formatters'
 
 interface CurriculumItem {
   title: string
@@ -58,15 +59,7 @@ function handleItemClick(item: CurriculumItem) {
   emit('startChat', item.title)
 }
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
+const formatDate = formatDateFull
 
 onMounted(() => {
   fetchCurriculum()

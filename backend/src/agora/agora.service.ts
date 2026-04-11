@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
@@ -19,6 +20,8 @@ const AGORA_MONTHLY_LIMITS: Partial<Record<UserPlan, number>> = {
 
 @Injectable()
 export class AgoraService {
+  private readonly logger = new Logger(AgoraService.name);
+
   constructor(
     private prisma: PrismaService,
     private readonly xp: XpService,
@@ -134,7 +137,7 @@ export class AgoraService {
     await this.xp.grantXP(userId, 10);
 
     // AI 콘텐츠 검열 (fire-and-forget)
-    this.moderation.moderateAgora(agora.id).catch(() => {});
+    this.moderation.moderateAgora(agora.id).catch((err) => this.logger.warn(`모더레이션 실패 (agora ${agora.id}): ${err.message}`));
 
     return agora;
   }
@@ -206,7 +209,7 @@ export class AgoraService {
     await this.quest.checkAndComplete(userId, QUEST_KEYS.AGORA_ANSWER);
 
     // AI 콘텐츠 검열 (fire-and-forget)
-    this.moderation.moderateAgoraAnswer(answer.id).catch(() => {});
+    this.moderation.moderateAgoraAnswer(answer.id).catch((err) => this.logger.warn(`모더레이션 실패 (agora-answer ${answer.id}): ${err.message}`));
 
     return answer;
   }

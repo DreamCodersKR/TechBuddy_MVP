@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { toast } from 'vue-sonner'
 
 // ─── Props ───────────────────────────────────────────────
 const props = defineProps<{
@@ -114,7 +115,7 @@ function goPosts() {
 function report() {
   emit('close')
   // 신고 모달은 추후 구현
-  alert(`${props.nickname} 사용자를 신고했습니다.`)
+  toast.info(`${props.nickname} 사용자를 신고했습니다.`)
 }
 
 // ─── 레벨 색상 ───────────────────────────────────────
