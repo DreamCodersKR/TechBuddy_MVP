@@ -178,7 +178,15 @@ const BADGE_META: Record<string, { label: string; icon: string; color: string }>
     <!-- 활동 히트맵 -->
     <div class="bg-card border border-border rounded-xl p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold">활동 기록</h2>
+        <h2 class="text-sm font-semibold flex items-center gap-1.5">
+          활동 기록
+          <span class="relative group">
+            <Icon icon="heroicons:information-circle" class="w-3.5 h-3.5 text-muted-foreground cursor-help" />
+            <span class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 px-3 py-2 text-xs text-popover-foreground bg-popover border border-border rounded-lg shadow-lg z-10 font-normal leading-relaxed">
+              TIL 작성, Task 완료, 게시글 작성, 댓글 작성, AI 멘토링 이용 기록을 합산합니다.
+            </span>
+          </span>
+        </h2>
         <NuxtLink to="/workspaces" class="text-xs text-primary hover:underline">워크스페이스 →</NuxtLink>
       </div>
       <GamificationActivityHeatmap :heatmap="heatmap" />

@@ -198,6 +198,12 @@ const formatDate = formatDateFull
         <h2 class="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
           <Icon icon="heroicons:calendar-days" class="w-4 h-4 text-primary" />
           활동 기록
+          <span class="relative group">
+            <Icon icon="heroicons:information-circle" class="w-3.5 h-3.5 text-muted-foreground cursor-help" />
+            <span class="absolute left-0 bottom-full mb-2 hidden group-hover:block w-48 px-3 py-2 text-xs text-popover-foreground bg-popover border border-border rounded-lg shadow-lg z-10 font-normal leading-relaxed">
+              TIL 작성, Task 완료, 게시글 작성, 댓글 작성, AI 멘토링 이용 기록을 합산합니다.
+            </span>
+          </span>
         </h2>
         <GamificationActivityHeatmap :heatmap="heatmapData" />
       </section>
