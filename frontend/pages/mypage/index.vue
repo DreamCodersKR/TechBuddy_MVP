@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { BADGE_CONFIG } from '~/utils/badge'
 
 definePageMeta({ layout: 'default', middleware: 'auth' })
 useHead({ title: '마이페이지 - FLOWIT' })
@@ -192,7 +193,15 @@ const xpProgress = computed(() => Math.min(100, (xp.value % xpForNextLevel.value
               :title="b.isDisplay ? '현재 대표 뱃지' : '클릭하여 대표 뱃지로 설정'"
               @click="setDisplayBadge(b.isDisplay ? null : b.type)"
             >
-              <span class="text-base">{{ b.icon }}</span>
+              <img
+                v-if="BADGE_CONFIG[b.type]?.imageUrl"
+                :src="BADGE_CONFIG[b.type].imageUrl"
+                :alt="b.label"
+                :width="20"
+                :height="20"
+                class="rounded-full object-cover"
+              >
+              <span v-else class="text-base">{{ b.icon }}</span>
               <span>{{ b.label }}</span>
               <Icon v-if="b.isDisplay" icon="heroicons:check-circle-solid" class="w-3.5 h-3.5 text-primary" />
             </button>
@@ -209,7 +218,15 @@ const xpProgress = computed(() => Math.min(100, (xp.value % xpForNextLevel.value
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted/30 text-muted-foreground opacity-60 text-sm"
               :title="b.description"
             >
-              <span class="text-base grayscale">{{ b.icon }}</span>
+              <img
+                v-if="BADGE_CONFIG[b.type]?.imageUrl"
+                :src="BADGE_CONFIG[b.type].imageUrl"
+                :alt="b.label"
+                :width="20"
+                :height="20"
+                class="rounded-full object-cover grayscale"
+              >
+              <span v-else class="text-base grayscale">{{ b.icon }}</span>
               <span>{{ b.label }}</span>
               <span v-if="b.progress" class="text-xs ml-1">
                 {{ b.progress.current }}/{{ b.progress.target }}
