@@ -1,287 +1,183 @@
-# 🚀 TechBuddy MVP
+# FLOWIT
 
-> IT 부트캠프 학생을 위한 **올인원 성장 플랫폼**  
-> 커뮤니티 · 멘토링 · 프로젝트 관리
+> IT 부트캠프 수료생 및 취업 준비생을 위한 **올인원 성장 플랫폼**
+> 커뮤니티 · PM툴 · AI 멘토링 · 포트폴리오
 
-[![GitHub](https://img.shields.io/badge/GitHub-DreamCodersKR%2FTechBuddy__MVP-blue?logo=github)](https://github.com/DreamCodersKR/TechBuddy_MVP)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![NestJS](https://img.shields.io/badge/NestJS-11.x-E0234E?logo=nestjs)](https://nestjs.com/)
+[![Nuxt](https://img.shields.io/badge/Nuxt-4.2-00DC82?logo=nuxt.js)](https://nuxt.com/)
 [![License](https://img.shields.io/badge/License-Private-red)]()
 
 ---
 
-## 📋 목차
+## 프로젝트 소개
 
-- [프로젝트 소개](#-프로젝트-소개)
-- [핵심 기능](#-핵심-기능)
-- [기술 스택](#-기술-스택)
-- [프로젝트 구조](#-프로젝트-구조)
-- [시작하기](#-시작하기)
-- [개발 로드맵](#-개발-로드맵)
-- [팀 구성](#-팀-구성)
-- [문서](#-문서)
+**FLOWIT**은 IT 부트캠프 수료생들이 겪는 정보 비대칭, 프로젝트 관리 어려움, 멘토 부재 문제를 해결하는 통합 플랫폼입니다.
 
----
-
-## 🎯 프로젝트 소개
-
-**TechBuddy**는 IT 부트캠프 학생들이 겪는 다음 문제들을 해결합니다:
-
-### 🔴 Pain Points
-
-```
-❌ 실무 경험 부족 → 포트폴리오 프로젝트 막막함
-❌ 멘토 찾기 어려움 → 주변에 물어볼 시니어가 없음
-❌ 프로젝트 관리 도구 진입장벽 → Jira/Linear 너무 복잡
-❌ 정보 부족 → 취업 정보를 어디서 얻어야 할지 모름
-```
-
-### ✅ Solutions
-
-```
-✅ 등급별 커뮤니티 → 취준생/주니어/시니어별 맞춤 정보
-✅ 멘토링 매칭 → 시니어 개발자와 쉽게 연결
-✅ 초보자용 PM 도구 → 배우기 쉬운 칸반보드 + Help 상태
-✅ 검증된 유입 채널 → 부트캠프 파트너십
-```
+### 핵심 가치
+- **커뮤니티** — 취준생/주니어 맞춤 정보 공유
+- **PM툴** — 초보자용 칸반보드 + Help 상태
+- **AI 멘토링** — 멀티모델 AI 기반 실시간 학습 지원
+- **포트폴리오** — 활동 기반 자동 생성
 
 ---
 
-## 🌟 핵심 기능
+## 주요 기능
 
-### Phase 1: 커뮤니티 (1개월차)
+### 커뮤니티
+- 게시판 (카테고리별, 고정글, 좋아요, 북마크, 검색)
+- 아고라 (크레딧 바운티 기반 Q&A)
+- 팀원 모집 (프로젝트/스터디 + 지원 관리)
+- 미니프로필 팝업, 유저 신고
 
-- 등급별 게시판 (취준생/주니어/시니어)
-- 회원 시스템 & 등급 인증
-- 교육기관 홍보 플랫폼
-- 기관별 커뮤니티 (Everytime 스타일)
+### PM툴 (워크스페이스)
+- 칸반 보드 (드래그앤드롭, 이슈 번호, position 정렬)
+- 스프린트 관리 (PLANNED → ACTIVE → COMPLETED)
+- 산출문서 (R2 파일 스토리지, 일괄 다운로드)
+- KPT 회고, 태스크 코멘트/라벨
 
-### Phase 2: 프로젝트 관리 (2개월차)
+### 스터디룸 (STUDY 타입 워크스페이스)
+- 주차별 커리큘럼 & 과제
+- 과제 제출/관리
+- 벌금 규칙 (동의 기반)
+- 공유 자료실
 
-- 초보자용 칸반보드 (Todo/In Progress/Done/Help)
-- Task 관리 & 팀원 할당
-- **Help 상태** (부트캠프 특화 기능)
-- 산출문서 보관함
+### AI 멘토링
+- 멀티모델 지원: Claude, GPT, Gemini, Grok
+- SSE 스트리밍 실시간 응답
+- 카테고리별 모델 자동 선택 (CODE/DOCUMENT/PLANNING/RESEARCH)
+- RAG 파이프라인 (프로젝트 문서 기반 맥락 인식)
+- AI 커리큘럼 추천
 
-### Phase 3: 멘토링 (3개월차)
+### 게이미피케이션
+- XP & 레벨 (Lv.1~5)
+- 뱃지 시스템 (10종 + 엔터프라이즈)
+- 데일리 퀘스트 5종
+- 연속 출석 스트릭 (크레딧 보상)
+- TIL (Today I Learned)
+- 활동 잔디 히트맵
+- 친구 초대 코드
 
-- 멘토-멘티 매칭
-- 1:1 실시간 채팅
-- 멘토링 평가 시스템
+### 포트폴리오
+- 닉네임 기반 공개 프로필 (`/portfolio/:nickname`)
+- 통계, 프로젝트, 뱃지, TIL 자동 집계
+
+### 기타
+- OAuth 소셜 로그인 (Google, GitHub)
+- 커피챗 1:1 네트워킹
+- 관리자 콘솔 (유저/게시글/신고/문의 관리)
+- 온보딩 투어 (driver.js)
+- 다크모드
 
 ---
 
-## 🛠️ 기술 스택
-
-### Frontend
-
-```typescript
-- Nuxt.js 3        // Vue 3 프레임워크
-- TypeScript       // 타입 안정성
-- Tailwind CSS     // 스타일링
-- Shadcn-vue       // UI 컴포넌트
-- Socket.io        // 실시간 통신
-- vue-draggable-next // 칸반보드
-```
+## 기술 스택
 
 ### Backend
+| 기술 | 버전 | 용도 |
+|------|------|------|
+| NestJS | 11.x | API 프레임워크 |
+| Prisma | 6.x | ORM |
+| PostgreSQL | - | DB (Supabase) |
+| pgvector | 0.8 | RAG 벡터 검색 |
+| Passport | 0.7 | JWT + OAuth |
+| Helmet + Throttler | - | 보안 + 레이트리밋 |
 
-```typescript
-- NestJS           // Node.js 프레임워크
-- TypeScript       // 타입 안정성
-- Prisma ORM       // DB ORM
-- PostgreSQL       // 메인 데이터베이스
-- Redis            // 캐싱 & 세션
-- Socket.io        // 실시간 통신
-```
+### Frontend
+| 기술 | 버전 | 용도 |
+|------|------|------|
+| Nuxt | 4.2 | SSR 프레임워크 |
+| Vue | 3.5 | UI 프레임워크 |
+| shadcn-vue | 2.4 | UI 컴포넌트 |
+| TailwindCSS | - | 스타일링 |
+| Pinia | 3.x | 상태 관리 |
+| Toast UI Editor | 3.2 | 마크다운 에디터 |
+
+### AI 모델
+| 모델 | SDK | 용도 |
+|------|-----|------|
+| Claude (Anthropic) | @anthropic-ai/sdk | 코딩/기획 |
+| GPT (OpenAI) | openai | 코딩 보조 |
+| Gemini (Google) | @google/generative-ai | 문서/디자인 |
+| Grok (xAI) | openai (baseURL) | 리서치 |
 
 ### Infrastructure
-
-```yaml
-Frontend: Vercel
-Backend: Railway
-Database: Supabase (PostgreSQL)
-Cache: Redis Cloud
-Storage: Cloudflare R2
-```
+| 서비스 | 용도 |
+|--------|------|
+| Vercel | 프론트엔드 배포 |
+| Railway | 백엔드 배포 |
+| Supabase | PostgreSQL DB |
+| Cloudflare R2 | 파일 스토리지 |
+| Linear | 이슈 트래킹 |
 
 ---
 
-## 📁 프로젝트 구조
+## 프로젝트 구조
 
 ```
 TechBuddy_MVP/
-├── 📄 docs/                    # 프로젝트 문서 (Git 포함)
-│   ├── 01_기획서_v1.3.md
-│   ├── 02_프로젝트관리_기능요구사항정의서_v1.0.md
-│   ├── 03_프로젝트관리_API명세서_v1.0.md
-│   ├── 04_DB스키마_설계.sql
-│   ├── 05_개발가이드.md
-│   ├── 06_Phase별_구현계획.md
-│   └── ERD_20251114.jpg
-│
-├── 🔧 backend/                 # NestJS 백엔드
-│   ├── src/
-│   │   ├── auth/              # 인증 모듈
-│   │   ├── users/             # 사용자 모듈
-│   │   ├── projects/          # 프로젝트 관리
-│   │   ├── tasks/             # Task 관리
-│   │   ├── boards/            # 게시판
-│   │   └── ...
-│   ├── prisma/
-│   │   └── schema.prisma      # Prisma 스키마
-│   └── package.json
-│
-├── 🎨 frontend/                # Nuxt.js 프론트엔드
-│   ├── pages/                 # 페이지 라우팅
-│   ├── components/            # Vue 컴포넌트
-│   ├── composables/           # Vue Composables
-│   ├── layouts/               # 레이아웃
-│   └── package.json
-│
-├── 🔗 shared/                  # 공통 타입/유틸
-│   ├── types/
-│   │   ├── api.types.ts      # API 타입
-│   │   └── models.types.ts   # DB 모델 타입
-│   └── utils/
-│
-├── .gitignore
-├── README.md                   # 이 파일
-└── PROJECT_SETUP.md            # 개발 시작 가이드
+├── backend/                # NestJS 백엔드 (32개 모듈)
+│   ├── src/                # 소스 코드
+│   └── prisma/             # DB 스키마 (48개 모델, 21개 enum)
+├── frontend/               # Nuxt 프론트엔드
+│   ├── pages/              # 60+ 페이지
+│   ├── components/         # shadcn-vue + 커스텀 컴포넌트
+│   ├── composables/        # Vue Composables
+│   └── stores/             # Pinia 스토어
+└── docs/                   # 프로젝트 문서
+    ├── 기획/               # 기능정의서, 서비스정의서, 화면설계서 등
+    ├── 기술/               # AI 고도화, MCP 확장성 기획서
+    └── 운영/               # 프로덕션 준비, 비용 가이드
 ```
 
 ---
 
-## 🚀 시작하기
+## 시작하기
+
+상세한 설정 가이드: [PROJECT_SETUP.md](./PROJECT_SETUP.md)
 
 ### 사전 요구사항
-
-```bash
-Node.js: v22.14 이상
-PostgreSQL: 14 이상
-Redis: 7 이상
-```
+- Node.js 22+
+- npm 10+
+- Supabase 계정 (PostgreSQL)
 
 ### 빠른 시작
-
-상세한 설정 가이드는 [PROJECT_SETUP.md](./PROJECT_SETUP.md)를 참고하세요.
 
 ```bash
 # 1. 저장소 클론
 git clone git@github.com:DreamCodersKR/TechBuddy_MVP.git
 cd TechBuddy_MVP
 
-# 2. 백엔드 설정
+# 2. 백엔드
 cd backend
-npm install                # prisma generate 자동 실행됨
-cp .env.example .env       # 환경변수 설정 (DATABASE_URL 필수!)
-npx prisma migrate dev     # DB 마이그레이션
-npm run start:dev          # 개발 서버 실행
-
-# 3. 프론트엔드 설정
-cd ../frontend
 npm install
-cp .env.example .env  # 환경변수 설정
-npm run dev
+cp .env.example .env       # 환경변수 설정
+npm run start:dev          # http://localhost:8080
+
+# 3. 프론트엔드 (새 터미널)
+cd frontend
+npm install
+cp .env.example .env
+npm run dev                # http://localhost:3000
 ```
 
 ---
 
-## 📅 개발 로드맵
+## 문서
 
-### 🗓️ MVP 타임라인 (2개월)
-
-| Phase       | 기간    | 주요 기능                 | 마일스톤               |
-| ----------- | ------- | ------------------------- | ---------------------- |
-| **Phase 1** | 1개월차 | 커뮤니티 + 교육기관       | 커뮤니티 오픈          |
-| **Phase 2** | 2개월차 | 프로젝트 관리 + Help 기능 | MVP 완성 & 베타 테스트 |
-| **Phase 3** | 추후    | 멘토링 시스템             | 정식 런칭              |
-
-### 📊 현재 진행 상황
-
-```
-✅ 기획서 v1.3 완료
-✅ API 명세서 v1.0 완료
-✅ ERD 설계 완료 (22개 테이블)
-✅ 프로젝트 구조 생성
-⏳ Prisma 스키마 작성 중
-⏳ NestJS 초기 설정 대기
-⏳ Nuxt.js 초기 설정 대기
-```
+| 카테고리 | 문서 |
+|---------|------|
+| 기획 | [기능정의서 v2.3](docs/기획/FLOWIT_기능정의서_v2.3.md), [서비스정의서](docs/기획/FLOWIT_서비스정의서.md), [화면설계서](docs/기획/FLOWIT_화면설계서_v1.0.md) |
+| 기술 | [AI 고도화 기획서](docs/기술/FLOWIT_LangChain_AI_고도화_기획서_v1.0.md), [MCP 확장성 기획서](docs/기술/FLOWIT_MCP_API_확장성_기획서_v1.0.md) |
+| 운영 | [프로덕션 준비 가이드](docs/운영/FLOWIT_프로덕션_준비_가이드.md), [비용 가이드라인](docs/운영/FLOWIT_비용_및_Unit_Economics_가이드라인_v2.md) |
+| API | Swagger UI — `http://localhost:8080/api-docs` (개발 환경) |
 
 ---
 
-## 👥 팀 구성
+## License
 
-| 역할           | 이름   | 담당                               |
-| -------------- | ------ | ---------------------------------- |
-| **PM/인프라**  | 윤종호 | 프로젝트 총괄, 인프라 관리, 백엔드 |
-| **프론트엔드** | 박지승 | Nuxt.js 개발, UI/UX 구현           |
-| **백엔드**     | 윤종호 | NestJS API 개발, DB 설계           |
-| **디자이너**   | 미정   | UI/UX 디자인                       |
-
-### ⭐ Key Strength
-
-**박지승** - 스마트인재개발원 강사 출신 → 직접 부트캠프 영업 가능
+Private - All rights reserved
 
 ---
 
-## 📚 문서
-
-### 기획 문서
-
-- [📄 기획서 v1.3](./docs/01_기획서_v1.3.md)
-- [📄 프로젝트 관리 기능요구사항정의서](./docs/02_프로젝트관리_기능요구사항정의서_v1.0.md)
-- [📄 API 명세서](./docs/03_프로젝트관리_API명세서_v1.0.md)
-
-### 기술 문서
-
-- [🗂️ DB 스키마 설계](./docs/04_DB스키마_설계.sql)
-- [🖼️ ERD 다이어그램](./docs/ERD_20251114.jpg)
-- [📖 개발 가이드](./docs/05_개발가이드.md)
-- [📅 Phase별 구현 계획](./docs/06_Phase별_구현계획.md)
-
-### 개발 가이드
-
-- [🚀 프로젝트 셋업 가이드](./PROJECT_SETUP.md)
-- [📖 Backend README](./backend/README.md)
-- [📖 Frontend README](./frontend/README.md)
-
----
-
-## 🎯 성공 지표
-
-### 3개월 후 목표
-
-```
-✅ 가입자: 300명+
-✅ MAU: 150명+
-✅ 멘토링 매칭: 월 30건+
-✅ 부트캠프 파트너: 1곳 (스마트인재개발원)
-✅ 프로젝트 생성: 월 20개+
-```
-
-### 12개월 후 목표
-
-```
-🚀 가입자: 5,000명+
-🚀 MAU: 2,000명+
-🚀 부트캠프 파트너: 10곳+
-🚀 월 매출: 500만원+
-```
-
----
-
-## 📄 License
-
-Private - 상업적 사용 금지
-
----
-
-## 📞 Contact
-
-- **GitHub**: [@DreamCodersKR](https://github.com/DreamCodersKR)
-- **Email**: llsee01@naver.com
-
----
-
-**Made with ❤️ by DreamCoders Team**
+**DreamCoders Team**
