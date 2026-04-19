@@ -227,7 +227,8 @@ function levelColor(level: number) {
           </div>
 
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-sm truncate">
+            <p class="font-semibold text-sm truncate inline-flex items-center gap-1">
+              <BadgeUserBadge :badge-type="profile.displayBadgeType" size="md" />
               {{ profile.nickname ?? profile.name }}
             </p>
             <p class="text-xs text-muted-foreground">

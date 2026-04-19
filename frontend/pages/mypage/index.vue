@@ -9,23 +9,49 @@ useHead({ title: '마이페이지 - FLOWIT' })
 const authStore = useAuthStore()
 const { get: authGet } = useAuthFetch()
 
-interface Badge {
-  id: string
-  badge: string
-  earnedAt: string
+interface BadgeItem {
+  type: string
+  label: string
+  description: string
+  icon: string
+  color: string
+  earned: boolean
+  earnedAt: string | null
+  isDisplay: boolean
+  progress?: { current: number; target: number } | null
 }
 
-const badges = ref<Badge[]>([])
+interface BadgeCollection {
+  displayBadgeType: string | null
+  badges: BadgeItem[]
+}
+
+const badgeCollection = ref<BadgeCollection>({ displayBadgeType: null, badges: [] })
 const badgesLoading = ref(true)
 const heatmap = ref<Record<string, number>>({})
 
 async function loadBadges() {
   try {
-    badges.value = await authGet<Badge[]>('/badges/mine')
+    badgeCollection.value = await authGet<BadgeCollection>('/badges/mine')
   }
-  catch { badges.value = [] }
+  catch { badgeCollection.value = { displayBadgeType: null, badges: [] } }
   finally { badgesLoading.value = false }
 }
+
+async function setDisplayBadge(badgeType: string | null) {
+  try {
+    await authGet('/badges/display', { method: 'PATCH', body: { badgeType } } as any)
+    badgeCollection.value.badges.forEach(b => {
+      b.isDisplay = b.type === badgeType
+    })
+    badgeCollection.value.displayBadgeType = badgeType
+    // 프로필 새로고침
+    await authStore.fetchUser()
+  } catch {}
+}
+
+const earnedBadges = computed(() => badgeCollection.value.badges.filter(b => b.earned))
+const unearnedBadges = computed(() => badgeCollection.value.badges.filter(b => !b.earned))
 
 async function loadHeatmap() {
   try {
@@ -52,13 +78,6 @@ const plan = computed(() => (user.value as any)?.plan ?? 'FREE')
 const xpForNextLevel = computed(() => level.value * 100)
 const xpProgress = computed(() => Math.min(100, (xp.value % xpForNextLevel.value) / xpForNextLevel.value * 100))
 
-const BADGE_META: Record<string, { label: string; icon: string; color: string }> = {
-  NEW_MEMBER: { label: '신규 회원', icon: 'heroicons:star', color: 'text-yellow-500' },
-  ACTIVITY: { label: '활동가', icon: 'heroicons:fire', color: 'text-orange-500' },
-  SUBSCRIBER: { label: '구독자', icon: 'heroicons:heart', color: 'text-pink-500' },
-  LOYALTY: { label: '충성 회원', icon: 'heroicons:trophy', color: 'text-purple-500' },
-  ORGANIZATION: { label: '조직 멤버', icon: 'heroicons:building-office', color: 'text-blue-500' },
-}
 </script>
 
 <template>
@@ -72,7 +91,8 @@ const BADGE_META: Record<string, { label: string; icon: string; color: string }>
         </Avatar>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-1">
-            <h1 class="text-xl font-bold text-foreground truncate">
+            <h1 class="text-xl font-bold text-foreground truncate inline-flex items-center gap-1">
+              <BadgeUserBadge :badge-type="user?.displayBadgeType" size="md" />
               {{ user?.nickname || user?.name }}
             </h1>
             <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
@@ -147,25 +167,57 @@ const BADGE_META: Record<string, { label: string; icon: string; color: string }>
       </NuxtLink>
     </div>
 
-    <!-- 뱃지 -->
+    <!-- 뱃지 컬렉션 -->
     <div class="bg-card border border-border rounded-xl p-6 mb-6">
-      <h2 class="text-sm font-semibold text-foreground mb-4">보유 뱃지</h2>
+      <h2 class="text-sm font-semibold text-foreground mb-4">
+        뱃지 컬렉션 <span class="text-muted-foreground font-normal">({{ earnedBadges.length }}/{{ badgeCollection.badges.length }})</span>
+      </h2>
+
       <div v-if="badgesLoading" class="flex gap-3">
-        <div v-for="n in 3" :key="n" class="h-10 w-10 rounded-full bg-muted animate-pulse" />
+        <div v-for="n in 4" :key="n" class="h-12 w-20 rounded-lg bg-muted animate-pulse" />
       </div>
-      <div v-else-if="badges.length > 0" class="flex flex-wrap gap-3">
-        <div v-for="b in badges" :key="b.id" class="flex flex-col items-center gap-1">
-          <div class="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-            <Icon
-              :icon="BADGE_META[b.badge]?.icon ?? 'heroicons:star'"
-              class="w-5 h-5"
-              :class="BADGE_META[b.badge]?.color ?? 'text-muted-foreground'"
-            />
+
+      <template v-else>
+        <!-- 보유 뱃지 -->
+        <div v-if="earnedBadges.length > 0" class="mb-4">
+          <p class="text-xs text-muted-foreground mb-2">보유한 뱃지</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="b in earnedBadges"
+              :key="b.type"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-all"
+              :class="b.isDisplay
+                ? 'border-primary bg-primary/10 text-primary font-medium ring-1 ring-primary/30'
+                : 'border-border bg-card hover:bg-accent/50 text-foreground'"
+              :title="b.isDisplay ? '현재 대표 뱃지' : '클릭하여 대표 뱃지로 설정'"
+              @click="setDisplayBadge(b.isDisplay ? null : b.type)"
+            >
+              <span class="text-base">{{ b.icon }}</span>
+              <span>{{ b.label }}</span>
+              <Icon v-if="b.isDisplay" icon="heroicons:check-circle-solid" class="w-3.5 h-3.5 text-primary" />
+            </button>
           </div>
-          <span class="text-xs text-muted-foreground">{{ BADGE_META[b.badge]?.label ?? b.badge }}</span>
         </div>
-      </div>
-      <p v-else class="text-sm text-muted-foreground">아직 획득한 뱃지가 없습니다.</p>
+
+        <!-- 미보유 뱃지 -->
+        <div v-if="unearnedBadges.length > 0">
+          <p class="text-xs text-muted-foreground mb-2">획득 가능한 뱃지</p>
+          <div class="flex flex-wrap gap-2">
+            <div
+              v-for="b in unearnedBadges"
+              :key="b.type"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted/30 text-muted-foreground opacity-60 text-sm"
+              :title="b.description"
+            >
+              <span class="text-base grayscale">{{ b.icon }}</span>
+              <span>{{ b.label }}</span>
+              <span v-if="b.progress" class="text-xs ml-1">
+                {{ b.progress.current }}/{{ b.progress.target }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- ===== M10 게이미피케이션 섹션 ===== -->

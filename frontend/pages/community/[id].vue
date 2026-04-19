@@ -275,10 +275,11 @@ onMounted(() => {
           </div>
           <div>
             <p
-              class="text-sm font-medium text-foreground"
+              class="text-sm font-medium text-foreground inline-flex items-center gap-1"
               :class="post.author.nickname ? 'cursor-pointer hover:underline' : ''"
               @click="openPopup(post.author.nickname, $event)"
             >
+              <BadgeUserBadge :badge-type="post.author.displayBadgeType" />
               {{ post.author.nickname || post.author.name }}
             </p>
             <div class="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">

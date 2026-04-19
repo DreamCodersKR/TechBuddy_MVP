@@ -18,15 +18,7 @@ interface Author {
   name: string
   nickname: string | null
   avatarUrl: string | null
-  userBadges?: { badge: string }[]
-}
-
-const BADGE_CONFIG: Record<string, { icon: string; class: string }> = {
-  SUBSCRIBER: { icon: 'heroicons:sparkles', class: 'text-violet-500' },
-  LOYALTY: { icon: 'heroicons:trophy', class: 'text-amber-500' },
-  ORGANIZATION: { icon: 'heroicons:building-office', class: 'text-blue-500' },
-  ACTIVITY: { icon: 'heroicons:bolt', class: 'text-orange-400' },
-  NEW_MEMBER: { icon: 'heroicons:star', class: 'text-green-500' },
+  displayBadgeType?: string | null
 }
 
 export interface Comment {
@@ -114,20 +106,16 @@ const formatDate = formatRelativeTime
       <!-- 헤더: 작성자 + 날짜 + 액션 -->
       <div class="flex items-center justify-between gap-2 mb-1">
         <div class="flex items-center gap-2">
-          <span
-            class="text-sm font-medium text-foreground"
-            :class="comment.author.nickname ? 'cursor-pointer hover:underline' : ''"
-            @click="openPopup(comment.author.nickname, $event)"
-          >
-            {{ comment.author.nickname || comment.author.name }}
+          <span class="inline-flex items-center gap-0.5">
+            <BadgeUserBadge :badge-type="comment.author.displayBadgeType" />
+            <span
+              class="text-sm font-medium text-foreground"
+              :class="comment.author.nickname ? 'cursor-pointer hover:underline' : ''"
+              @click="openPopup(comment.author.nickname, $event)"
+            >
+              {{ comment.author.nickname || comment.author.name }}
+            </span>
           </span>
-          <Icon
-            v-for="ub in comment.author.userBadges?.slice(0, 2)"
-            :key="ub.badge"
-            :icon="BADGE_CONFIG[ub.badge]?.icon || 'heroicons:star'"
-            class="w-3.5 h-3.5"
-            :class="BADGE_CONFIG[ub.badge]?.class"
-          />
           <span class="text-xs text-muted-foreground">
             {{ formatDate(comment.createdAt) }}
           </span>

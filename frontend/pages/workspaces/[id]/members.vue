@@ -188,7 +188,8 @@ onMounted(() => { loadMembers() })
 
         <!-- 이름/이메일 -->
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-foreground">
+          <p class="text-sm font-medium text-foreground inline-flex items-center gap-1">
+            <BadgeUserBadge :badge-type="(m.user as any).displayBadgeType" />
             {{ m.user.nickname ?? m.user.name }}
             <span
               v-if="m.user.id === authStore.currentUser?.id"

@@ -169,10 +169,13 @@ function openPopup(nickname: string | null | undefined, event: MouseEvent) {
                 {{ item.content.replace(/<[^>]*>/g, '').slice(0, 100) }}
               </p>
               <div class="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                <span
-                  :class="item.author.nickname ? 'cursor-pointer hover:underline hover:text-foreground' : ''"
-                  @click.stop="openPopup(item.author.nickname, $event)"
-                >{{ item.author.nickname ?? item.author.name }}</span>
+                <span class="inline-flex items-center gap-0.5">
+                  <BadgeUserBadge :badge-type="item.author.displayBadgeType" />
+                  <span
+                    :class="item.author.nickname ? 'cursor-pointer hover:underline hover:text-foreground' : ''"
+                    @click.stop="openPopup(item.author.nickname, $event)"
+                  >{{ item.author.nickname ?? item.author.name }}</span>
+                </span>
                 <span>{{ useRelativeTime(item.createdAt) }}</span>
                 <span class="flex items-center gap-1">
                   <Icon icon="heroicons:chat-bubble-left" class="w-3 h-3" />

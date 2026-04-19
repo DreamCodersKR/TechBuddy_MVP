@@ -245,10 +245,13 @@ onMounted(async () => {
                 <span v-if="post.board" class="text-sm text-muted-foreground shrink-0">[{{ post.board.name }}]</span>
                 <span class="flex-1 text-sm text-foreground truncate">{{ post.title }}</span>
                 <div class="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
-                  <span
-                    :class="post.author.nickname ? 'cursor-pointer hover:underline hover:text-foreground' : ''"
-                    @click.prevent.stop="openPopup(post.author.nickname, $event)"
-                  >{{ post.author.nickname || post.author.name }}</span>
+                  <span class="inline-flex items-center gap-0.5">
+                    <BadgeUserBadge :badge-type="post.author.displayBadgeType" />
+                    <span
+                      :class="post.author.nickname ? 'cursor-pointer hover:underline hover:text-foreground' : ''"
+                      @click.prevent.stop="openPopup(post.author.nickname, $event)"
+                    >{{ post.author.nickname || post.author.name }}</span>
+                  </span>
                   <span>{{ formatDate(post.createdAt) }}</span>
                   <span class="flex items-center gap-1">
                     <Icon icon="heroicons:eye" class="w-4 h-4" />
@@ -310,10 +313,13 @@ onMounted(async () => {
                 <span class="flex-1 text-sm text-foreground truncate" :class="post.isPinned ? 'font-medium' : ''">{{ post.title }}</span>
                 <span v-if="isNew(post.createdAt)" class="text-xs font-bold text-destructive shrink-0">N</span>
                 <div class="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
-                  <span
-                    :class="post.author.nickname ? 'cursor-pointer hover:underline hover:text-foreground' : ''"
-                    @click.prevent.stop="openPopup(post.author.nickname, $event)"
-                  >{{ post.author.nickname || post.author.name }}</span>
+                  <span class="inline-flex items-center gap-0.5">
+                    <BadgeUserBadge :badge-type="post.author.displayBadgeType" />
+                    <span
+                      :class="post.author.nickname ? 'cursor-pointer hover:underline hover:text-foreground' : ''"
+                      @click.prevent.stop="openPopup(post.author.nickname, $event)"
+                    >{{ post.author.nickname || post.author.name }}</span>
+                  </span>
                   <span>{{ formatDate(post.createdAt) }}</span>
                   <span class="flex items-center gap-1">
                     <Icon icon="heroicons:eye" class="w-4 h-4" />
