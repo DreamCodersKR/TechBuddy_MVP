@@ -122,12 +122,16 @@ enum CreditTransactionType {
 }
 
 enum BadgeType {
-  NEW_MEMBER   // 신규 가입
-  ACTIVITY     // 활동 레벨
-  SUBSCRIBER   // 구독 중
-  LOYALTY      // 구독 6개월 연속
-  ORGANIZATION // 소속 (Enterprise)
-  STREAK_7     // 7일 연속 출석
+  NEWBIE               // 뉴비 (회원가입)
+  COMMUNICATOR         // 소통장인 (게시글10+좋아요100+댓글50)
+  BEST_ANSWERER        // 명답자 (아고라 채택 10개)
+  CURIOUS              // 호기심천국 (아고라 질문 10개)
+  TASK_HUNTER          // 태스크 헌터 (DONE 100개)
+  CAPTAIN              // 캡틴 (ADMIN 3프로젝트, 각 3명+)
+  TEAM_PLAYER          // 팀플레이어 (프로젝트 참여 5개)
+  ATTENDANCE_30        // 개근상 (30일 연속 출석)
+  PRO_SUBSCRIBER       // PRO 구독 중
+  PREMIUM_SUBSCRIBER   // PREMIUM 구독 중
 }
 
 enum TilVisibility {
@@ -233,6 +237,9 @@ model User {
 
   // 이메일 수신 설정
   emailPreferences Json @default("{\"marketing\":true,\"commentReply\":true,\"projectActivity\":true,\"weeklySummary\":true}")
+
+  // 대표 뱃지
+  displayBadgeType BadgeType?
 
   // 온보딩
   onboardingCompleted Boolean @default(false)

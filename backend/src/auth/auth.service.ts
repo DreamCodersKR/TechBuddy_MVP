@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHash, randomUUID } from 'crypto';
 import { UserService } from '../user/user.service';
 import { XpService } from '../xp/xp.service';
+import { BadgeService } from '../badge/badge.service';
 import { ReferralService } from '../referral/referral.service';
 import { CreditSchedulerService } from '../credit/credit.scheduler';
 import { CreateUserDto, LoginDto, UserResponseDto } from '../user/dto';
@@ -23,6 +24,7 @@ export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly xp: XpService,
+    private readonly badge: BadgeService,
     private readonly referral: ReferralService,
     private readonly creditScheduler: CreditSchedulerService,
     private readonly jwtService: JwtService,
@@ -39,7 +41,7 @@ export class AuthService {
     const accessToken = this.generateAccessToken(user.id, user.email);
 
     // 신규 가입 뱃지 부여
-    await this.xp.awardBadge(user.id, BadgeType.NEW_MEMBER);
+    await this.badge.awardBadge(user.id, BadgeType.NEWBIE);
 
     // 초기 크레딧 지급 (Free 플랜 100cr)
     await this.creditScheduler.grantInitialCredits(user.id);
@@ -156,9 +158,11 @@ export class AuthService {
       });
     }
 
-    // 스트릭 7일 달성 시 STREAK_7 뱃지 지급 (DRE-196)
-    if (newStreak === 7) {
-      await this.xp.awardBadge(userId, BadgeType.STREAK_7);
+    // 30일 연속 출석 시 ATTENDANCE_30 뱃지 지급
+    if (newStreak === 30) {
+      this.badge
+        .awardBadge(userId, BadgeType.ATTENDANCE_30)
+        .catch((err) => console.warn('Badge award failed', err.message));
     }
   }
 

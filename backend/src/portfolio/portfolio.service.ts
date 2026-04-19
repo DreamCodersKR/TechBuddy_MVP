@@ -23,6 +23,7 @@ export class PortfolioService {
         name: true,
         bio: true,
         avatarUrl: true,
+        displayBadgeType: true,
         level: true,
         techStack: true,
         githubUrl: true,

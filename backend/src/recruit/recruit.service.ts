@@ -40,7 +40,7 @@ export class RecruitService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+          author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
           project: { select: { id: true, name: true, type: true } },
           _count: { select: { applications: true } },
         },
@@ -58,7 +58,7 @@ export class RecruitService {
     const recruit = await this.prisma.recruit.findUnique({
       where: { id },
       include: {
-        author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+        author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
         project: { select: { id: true, name: true, type: true } },
         _count: { select: { applications: true } },
       },

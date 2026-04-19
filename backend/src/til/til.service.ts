@@ -60,7 +60,7 @@ export class TilService {
         visibility: dto.visibility ?? TilVisibility.PUBLIC,
       },
       include: {
-        author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+        author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
       },
     });
 
@@ -110,7 +110,7 @@ export class TilService {
         skip,
         take: limit,
         include: {
-          author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+          author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
         },
       }),
       this.prisma.til.count({ where }),
@@ -126,7 +126,7 @@ export class TilService {
     const til = await this.prisma.til.findUnique({
       where: { id },
       include: {
-        author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+        author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
       },
     });
     if (!til) throw new NotFoundException('TIL을 찾을 수 없습니다');
@@ -150,7 +150,7 @@ export class TilService {
         ...(dto.visibility !== undefined && { visibility: dto.visibility }),
       },
       include: {
-        author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+        author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
       },
     });
   }

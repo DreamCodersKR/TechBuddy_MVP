@@ -1,18 +1,24 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadgeService } from '../badge/badge.service';
 import { CreateTaskDto, UpdateTaskDto, CreateTaskCommentDto, UpdateCommentDto } from './dto';
 import { ProjectRole, TaskStatus } from '@prisma/client';
 
 const TASK_INCLUDE = {
-  assignee: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
-  createdBy: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+  assignee: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
+  createdBy: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
   sprint: { select: { id: true, name: true } },
   project: { select: { id: true, issuePrefix: true } },
 };
 
 @Injectable()
 export class TaskService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(TaskService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private readonly badgeService: BadgeService,
+  ) {}
 
   private async checkMember(workspaceId: string, userId: string) {
     const member = await this.prisma.projectMember.findUnique({
@@ -116,7 +122,7 @@ export class TaskService {
       throw new ForbiddenException('수정 권한이 없습니다');
 
     const { dueDate, ...rest } = dto;
-    return this.prisma.task.update({
+    const updated = await this.prisma.task.update({
       where: { id: taskId },
       data: {
         ...rest,
@@ -124,6 +130,13 @@ export class TaskService {
       },
       include: TASK_INCLUDE,
     });
+
+    // 뱃지 체크: DONE 상태 변경 시 담당자 TASK_HUNTER 체크 (fire-and-forget)
+    if (dto.status === 'DONE' && updated.assigneeId) {
+      this.badgeService.checkAndAwardBadges(updated.assigneeId).catch((err) => this.logger.warn(`Badge check failed: ${err.message}`));
+    }
+
+    return updated;
   }
 
   async reorder(workspaceId: string, userId: string, updates: { id: string; position: number; status: string }[]) {
@@ -169,7 +182,7 @@ export class TaskService {
 
     return this.prisma.taskComment.create({
       data: { taskId, authorId: userId, content: dto.content },
-      include: { author: { select: { id: true, name: true, nickname: true, avatarUrl: true } } },
+      include: { author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } } },
     });
   }
 
@@ -179,7 +192,7 @@ export class TaskService {
 
     return this.prisma.taskComment.findMany({
       where: { taskId },
-      include: { author: { select: { id: true, name: true, nickname: true, avatarUrl: true } } },
+      include: { author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } } },
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -197,7 +210,7 @@ export class TaskService {
     return this.prisma.taskComment.update({
       where: { id: commentId },
       data: { content: dto.content },
-      include: { author: { select: { id: true, name: true, nickname: true, avatarUrl: true } } },
+      include: { author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } } },
     });
   }
 

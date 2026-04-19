@@ -4,6 +4,7 @@ import { XpService } from '../xp/xp.service';
 import { NotificationService } from '../notification/notification.service';
 import { QuestService, QUEST_KEYS } from '../quest/quest.service';
 import { ModerationService } from '../moderation/moderation.service';
+import { BadgeService } from '../badge/badge.service';
 import { NotificationType } from '@prisma/client';
 import { CreateCommentDto, UpdateCommentDto } from './dto';
 
@@ -17,6 +18,7 @@ export class CommentService {
     private readonly notification: NotificationService,
     private readonly quest: QuestService,
     private readonly moderation: ModerationService,
+    private readonly badgeService: BadgeService,
   ) {}
 
   /**
@@ -54,7 +56,7 @@ export class CommentService {
       },
       include: {
         author: {
-          select: { id: true, name: true, nickname: true, avatarUrl: true },
+          select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true },
         },
       },
     });
@@ -76,6 +78,8 @@ export class CommentService {
 
     // AI 콘텐츠 검열 (fire-and-forget)
     this.moderation.moderateComment(comment.id).catch((err) => this.logger.warn(`모더레이션 실패 (comment ${comment.id}): ${err.message}`));
+    // 뱃지 체크 (fire-and-forget)
+    this.badgeService.checkAndAwardBadges(authorId).catch((err) => this.logger.warn(`Badge check failed: ${err.message}`));
 
     return comment;
   }
@@ -101,12 +105,12 @@ export class CommentService {
       },
       include: {
         author: {
-          select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } },
+          select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true },
         },
         replies: {
           include: {
             author: {
-              select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } },
+              select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true },
             },
           },
           orderBy: { createdAt: 'asc' },
@@ -139,7 +143,7 @@ export class CommentService {
       data: { content: updateCommentDto.content },
       include: {
         author: {
-          select: { id: true, name: true, nickname: true, avatarUrl: true },
+          select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true },
         },
       },
     });

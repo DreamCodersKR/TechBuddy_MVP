@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { XpService } from '../xp/xp.service';
 import { QuestService, QUEST_KEYS } from '../quest/quest.service';
 import { ModerationService } from '../moderation/moderation.service';
+import { BadgeService } from '../badge/badge.service';
 import { CreatePostDto, UpdatePostDto } from './dto';
 import { Prisma } from '@prisma/client';
 
@@ -15,6 +16,7 @@ export class PostService {
     private readonly xp: XpService,
     private readonly quest: QuestService,
     private readonly moderation: ModerationService,
+    private readonly badgeService: BadgeService,
   ) {}
 
   /**
@@ -43,7 +45,7 @@ export class PostService {
       },
       include: {
         author: {
-          select: { id: true, name: true, nickname: true, avatarUrl: true },
+          select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true },
         },
         postTags: {
           include: { tag: true },
@@ -58,6 +60,8 @@ export class PostService {
 
     // AI 콘텐츠 검열 (fire-and-forget)
     this.moderation.moderatePost(post.id).catch((err) => this.logger.warn(`모더레이션 실패 (post ${post.id}): ${err.message}`));
+    // 뱃지 체크 (fire-and-forget)
+    this.badgeService.checkAndAwardBadges(authorId).catch((err) => this.logger.warn(`Badge check failed: ${err.message}`));
 
     return post;
   }
@@ -109,7 +113,7 @@ export class PostService {
         orderBy: [{ isPinned: 'desc' }, { [sortBy]: order }],
         include: {
           author: {
-            select: { id: true, name: true, nickname: true, avatarUrl: true },
+            select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true },
           },
           board: {
             select: { id: true, name: true },
@@ -144,7 +148,7 @@ export class PostService {
       where: { id },
       include: {
         author: {
-          select: { id: true, name: true, nickname: true, avatarUrl: true },
+          select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true },
         },
         board: true,
         postTags: {
@@ -153,7 +157,7 @@ export class PostService {
         comments: {
           include: {
             author: {
-              select: { id: true, name: true, nickname: true, avatarUrl: true },
+              select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true },
             },
           },
           orderBy: { createdAt: 'asc' },
@@ -217,7 +221,7 @@ export class PostService {
       },
       include: {
         author: {
-          select: { id: true, name: true, nickname: true, avatarUrl: true },
+          select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true },
         },
         postTags: {
           include: { tag: true },
@@ -293,7 +297,7 @@ export class PostService {
         orderBy: { createdAt: 'desc' },
         include: {
           author: {
-            select: { id: true, name: true, nickname: true, avatarUrl: true },
+            select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true },
           },
           board: {
             select: { id: true, name: true },

@@ -68,7 +68,7 @@ export class UserService {
       await tx.userBadge.create({
         data: {
           userId: newUser.id,
-          badge: BadgeType.NEW_MEMBER,
+          badge: BadgeType.NEWBIE,
         },
       });
       return newUser;
@@ -214,6 +214,7 @@ export class UserService {
         nickname: true,
         name: true,
         avatarUrl: true,
+        displayBadgeType: true,
         level: true,
         techStack: true,
         bio: true,
@@ -239,6 +240,7 @@ export class UserService {
         name: true,
         nickname: true,
         avatarUrl: true,
+        displayBadgeType: true,
         bio: true,
         techStack: true,
         xp: true,

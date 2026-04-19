@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { BadgeType } from '@prisma/client';
 
 @Injectable()
 export class XpService {
@@ -22,7 +21,7 @@ export class XpService {
   }
 
   /**
-   * XP 부여 + 레벨업 체크 + ACTIVITY 뱃지 자동 지급
+   * XP 부여 + 레벨업 체크
    */
   async grantXP(userId: string, amount: number) {
     const user = await this.prisma.user.findUnique({
@@ -39,22 +38,6 @@ export class XpService {
       data: { xp: newXp, level: newLevel },
     });
 
-    // 레벨업 시 Lv.5 이상이면 ACTIVITY 뱃지 지급
-    if (newLevel > user.level && newLevel >= 5) {
-      await this.awardBadge(userId, BadgeType.ACTIVITY);
-    }
-
     return { newXp, newLevel, leveledUp: newLevel > user.level };
-  }
-
-  /**
-   * 뱃지 지급 (중복 무시: @@unique([userId, badge]))
-   */
-  async awardBadge(userId: string, badge: BadgeType) {
-    try {
-      await this.prisma.userBadge.create({ data: { userId, badge } });
-    } catch {
-      // 이미 획득한 뱃지 → 무시
-    }
   }
 }

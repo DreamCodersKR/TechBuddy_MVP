@@ -10,6 +10,7 @@ import { XpService } from '../xp/xp.service';
 import { NotificationService } from '../notification/notification.service';
 import { QuestService, QUEST_KEYS } from '../quest/quest.service';
 import { ModerationService } from '../moderation/moderation.service';
+import { BadgeService } from '../badge/badge.service';
 import { CreateAgoraDto } from './dto/create-agora.dto';
 import { CreateAgoraAnswerDto } from './dto/create-agora-answer.dto';
 import { AgoraStatus, CreditTransactionType, NotificationType, UserPlan } from '@prisma/client';
@@ -28,6 +29,7 @@ export class AgoraService {
     private readonly notification: NotificationService,
     private readonly quest: QuestService,
     private readonly moderation: ModerationService,
+    private readonly badgeService: BadgeService,
   ) {}
 
   // ========================
@@ -55,7 +57,7 @@ export class AgoraService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          author: { select: { id: true, name: true, nickname: true, avatarUrl: true } },
+          author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
           _count: { select: { answers: true } },
         },
       }),
@@ -72,10 +74,10 @@ export class AgoraService {
     const agora = await this.prisma.agora.findUnique({
       where: { id },
       include: {
-        author: { select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } } },
+        author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
         answers: {
           include: {
-            author: { select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } } },
+            author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
           },
           orderBy: [{ isAccepted: 'desc' }, { createdAt: 'asc' }],
         },
@@ -138,6 +140,8 @@ export class AgoraService {
 
     // AI 콘텐츠 검열 (fire-and-forget)
     this.moderation.moderateAgora(agora.id).catch((err) => this.logger.warn(`모더레이션 실패 (agora ${agora.id}): ${err.message}`));
+    // 뱃지 체크 (fire-and-forget)
+    this.badgeService.checkAndAwardBadges(userId).catch((err) => this.logger.warn(`Badge check failed: ${err.message}`));
 
     return agora;
   }
@@ -191,7 +195,7 @@ export class AgoraService {
     const answer = await this.prisma.agoraAnswer.create({
       data: { ...dto, agoraId, authorId: userId },
       include: {
-        author: { select: { id: true, name: true, nickname: true, avatarUrl: true, userBadges: { select: { badge: true } } } },
+        author: { select: { id: true, name: true, nickname: true, avatarUrl: true, displayBadgeType: true } },
       },
     });
 
@@ -274,6 +278,10 @@ export class AgoraService {
       message: `"${agora.title}" 질문에서 답변이 채택되어 ${agora.bounty}C를 받았습니다`,
       relatedId: agoraId,
     });
+
+    // 뱃지 체크 (fire-and-forget): 답변자(BEST_ANSWERER) + 질문자(CURIOUS)
+    this.badgeService.checkAndAwardBadges(answer.authorId).catch((err) => this.logger.warn(`Badge check failed: ${err.message}`));
+    this.badgeService.checkAndAwardBadges(userId).catch((err) => this.logger.warn(`Badge check failed: ${err.message}`));
 
     return { message: '답변이 채택되었습니다' };
   }
